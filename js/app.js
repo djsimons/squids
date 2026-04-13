@@ -239,22 +239,18 @@ function showHome() {
   renderHomeGames();
 }
 
+function fmtTime(t) {
+  // Convert "7" or "8" or "7pm" -> "7pm"
+  if(!t) return '';
+  const n = parseInt(t);
+  if(!isNaN(n)) return n + 'pm';
+  return t;
+}
+
 function renderHomeGames() {
   const today = new Date().toISOString().slice(0,10);
 
-  // Last completed game from logs
-  const latest = [...DATA.logs].sort((a,b)=>b.date.localeCompare(a.date)||b.game_num-a.game_num)[0];
-  let recentHTML = '';
-  if(latest) {
-    const rows = DATA.logs
-      .filter(l=>l.date===latest.date&&l.game_num===latest.game_num)
-      .sort((a,b)=>a.batting_order-b.batting_order);
-    recentHTML = `
-      <div class="section-title">Last Game — ${latest.date} vs ${latest.opponent}</div>
-      ${buildBoxTable(rows,false)}`;
-  }
-
-  // Next two upcoming games from schedule (date >= today, no result)
+  // ── Upcoming games (top, full width) ──
   let upcomingHTML = '';
   if(window._scheduleRows && window._scheduleRows.length) {
     const upcoming = window._scheduleRows
@@ -265,21 +261,51 @@ function renderHomeGames() {
       .slice(0,2);
     if(upcoming.length) {
       upcomingHTML = `
-        <div class="section-title mt2">Upcoming</div>
-        <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div class="section-title">Upcoming</div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
           ${upcoming.map(r=>`
-            <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem">
+            <div class="card" style="flex:1;min-width:200px;display:flex;justify-content:space-between;align-items:center;padding:0.7rem 1rem">
               <div>
-                <span style="font-family:var(--font-display);font-weight:700;color:var(--text)">${r['Day']||''} ${r['Date']||''}</span>
-                <span style="color:var(--text-muted);margin-left:0.75rem;font-size:0.88rem">${r['H/A']==='H'?'vs':'@'} ${r['Opponent']||''}</span>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text)">${r['Day']||''} ${r['Date']||''}</div>
+                <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">${(r['H/A']||'').trim()==='H'?'vs':'@'} ${r['Opponent']||''}</div>
               </div>
-              <span style="color:var(--text-muted);font-size:0.88rem">${r['Time']||''}</span>
+              <div style="font-family:var(--font-blade);color:var(--sky);font-size:1rem;white-space:nowrap">${fmtTime(r['Time']||'')}</div>
             </div>`).join('')}
         </div>`;
     }
   }
+  document.getElementById('home-upcoming').innerHTML = upcomingHTML;
 
-  document.getElementById('home-recent').innerHTML = recentHTML + upcomingHTML;
+  // ── Last game box score ──
+  const latest = [...DATA.logs].sort((a,b)=>b.date.localeCompare(a.date)||b.game_num-a.game_num)[0];
+  let recentHTML = '';
+  if(latest) {
+    const rows = DATA.logs
+      .filter(l=>l.date===latest.date&&l.game_num===latest.game_num)
+      .sort((a,b)=>a.batting_order-b.batting_order);
+
+    // Try to find game result from schedule
+    let resultBadge = '';
+    if(window._scheduleRows) {
+      const latestISO = latest.date; // already YYYY-MM-DD
+      const sched = window._scheduleRows.find(r => schedDateToISO(r['Date']||'') === latestISO);
+      if(sched && (sched['W/L']||'').trim()) {
+        const wl = sched['W/L'].trim().toUpperCase();
+        const rs = sched['RS']||'';
+        const ra = sched['RA']||'';
+        const color = wl==='W'?'var(--green)':'var(--red)';
+        const score = rs&&ra ? `, ${rs}–${ra}` : '';
+        resultBadge = `<span style="font-family:var(--font-blade);color:${color};margin-left:0.75rem;font-size:1rem">${wl}${score}</span>`;
+      }
+    }
+
+    recentHTML = `
+      <div class="section-title" style="display:flex;align-items:center;gap:0.5rem">
+        Last Game — ${latest.date} vs ${latest.opponent}${resultBadge}
+      </div>
+      ${buildBoxTableWithPos(rows,false)}`;
+  }
+  document.getElementById('home-recent').innerHTML = recentHTML;
 }
 
 function schedDateToISO(d) {

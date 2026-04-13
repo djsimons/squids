@@ -105,13 +105,13 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
 .page { display: none; }
 .page.active { display: block; }
 
-.container { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; }
+.container { max-width: 1300px; margin: 0 auto; padding: 1.25rem 1.25rem; }
 
 /* ── HERO ── */
 .hero {
   background: linear-gradient(135deg, var(--deep-mid) 0%, var(--deep) 100%);
   border-bottom: 1px solid var(--border);
-  padding: 3rem 1.5rem;
+  padding: 2rem 1.5rem;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -141,7 +141,7 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
 
 /* ── PAGE HEADER ── */
 .page-header {
-  padding: 2rem 1.5rem 0;
+  padding: 1.25rem 1.25rem 0;
   max-width: 1300px;
   margin: 0 auto;
 }
@@ -160,7 +160,7 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: 0.9rem 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .card:hover { border-color: var(--border-bright); box-shadow: var(--glow); }
@@ -185,7 +185,7 @@ thead th {
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.6rem 0.65rem;
+  padding: 0.4rem 0.55rem;
   text-align: right;
   white-space: nowrap;
   cursor: pointer;
@@ -200,7 +200,7 @@ thead th.sort-desc::after { content: ' ▼'; font-size: 0.6rem; }
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: var(--surface-raised); }
 tbody tr:last-child { border-bottom: none; }
-tbody td { padding: 0.5rem 0.65rem; text-align: right; color: var(--text); }
+tbody td { padding: 0.35rem 0.55rem; text-align: right; color: var(--text); }
 tbody td:first-child { text-align: left; }
 tbody td a { color: var(--sky-light); text-decoration: none; cursor: pointer; }
 tbody td a:hover { color: var(--sky); text-decoration: underline; }
@@ -226,7 +226,7 @@ tbody td a:hover { color: var(--sky); text-decoration: underline; }
   display: flex;
   gap: 1.5rem;
   align-items: center;
-  padding: 1.5rem 1.5rem 0.5rem;
+  padding: 1rem 1.25rem 0.5rem;
   max-width: 1300px;
   margin: 0 auto;
 }
