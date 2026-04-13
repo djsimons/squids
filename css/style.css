@@ -67,7 +67,13 @@ nav {
   cursor: pointer;
   flex-shrink: 0;
 }
-.nav-logo img { height: 36px; width: auto; display: block; filter: drop-shadow(0 0 6px rgba(56,189,248,0.4)); }
+.nav-logo img {
+  height: 36px;
+  width: auto;
+  display: block;
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 0 8px rgba(56,189,248,0.6)) brightness(0.85) saturate(1.5);
+}
 nav a {
   color: var(--text-dim);
   text-decoration: none;

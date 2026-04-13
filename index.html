@@ -8,20 +8,20 @@
 </head>
 <body>
 
+<!-- NAV -->
 <nav>
   <div class="nav-inner">
-    <a class="nav-logo" onclick="navigate('home')">
-      <div class="nav-logo-placeholder">🦑</div>
-      <span class="nav-team-name">The Fightin' Squids</span>
+    <a class="nav-logo" onclick="navigate('home')" style="padding-right:1rem;margin-right:0.25rem;border-right:1px solid var(--border)">
+      <img src="img/logo.png" alt="Squids"
+        style="height:36px;width:auto;display:block;filter:drop-shadow(0 0 6px rgba(56,189,248,0.5))"
+        onerror="this.outerHTML='<div style=&quot;width:36px;height:36px;border-radius:50%;background:var(--deep-light);border:2px solid var(--sky-dim);display:flex;align-items:center;justify-content:center;font-size:18px&quot;>🦑</div>'">
     </a>
-    <a data-route="home" onclick="navigate('home')">Home</a>
     <a data-route="players" onclick="navigate('players')">Players</a>
-    <a data-route="seasons" onclick="navigate('seasons')">Seasons</a>
+    <a data-route="seasons" onclick="navigate('seasons')">Stats</a>
     <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
     <a data-route="records" onclick="navigate('records')">Records</a>
     <a data-route="schedule" onclick="navigate('schedule')">Schedule</a>
     <a data-route="standings" onclick="navigate('standings')">Standings</a>
-    <a data-route="current" onclick="navigate('current')" style="color:var(--green)">2026 ▶</a>
   </div>
 </nav>
 
@@ -40,7 +40,7 @@
         <div id="home-recent"></div>
       </div>
       <div>
-        <div class="section-title">Career Leaders</div>
+        <div class="section-title">Season Leaders</div>
         <div id="home-leaders" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem"></div>
       </div>
     </div>
@@ -76,16 +76,17 @@
       </div>
       <label style="display:flex;flex-direction:column;gap:0.25rem;cursor:pointer">
         <span class="filter-label">Active Only</span>
-        <input type="checkbox" id="active-only" onchange="applyRosterFilters()" style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
+        <input type="checkbox" id="active-only" onchange="applyRosterFilters()"
+          style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
       </label>
     </div>
     <div id="roster-grid" class="roster-grid"></div>
   </div>
 </div>
 
-<!-- SEASONS -->
+<!-- STATS -->
 <div id="page-seasons" class="page">
-  <div class="page-header"><h2>Season Stats</h2></div>
+  <div class="page-header"><h2>Stats</h2></div>
   <div class="container">
     <div class="filter-bar">
       <span class="filter-label">Season:</span>
@@ -97,10 +98,12 @@
       </select>
     </div>
     <div class="section-title" id="season-label"></div>
-    <div class="table-wrap"><table>
-      <thead id="season-thead"></thead>
-      <tbody id="season-tbody"></tbody>
-    </table></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="season-thead"></thead>
+        <tbody id="season-tbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -161,16 +164,13 @@
         <th style="text-align:left">G#</th>
         <th style="text-align:left">Day</th>
         <th style="text-align:left">Date</th>
-        <th>Time</th>
-        <th>H/A</th>
+        <th>Time</th><th>H/A</th>
         <th style="text-align:left">Opponent</th>
-        <th>W/L</th>
-        <th>RS</th>
-        <th>RA</th>
+        <th>W/L</th><th>RS</th><th>RA</th>
         <th style="text-align:left">Record</th>
       </tr></thead>
       <tbody id="schedule-tbody">
-        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">No schedule data yet</td></tr>
+        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>
       </tbody>
     </table></div>
   </div>
@@ -181,20 +181,18 @@
   <div class="page-header"><h2>Standings</h2><p>Spring 2026</p></div>
   <div class="container">
     <div style="max-width:380px">
-    <div class="table-wrap"><table>
-      <thead><tr>
-        <th style="text-align:left">Team</th>
-        <th>W</th><th>L</th><th>Win%</th>
-      </tr></thead>
-      <tbody id="standings-tbody">
-        <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">No standings data yet</td></tr>
-      </tbody>
-    </table></div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">Team</th>
+          <th>W</th><th>L</th><th>Win%</th>
+        </tr></thead>
+        <tbody id="standings-tbody">
+          <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>
+        </tbody>
+      </table></div>
     </div>
   </div>
 </div>
-
-
 
 <!-- PROFILE -->
 <div id="page-profile" class="page"></div>
