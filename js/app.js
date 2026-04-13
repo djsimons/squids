@@ -752,23 +752,23 @@ const LIVE_LABEL     = 'Spring 2026';
 
 const SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
 
+// Parse a single CSV line respecting quoted fields (global so live data fns can use it)
+function parseLine(line) {
+  const vals = [];
+  let cur = '', inQ = false;
+  for(let i=0; i<line.length; i++){
+    const ch = line[i];
+    if(ch==='"') { inQ=!inQ; }
+    else if(ch===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+    else { cur+=ch; }
+  }
+  vals.push(cur.trim());
+  return vals.map(v => v.replace(/^"|"$/g,'').trim());
+}
+
 function parseCSV(text) {
   // Normalize Windows line endings
   const lines = text.trim().replace(/\r/g,'').split('\n');
-
-  // Parse a single CSV line respecting quoted fields
-  function parseLine(line) {
-    const vals = [];
-    let cur = '', inQ = false;
-    for(let i=0; i<line.length; i++){
-      const ch = line[i];
-      if(ch==='"') { inQ=!inQ; }
-      else if(ch===',' && !inQ) { vals.push(cur.trim()); cur=''; }
-      else { cur+=ch; }
-    }
-    vals.push(cur.trim());
-    return vals.map(v => v.replace(/^"|"$/g,'').trim());
-  }
 
   // Use first occurrence of any duplicate header
   const rawHeaders = parseLine(lines[0]);
