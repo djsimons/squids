@@ -628,15 +628,15 @@ function showProfile(id) {
       '<div class="profile-info" style="text-align:center">'+
         '<div class="blade-name">'+player.first+' '+player.last+'</div>'+
         (akaStr?'<div class="aka">'+akaStr+'</div>':'')+
-        (milestones.length?'<div style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.3rem;justify-content:center">'+
-          milestones.map(function(m){return '<span style="background:rgba(240,192,96,0.12);color:var(--gold);border:1px solid rgba(240,192,96,0.3);border-radius:4px;padding:0.15rem 0.6rem;font-size:0.75rem;font-family:var(--font-display);letter-spacing:0.05em">'+m+'</span>';}).join('')+
-        '</div>':'')+
         '<div class="profile-meta" style="justify-content:center">'+
           (isActive?'<span class="badge badge-current">Active</span>':'')+
           '<span style="color:var(--text-dim);font-size:0.85rem">'+player.gender+' &middot; Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
           (posDisplay?'<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">'+posDisplay+'</span>':'')+
           (nS>0?'<span style="color:var(--text-dim);font-size:0.85rem"><strong style="color:var(--text)">'+nS+'</strong> season'+(nS!==1?'s':'')+' &middot; '+rangeStr+'</span>':'')+
         '</div>'+
+        (isActive&&milestones.length?'<div style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.3rem;justify-content:center">'+
+          milestones.map(function(m){return '<span style="background:rgba(240,192,96,0.12);color:var(--gold);border:1px solid rgba(240,192,96,0.3);border-radius:4px;padding:0.15rem 0.6rem;font-size:0.75rem;font-family:var(--font-display);letter-spacing:0.05em">'+m+'</span>';}).join('')+
+        '</div>':'')+
       '</div>'+
     '</div>'+
     '<div class="container">'+statsContent+'</div>';
