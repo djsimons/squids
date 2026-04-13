@@ -1,0 +1,1676 @@
+[
+  {
+    "id": "Adams",
+    "last": "Adams",
+    "first": "Mike",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Mike Adams"
+  },
+  {
+    "id": "AdamsMark",
+    "last": "Adams",
+    "first": "Mark",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Mark Adams"
+  },
+  {
+    "id": "Admire",
+    "last": "Admire",
+    "first": "Lauren",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lauren Admire"
+  },
+  {
+    "id": "AkinsD",
+    "last": "Akins",
+    "first": "DeAnn",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "DeAnn Akins"
+  },
+  {
+    "id": "AkinsT",
+    "last": "AkinsT",
+    "first": "Tom",
+    "gender": "M",
+    "bat": "R",
+    "throw": "L",
+    "display_name": "Tom AkinsT"
+  },
+  {
+    "id": "AlmonteS",
+    "last": "Almonte",
+    "first": "Sean",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sean Almonte"
+  },
+  {
+    "id": "Amling",
+    "last": "Amling",
+    "first": "Marisa",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Marisa Amling"
+  },
+  {
+    "id": "Amsbary",
+    "last": "Amsbary",
+    "first": "Chris",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Chris Amsbary"
+  },
+  {
+    "id": "Babwah",
+    "last": "Babwah",
+    "first": "Lorelle",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lorelle Babwah"
+  },
+  {
+    "id": "Bonds",
+    "last": "Bonds",
+    "first": "Matt",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Matt Bonds"
+  },
+  {
+    "id": "Bowes",
+    "last": "Bowes",
+    "first": "Jeremy",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jeremy Bowes"
+  },
+  {
+    "id": "Bridges",
+    "last": "Bridges",
+    "first": "Meredith",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Meredith Bridges"
+  },
+  {
+    "id": "Brooks",
+    "last": "Brooks",
+    "first": "Christa",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Christa Brooks"
+  },
+  {
+    "id": "Burdette",
+    "last": "Burdette",
+    "first": "Erica",
+    "gender": "F",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Erica Burdette"
+  },
+  {
+    "id": "Busby",
+    "last": "Busby",
+    "first": "Ted",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Ted Busby"
+  },
+  {
+    "id": "Camenzind",
+    "last": "Camenzind",
+    "first": "Hannah",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Hannah Camenzind"
+  },
+  {
+    "id": "Campbell",
+    "last": "Campbell",
+    "first": "Kelley",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kelley Campbell"
+  },
+  {
+    "id": "Campione",
+    "last": "Campione",
+    "first": "Joanne",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Joanne Campione"
+  },
+  {
+    "id": "Candelori",
+    "last": "Candelori",
+    "first": "Adam",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Adam Candelori"
+  },
+  {
+    "id": "Caplow",
+    "last": "Caplow",
+    "first": "Susan",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Susan Caplow"
+  },
+  {
+    "id": "Caracci",
+    "last": "Caracci",
+    "first": "Aaron",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Aaron Caracci"
+  },
+  {
+    "id": "Chaplin",
+    "last": "Chaplin",
+    "first": "Tra",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Tra Chaplin"
+  },
+  {
+    "id": "Clark",
+    "last": "Clark",
+    "first": "Adrian",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Adrian Clark"
+  },
+  {
+    "id": "Clarke",
+    "last": "Clarke",
+    "first": "Asia",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Asia Clarke"
+  },
+  {
+    "id": "Collins",
+    "last": "Collins",
+    "first": "Julie",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Julie Collins"
+  },
+  {
+    "id": "Connor",
+    "last": "Connor",
+    "first": "Sarah",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sarah Connor"
+  },
+  {
+    "id": "Cooney",
+    "last": "Cooney",
+    "first": "Patrick",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Patrick Cooney"
+  },
+  {
+    "id": "Cornwell",
+    "last": "Cornwell",
+    "first": "Paul",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Paul Cornwell"
+  },
+  {
+    "id": "Corpus",
+    "last": "Corpus",
+    "first": "Brandon",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brandon Corpus"
+  },
+  {
+    "id": "Cotton",
+    "last": "Cotton",
+    "first": "Jay",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jay Cotton"
+  },
+  {
+    "id": "Cozart",
+    "last": "Cozart",
+    "first": "Bruce",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bruce Cozart"
+  },
+  {
+    "id": "Cseh",
+    "last": "Cseh",
+    "first": "Karen",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Karen Cseh"
+  },
+  {
+    "id": "Daigle",
+    "last": "Daigle",
+    "first": "James",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "James Daigle"
+  },
+  {
+    "id": "Dale",
+    "last": "Dale",
+    "first": "Freddie",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Freddie Dale"
+  },
+  {
+    "id": "Day",
+    "last": "Day",
+    "first": "Steph",
+    "gender": "F",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Steph Day"
+  },
+  {
+    "id": "DeBoer",
+    "last": "DeBoer",
+    "first": "Katie",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Katie DeBoer"
+  },
+  {
+    "id": "DeSantis",
+    "last": "DeSantis",
+    "first": "Stacey",
+    "gender": "F",
+    "bat": "R",
+    "throw": "L",
+    "display_name": "Stacey DeSantis"
+  },
+  {
+    "id": "DeVrieze",
+    "last": "DeVrieze",
+    "first": "Steve",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Steve DeVrieze"
+  },
+  {
+    "id": "Dijkerman",
+    "last": "Dijkerman",
+    "first": "Sally",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sally Dijkerman"
+  },
+  {
+    "id": "Drucker",
+    "last": "Drucker",
+    "first": "Jon",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jon Drucker"
+  },
+  {
+    "id": "Duke",
+    "last": "Duke",
+    "first": "Kevin",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Kevin Duke"
+  },
+  {
+    "id": "Duncan",
+    "last": "Duncan",
+    "first": "Emily",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Emily Duncan"
+  },
+  {
+    "id": "Fallon",
+    "last": "Fallon",
+    "first": "Joe",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Joe Fallon"
+  },
+  {
+    "id": "Foster",
+    "last": "Foster",
+    "first": "Mary",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Mary Foster"
+  },
+  {
+    "id": "Fromen",
+    "last": "Fromen",
+    "first": "Cathy",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Cathy Fromen"
+  },
+  {
+    "id": "Funk",
+    "last": "Funk",
+    "first": "Shoshana",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Shoshana Funk"
+  },
+  {
+    "id": "Galindo",
+    "last": "Galindo",
+    "first": "Rudy",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Rudy Galindo"
+  },
+  {
+    "id": "Gavenman",
+    "last": "Gavenman",
+    "first": "Jason",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jason Gavenman"
+  },
+  {
+    "id": "Gelfand",
+    "last": "Gelfand",
+    "first": "Rachel",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Rachel Gelfand"
+  },
+  {
+    "id": "Goldbach",
+    "last": "Goldbach",
+    "first": "Lizzie",
+    "gender": "F",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Lizzie Goldbach"
+  },
+  {
+    "id": "Goldman",
+    "last": "Goldman",
+    "first": "Glenn",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Glenn Goldman"
+  },
+  {
+    "id": "Gomez",
+    "last": "Gomez",
+    "first": "Jenny",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jenny Gomez"
+  },
+  {
+    "id": "Gonzales",
+    "last": "Gonzales",
+    "first": "Chris",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Chris Gonzales"
+  },
+  {
+    "id": "Gould",
+    "last": "Gould",
+    "first": "Kris",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kris Gould"
+  },
+  {
+    "id": "Gralinski",
+    "last": "Gralinski",
+    "first": "Lisa",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lisa Gralinski"
+  },
+  {
+    "id": "Graves",
+    "last": "Graves",
+    "first": "Deanna",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Deanna Graves"
+  },
+  {
+    "id": "Gray",
+    "last": "Gray",
+    "first": "Amber",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Amber Gray"
+  },
+  {
+    "id": "Griffin",
+    "last": "Griffin",
+    "first": "Cat",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Cat Griffin"
+  },
+  {
+    "id": "Harris",
+    "last": "Harris",
+    "first": "Katy",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Katy Harris"
+  },
+  {
+    "id": "Hart",
+    "last": "Hart",
+    "first": "Jefferson",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jefferson Hart"
+  },
+  {
+    "id": "Hartman",
+    "last": "Hartman",
+    "first": "Lauren",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lauren Hartman"
+  },
+  {
+    "id": "Hayes",
+    "last": "Hayes",
+    "first": "Amber",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Amber Hayes"
+  },
+  {
+    "id": "Henze",
+    "last": "Henze",
+    "first": "Bethany",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bethany Henze"
+  },
+  {
+    "id": "Herbener",
+    "last": "Herbener",
+    "first": "Grace",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Grace Herbener"
+  },
+  {
+    "id": "Higby",
+    "last": "Higby",
+    "first": "Heather",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Heather Higby"
+  },
+  {
+    "id": "Hinton",
+    "last": "Hinton",
+    "first": "Darius",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Darius Hinton"
+  },
+  {
+    "id": "Hitchcock",
+    "last": "Hitchcock",
+    "first": "Jillian",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jillian Hitchcock"
+  },
+  {
+    "id": "Hodnichak",
+    "last": "Hodnichak",
+    "first": "Josh",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Josh Hodnichak"
+  },
+  {
+    "id": "Hurley",
+    "last": "Hurley",
+    "first": "Ryan",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Ryan Hurley"
+  },
+  {
+    "id": "Iannotte",
+    "last": "Iannotte",
+    "first": "Lauren",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lauren Iannotte"
+  },
+  {
+    "id": "Isaacs",
+    "last": "Isaacs",
+    "first": "Diane",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Diane Isaacs"
+  },
+  {
+    "id": "Itzkin",
+    "last": "Itzkin",
+    "first": "Michael",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Michael Itzkin"
+  },
+  {
+    "id": "Jenkins",
+    "last": "Jenkins",
+    "first": "Todd",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Todd Jenkins"
+  },
+  {
+    "id": "Jennings",
+    "last": "Jennings",
+    "first": "Julia",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Julia Jennings"
+  },
+  {
+    "id": "Jensen",
+    "last": "Jensen",
+    "first": "Bill",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bill Jensen"
+  },
+  {
+    "id": "Jessee",
+    "last": "Jessee",
+    "first": "Chyenna",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Chyenna Jessee"
+  },
+  {
+    "id": "JohnsonB",
+    "last": "Johnson",
+    "first": "Brad",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brad Johnson"
+  },
+  {
+    "id": "JohnsonBri",
+    "last": "Johnson",
+    "first": "Bridget",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bridget Johnson"
+  },
+  {
+    "id": "Johnston",
+    "last": "Johnston",
+    "first": "Chris",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Chris Johnston"
+  },
+  {
+    "id": "JohnstonA",
+    "last": "Johnston",
+    "first": "Aidan",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Aidan Johnston"
+  },
+  {
+    "id": "Jones",
+    "last": "Jones",
+    "first": "Morris",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Morris Jones"
+  },
+  {
+    "id": "Justice",
+    "last": "Justice",
+    "first": "Ebony",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Ebony Justice"
+  },
+  {
+    "id": "Kage",
+    "last": "Kage",
+    "first": "Meghan",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Meghan Kage"
+  },
+  {
+    "id": "Kalb",
+    "last": "Kalb",
+    "first": "Beth",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Beth Kalb"
+  },
+  {
+    "id": "KalbachD",
+    "last": "Kalbach",
+    "first": "Dan",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Dan Kalbach"
+  },
+  {
+    "id": "KalbachJ",
+    "last": "Kalbach",
+    "first": "Jill",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jill Kalbach"
+  },
+  {
+    "id": "Kassabaum",
+    "last": "Kassabaum",
+    "first": "Meg",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Meg Kassabaum"
+  },
+  {
+    "id": "Kazaglis",
+    "last": "Kazaglis",
+    "first": "Charlene",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Charlene Kazaglis"
+  },
+  {
+    "id": "Kehoe",
+    "last": "Kehoe",
+    "first": "Violet",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Violet Kehoe"
+  },
+  {
+    "id": "Kekahuna",
+    "last": "Kekahuna",
+    "first": "Lono",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lono Kekahuna"
+  },
+  {
+    "id": "Kelly",
+    "last": "Kelly",
+    "first": "Stacey",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Stacey Kelly"
+  },
+  {
+    "id": "Kocher",
+    "last": "Kocher",
+    "first": "Jake",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jake Kocher"
+  },
+  {
+    "id": "Kosmin",
+    "last": "Kosmin",
+    "first": "Jen",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jen Kosmin"
+  },
+  {
+    "id": "Kott",
+    "last": "Kott",
+    "first": "Jen",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jen Kott"
+  },
+  {
+    "id": "Kuykendall",
+    "last": "Kuykendall",
+    "first": "Mark",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Mark Kuykendall"
+  },
+  {
+    "id": "Lassiter",
+    "last": "Lassiter",
+    "first": "Lindsay",
+    "gender": "F",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Lindsay Lassiter"
+  },
+  {
+    "id": "Layne",
+    "last": "Layne",
+    "first": "Priscilla",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Priscilla Layne"
+  },
+  {
+    "id": "Lee",
+    "last": "Lee",
+    "first": "Kevin",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kevin Lee"
+  },
+  {
+    "id": "LeeJ",
+    "last": "Lee",
+    "first": "Jazzmine",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jazzmine Lee"
+  },
+  {
+    "id": "Leonard",
+    "last": "Leonard",
+    "first": "Grant",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Grant Leonard"
+  },
+  {
+    "id": "Leumas",
+    "last": "Leumas",
+    "first": "Brett",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brett Leumas"
+  },
+  {
+    "id": "Leverenz",
+    "last": "Leverenz",
+    "first": "Scott",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Scott Leverenz"
+  },
+  {
+    "id": "Levy",
+    "last": "Levy",
+    "first": "Marc",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Marc Levy"
+  },
+  {
+    "id": "Long",
+    "last": "Long",
+    "first": "Sara",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sara Long"
+  },
+  {
+    "id": "Looser",
+    "last": "Looser",
+    "first": "Kelly",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kelly Looser"
+  },
+  {
+    "id": "Lopez",
+    "last": "Lopez",
+    "first": "Angela",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Angela Lopez"
+  },
+  {
+    "id": "Losardo",
+    "last": "Losardo",
+    "first": "Diane",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Diane Losardo"
+  },
+  {
+    "id": "Lyght",
+    "last": "Lyght",
+    "first": "Krystal",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Krystal Lyght"
+  },
+  {
+    "id": "Madden",
+    "last": "Madden",
+    "first": "Emily",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Emily Madden"
+  },
+  {
+    "id": "Malcolm",
+    "last": "Malcolm",
+    "first": "Laura",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Laura Malcolm"
+  },
+  {
+    "id": "McSweeney",
+    "last": "McSweeney",
+    "first": "Neal",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Neal McSweeney"
+  },
+  {
+    "id": "Metros",
+    "last": "Metros",
+    "first": "Val",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Val Metros"
+  },
+  {
+    "id": "Miller",
+    "last": "Miller",
+    "first": "Whitney",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Whitney Miller"
+  },
+  {
+    "id": "Mooney",
+    "last": "Mooney",
+    "first": "Drew",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Drew Mooney"
+  },
+  {
+    "id": "Moore",
+    "last": "Moore",
+    "first": "Reuben",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Reuben Moore"
+  },
+  {
+    "id": "Morello",
+    "last": "Morello",
+    "first": "Paul",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Paul Morello"
+  },
+  {
+    "id": "Mudd",
+    "last": "Mudd",
+    "first": "Elise",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Elise Mudd"
+  },
+  {
+    "id": "Mueller",
+    "last": "Mueller",
+    "first": "Sarah",
+    "gender": "F",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Sarah Mueller"
+  },
+  {
+    "id": "Nejad",
+    "last": "Nejad",
+    "first": "Neda",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Neda Nejad"
+  },
+  {
+    "id": "Neser",
+    "last": "Neser",
+    "first": "Laura",
+    "gender": "F",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Laura Neser"
+  },
+  {
+    "id": "Neville",
+    "last": "Neville",
+    "first": "Holly",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Holly Neville"
+  },
+  {
+    "id": "OzmeralA",
+    "last": "Ozmeral",
+    "first": "Alisha",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Alisha Ozmeral"
+  },
+  {
+    "id": "OzmeralE",
+    "last": "Ozmeral",
+    "first": "Erol",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Erol Ozmeral"
+  },
+  {
+    "id": "Paradiso",
+    "last": "Paradiso",
+    "first": "David",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "David Paradiso"
+  },
+  {
+    "id": "Parks",
+    "last": "Parks",
+    "first": "Patrick",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Patrick Parks"
+  },
+  {
+    "id": "Pence",
+    "last": "Pence",
+    "first": "Rob",
+    "gender": "M",
+    "bat": "R",
+    "throw": "L",
+    "display_name": "Rob Pence"
+  },
+  {
+    "id": "Poles",
+    "last": "Poles",
+    "first": "Tamara",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tamara Poles"
+  },
+  {
+    "id": "Polson",
+    "last": "Polson",
+    "first": "Cody",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Cody Polson"
+  },
+  {
+    "id": "Quilliams",
+    "last": "Quilliams",
+    "first": "Bryson",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bryson Quilliams"
+  },
+  {
+    "id": "RadtkeS",
+    "last": "Radtke",
+    "first": "Spenser",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Spenser Radtke"
+  },
+  {
+    "id": "RadtkeT",
+    "last": "Radtke",
+    "first": "Tyler",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tyler Radtke"
+  },
+  {
+    "id": "Reigle",
+    "last": "Reigle",
+    "first": "Carley",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Carley Reigle"
+  },
+  {
+    "id": "RichersonL",
+    "last": "Richerson",
+    "first": "Liz",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Liz Richerson"
+  },
+  {
+    "id": "RichersonT",
+    "last": "Richerson",
+    "first": "Tom",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tom Richerson"
+  },
+  {
+    "id": "Ritz",
+    "last": "Ritz",
+    "first": "Justin",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Justin Ritz"
+  },
+  {
+    "id": "Robertson",
+    "last": "Robertson",
+    "first": "Nicole",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Nicole Robertson"
+  },
+  {
+    "id": "Roniger",
+    "last": "Roniger",
+    "first": "Luke",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Luke Roniger"
+  },
+  {
+    "id": "Rosario",
+    "last": "Rosario",
+    "first": "Jose",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jose Rosario"
+  },
+  {
+    "id": "Ryan",
+    "last": "Ryan",
+    "first": "Kelly",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kelly Ryan"
+  },
+  {
+    "id": "Salazar",
+    "last": "Salazar",
+    "first": "Aja",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Aja Salazar"
+  },
+  {
+    "id": "Sale",
+    "last": "Sale",
+    "first": "Amanda",
+    "gender": "F",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Amanda Sale"
+  },
+  {
+    "id": "Salsman",
+    "last": "Salsman",
+    "first": "John",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "John Salsman"
+  },
+  {
+    "id": "Scercy",
+    "last": "Scercy",
+    "first": "Ally",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Ally Scercy"
+  },
+  {
+    "id": "Schrader",
+    "last": "Schrader",
+    "first": "Billy",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Billy Schrader"
+  },
+  {
+    "id": "Schwane",
+    "last": "Meredith",
+    "first": "Schwane",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Schwane Meredith"
+  },
+  {
+    "id": "Scotton",
+    "last": "Scotton",
+    "first": "Ryan",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Ryan Scotton"
+  },
+  {
+    "id": "Sides",
+    "last": "Sides",
+    "first": "Caroline",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Caroline Sides"
+  },
+  {
+    "id": "Simon",
+    "last": "Simon",
+    "first": "Mike",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Mike Simon"
+  },
+  {
+    "id": "Simons",
+    "last": "Simons",
+    "first": "DJ",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "DJ Simons"
+  },
+  {
+    "id": "SimonsDM",
+    "last": "Simons",
+    "first": "David",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "David Simons"
+  },
+  {
+    "id": "SimonsJe",
+    "last": "Simons",
+    "first": "Jen",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jen Simons"
+  },
+  {
+    "id": "Sisk",
+    "last": "Sisk",
+    "first": "Christie",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Christie Sisk"
+  },
+  {
+    "id": "SmithA",
+    "last": "Smith",
+    "first": "Alana",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Alana Smith"
+  },
+  {
+    "id": "SmithL",
+    "last": "Smith",
+    "first": "Lee",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Lee Smith"
+  },
+  {
+    "id": "SmithS",
+    "last": "Smith",
+    "first": "Sarah",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sarah Smith"
+  },
+  {
+    "id": "Standish",
+    "last": "Standish",
+    "first": "Jen",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jen Standish"
+  },
+  {
+    "id": "Stanley",
+    "last": "Stanley",
+    "first": "Jay",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Jay Stanley"
+  },
+  {
+    "id": "Stockton",
+    "last": "Stockton",
+    "first": "Josh",
+    "gender": "M",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Josh Stockton"
+  },
+  {
+    "id": "Strobl",
+    "last": "Strobl",
+    "first": "Bridgette",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Bridgette Strobl"
+  },
+  {
+    "id": "Stucky",
+    "last": "Stucky",
+    "first": "Brian",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brian Stucky"
+  },
+  {
+    "id": "Tallon",
+    "last": "Tallon",
+    "first": "Alex",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Alex Tallon"
+  },
+  {
+    "id": "Tate",
+    "last": "Tate",
+    "first": "Jan",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jan Tate"
+  },
+  {
+    "id": "Taylor",
+    "last": "Taylor",
+    "first": "Dawn",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Dawn Taylor"
+  },
+  {
+    "id": "Terris",
+    "last": "Terris",
+    "first": "Trevor",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Trevor Terris"
+  },
+  {
+    "id": "Thiele",
+    "last": "Thiele",
+    "first": "Katri",
+    "gender": "F",
+    "bat": "L",
+    "throw": "L",
+    "display_name": "Katri Thiele"
+  },
+  {
+    "id": "Thomas",
+    "last": "Thomas",
+    "first": "Tony",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tony Thomas"
+  },
+  {
+    "id": "Thurman",
+    "last": "Thurman",
+    "first": "Brandon",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brandon Thurman"
+  },
+  {
+    "id": "Tinnen",
+    "last": "Tinnen",
+    "first": "Jenny",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jenny Tinnen"
+  },
+  {
+    "id": "TraheyJ",
+    "last": "Trahey",
+    "first": "Jenn",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Jenn Trahey"
+  },
+  {
+    "id": "TraheyS",
+    "last": "Trahey",
+    "first": "Shawn",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Shawn Trahey"
+  },
+  {
+    "id": "Turk",
+    "last": "Turk",
+    "first": "Megan",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Megan Turk"
+  },
+  {
+    "id": "Vacharkulksemsuk",
+    "last": "Vacharkulksemsuk",
+    "first": "Tanya",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tanya Vacharkulksemsuk"
+  },
+  {
+    "id": "Ventre",
+    "last": "Ventre",
+    "first": "FJ",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "FJ Ventre"
+  },
+  {
+    "id": "Wacker",
+    "last": "Wacker",
+    "first": "Bryan",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Bryan Wacker"
+  },
+  {
+    "id": "Waldron",
+    "last": "Waldron",
+    "first": "Tony",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Tony Waldron"
+  },
+  {
+    "id": "Walker",
+    "last": "Walker",
+    "first": "Alyssa",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Alyssa Walker"
+  },
+  {
+    "id": "Warren",
+    "last": "Warren",
+    "first": "Justice",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Justice Warren"
+  },
+  {
+    "id": "Watkins",
+    "last": "Watkins",
+    "first": "Kandace",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Kandace Watkins"
+  },
+  {
+    "id": "Wilder",
+    "last": "Wilder",
+    "first": "Avery",
+    "gender": "M",
+    "bat": "L",
+    "throw": "R",
+    "display_name": "Avery Wilder"
+  },
+  {
+    "id": "Wise",
+    "last": "Wise",
+    "first": "April",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "April Wise"
+  },
+  {
+    "id": "Knudson",
+    "last": "Knudson",
+    "first": "Sophie",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sophie Knudson"
+  },
+  {
+    "id": "WatkinsP",
+    "last": "Watkins",
+    "first": "Princetta",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Princetta Watkins"
+  },
+  {
+    "id": "Croneberger",
+    "last": "Croneberger",
+    "first": "Andrew",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Andrew Croneberger"
+  },
+  {
+    "id": "Poole",
+    "last": "Poole",
+    "first": "Scott",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Scott Poole"
+  },
+  {
+    "id": "LeonardGrac",
+    "last": "Leonard",
+    "first": "Grace",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Grace Leonard"
+  },
+  {
+    "id": "Spencer",
+    "last": "Spencer",
+    "first": "Brian",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brian Spencer"
+  }
+]

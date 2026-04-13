@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Squids</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" onclick="navigate('home')" style="cursor:pointer">
+      <!-- Replace with: <img src="img/logo.png" alt="Squids logo"> -->
+      <div class="nav-logo-placeholder">🦑</div>
+      <span class="nav-team-name">The Squids</span>
+    </a>
+    <a data-route="home" onclick="navigate('home')">Home</a>
+    <a data-route="players" onclick="navigate('players')">Players</a>
+    <a data-route="seasons" onclick="navigate('seasons')">Seasons</a>
+    <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
+    <a data-route="records" onclick="navigate('records')">Records</a>
+    <a data-route="current" onclick="navigate('current')" style="color:var(--green)">2026 ▶</a>
+  </div>
+</nav>
+
+<!-- ── HOME ─────────────────────────────────────────────────────────────── -->
+<div id="page-home" class="page">
+  <div class="hero">
+    <div class="hero-content">
+      <h1>The Squids</h1>
+      <div class="hero-sub">Est. 2010 · Durham, NC</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="news-grid">
+      <div>
+        <div class="section-title">Latest</div>
+        <div class="news-item">
+          <div class="news-date">Spring 2026</div>
+          <div class="news-title">Season Underway</div>
+          <div class="news-body">Two games in the books. Live stats coming soon — check the <a onclick="navigate('current')" style="color:var(--sky);cursor:pointer">2026 season page</a>.</div>
+        </div>
+        <div id="home-recent" class="mt2"></div>
+      </div>
+      <div>
+        <div class="section-title">Career Leaders</div>
+        <div id="home-leaders" class="stat-grid" style="grid-template-columns:1fr 1fr"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLAYERS ───────────────────────────────────────────────────────────── -->
+<div id="page-players" class="page">
+  <div class="page-header">
+    <h2>All-Time Roster</h2>
+    <p>186 players · all seasons</p>
+  </div>
+  <div class="container">
+    <div class="filter-bar">
+      <input type="text" id="player-search" placeholder="Search by name..." oninput="renderRoster(this.value, document.getElementById('gender-filter').value)" style="width:220px">
+      <span class="filter-label">Gender:</span>
+      <select id="gender-filter" onchange="renderRoster(document.getElementById('player-search').value, this.value)">
+        <option value="all">All</option>
+        <option value="M">M</option>
+        <option value="F">F</option>
+      </select>
+    </div>
+    <div id="roster-grid" class="roster-grid"></div>
+  </div>
+</div>
+
+<!-- ── SEASONS ───────────────────────────────────────────────────────────── -->
+<div id="page-seasons" class="page">
+  <div class="page-header">
+    <h2>Season Stats</h2>
+  </div>
+  <div class="container">
+    <div class="filter-bar">
+      <span class="filter-label">Season:</span>
+      <select id="season-select" onchange="renderSeasonStats()"></select>
+      <span class="filter-label">View:</span>
+      <select id="stat-type" onchange="renderSeasonStats()">
+        <option value="batting">Batting</option>
+        <option value="pitching">Pitching</option>
+      </select>
+    </div>
+    <div class="section-title" id="season-label"></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="season-thead"></thead>
+        <tbody id="season-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── GAME LOGS ─────────────────────────────────────────────────────────── -->
+<div id="page-gamelogs" class="page">
+  <div class="page-header">
+    <h2>Game Log</h2>
+    <p>Box scores · 2014–present · click a game to expand</p>
+  </div>
+  <div class="container">
+    <div class="filter-bar">
+      <span class="filter-label">Year:</span>
+      <select id="log-year-select" onchange="renderGameList()"></select>
+    </div>
+    <div id="game-list"></div>
+  </div>
+</div>
+
+<!-- ── RECORDS ───────────────────────────────────────────────────────────── -->
+<div id="page-records" class="page">
+  <div class="page-header">
+    <h2>Records &amp; Leaders</h2>
+    <p>Career and single-season bests</p>
+  </div>
+  <div class="container" id="records-content"></div>
+</div>
+
+<!-- ── CURRENT SEASON ────────────────────────────────────────────────────── -->
+<div id="page-current" class="page">
+  <div class="page-header">
+    <h2>Spring 2026</h2>
+    <p>Season in progress</p>
+  </div>
+  <div class="container">
+    <div class="empty-state" style="padding:4rem 1rem">
+      <div style="font-size:2rem;margin-bottom:1rem">🦑</div>
+      Live season stats pipeline coming soon.<br>
+      <span style="font-size:0.85rem;color:var(--text-muted);text-transform:none;letter-spacing:0">Check back after the data pipeline is set up.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROFILE (dynamic) ─────────────────────────────────────────────────── -->
+<div id="page-profile" class="page"></div>
+
+<script src="js/app.js"></script>
+<script>
+  // Hook current season nav
+  document.querySelector('a[data-route="current"]').addEventListener('click', () => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-current').classList.add('active');
+    document.querySelectorAll('nav a[data-route]').forEach(a => a.classList.remove('active'));
+    document.querySelector('nav a[data-route="current"]').classList.add('active');
+  });
+</script>
+</body>
+</html>
