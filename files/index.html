@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Fightin' Squids</title>
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" onclick="navigate('home')" style="padding-right:1rem;margin-right:0.25rem;border-right:1px solid var(--border)">
+      <img src="img/logo.png" alt="Squids"
+        style="height:36px;width:auto;display:block;filter:drop-shadow(0 0 6px rgba(56,189,248,0.5))"
+        onerror="this.outerHTML='<div style=&quot;width:36px;height:36px;border-radius:50%;background:var(--deep-light);border:2px solid var(--sky-dim);display:flex;align-items:center;justify-content:center;font-size:18px&quot;>🦑</div>'">
+    </a>
+    <a data-route="players" onclick="navigate('players')">Players</a>
+    <a data-route="seasons" onclick="navigate('seasons')">Stats</a>
+    <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
+    <a data-route="records" onclick="navigate('records')">Records</a>
+    <a data-route="schedule" onclick="navigate('schedule')">Schedule</a>
+    <a data-route="standings" onclick="navigate('standings')">Standings</a>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div id="page-home" class="page">
+  <div class="hero">
+    <div class="hero-content">
+      <h1>The Fightin' Squids</h1>
+      <div class="hero-sub">Est. 2010 · Carrboro, NC</div>
+    </div>
+  </div>
+  <div class="container">
+    <div id="home-wl"></div>
+    <div id="home-upcoming"></div>
+    <div class="news-grid mt2">
+      <div>
+        <div id="home-recent"></div>
+      </div>
+      <div>
+        <div class="section-title">Season Leaders</div>
+        <div id="home-leaders" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem"></div>
+        <div class="section-title mt2">News</div>
+        <div id="home-news">
+          <div class="news-item">
+            <div class="news-date">Spring 2026</div>
+            <div class="news-title">Season Underway</div>
+            <div class="news-body">Two games in the books. Check the <a onclick="navigate('schedule')" style="color:var(--sky);cursor:pointer">schedule</a> for upcoming games.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYERS -->
+<div id="page-players" class="page">
+  <div class="page-header"><h2>All-Time Roster</h2><p>186 players · all seasons</p></div>
+  <div class="container">
+    <div class="filter-bar" style="align-items:flex-end;gap:0.75rem">
+      <div style="display:flex;flex-direction:column;gap:0.25rem">
+        <span class="filter-label">Search</span>
+        <input type="text" id="player-search" placeholder="Name..." oninput="applyRosterFilters()" style="width:160px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.25rem">
+        <span class="filter-label">Gender</span>
+        <select id="gender-filter" onchange="applyRosterFilters()">
+          <option value="all">All</option><option value="M">M</option><option value="F">F</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.25rem">
+        <span class="filter-label">Position</span>
+        <select id="pos-filter" onchange="applyRosterFilters()">
+          <option value="all">All</option>
+          <option value="P">P</option><option value="C">C</option>
+          <option value="1B">1B</option><option value="2B">2B</option>
+          <option value="3B">3B</option><option value="SS">SS</option>
+          <option value="LF">LF</option><option value="LC">LC</option>
+          <option value="RC">RC</option><option value="RF">RF</option>
+          <option value="DH">DH</option>
+        </select>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:0.25rem;cursor:pointer">
+        <span class="filter-label">Active Only</span>
+        <input type="checkbox" id="active-only" onchange="applyRosterFilters()"
+          style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
+      </label>
+    </div>
+    <div id="roster-grid" class="roster-grid"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="page-seasons" class="page">
+  <div class="page-header"><h2>Stats</h2></div>
+  <div class="container">
+    <div id="season-recap"></div>
+    <div class="filter-bar">
+      <span class="filter-label">Season:</span>
+      <select id="season-select" onchange="renderSeasonStats()"></select>
+      <span class="filter-label">View:</span>
+      <select id="stat-type" onchange="renderSeasonStats()">
+        <option value="batting">Batting</option>
+        <option value="pitching">Pitching</option>
+      </select>
+    </div>
+    <div class="section-title" id="season-label"></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="season-thead"></thead>
+        <tbody id="season-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- GAME LOG -->
+<div id="page-gamelogs" class="page">
+  <div class="page-header"><h2>Game Log</h2><p>Box scores · 2014–present · click a game to expand</p></div>
+  <div class="container">
+    <div class="filter-bar">
+      <span class="filter-label">Year:</span>
+      <select id="log-year-select" onchange="renderGameList()"></select>
+    </div>
+    <div id="game-list"></div>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div id="page-records" class="page">
+  <div class="page-header"><h2>Records &amp; Leaders</h2></div>
+  <div class="container">
+    <div id="records-static"></div>
+    <div class="section-title mt2">Leaderboard</div>
+    <div class="card mt1">
+      <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Scope</span>
+          <select id="lb-scope">
+            <option value="career">Career</option>
+            <option value="season">Single Season</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Season</span>
+          <select id="lb-season"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Gender</span>
+          <select id="lb-gender">
+            <option value="all">All</option><option value="M">M</option><option value="F">F</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Min AB</span>
+          <input type="number" id="lb-minab" value="0" min="0" step="5" style="width:70px">
+        </div>
+        <button class="submit-btn" onclick="renderCustomLeaderboard()">Show</button>
+      </div>
+      <div id="lb-results" class="mt1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div id="page-schedule" class="page">
+  <div class="page-header"><h2>Schedule</h2><p>Spring 2026</p></div>
+  <div class="container">
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">G#</th>
+        <th style="text-align:left">Day</th>
+        <th style="text-align:left">Date</th>
+        <th>Time</th><th>H/A</th>
+        <th style="text-align:left">Opponent</th>
+        <th>W/L</th><th>RS</th><th>RA</th>
+        <th style="text-align:left">Record</th>
+      </tr></thead>
+      <tbody id="schedule-tbody">
+        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- STANDINGS -->
+<div id="page-standings" class="page">
+  <div class="page-header"><h2>Standings</h2><p>Spring 2026</p></div>
+  <div class="container">
+    <div style="max-width:380px">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">Team</th>
+          <th>W</th><th>L</th><th>Win%</th>
+        </tr></thead>
+        <tbody id="standings-tbody">
+          <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="page-profile" class="page"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
