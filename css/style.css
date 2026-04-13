@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
 
 :root {
   --sky: #38bdf8;
@@ -21,6 +22,7 @@
   --border-bright: rgba(56, 189, 248, 0.4);
   --glow: 0 0 20px rgba(56, 189, 248, 0.2);
   --font-display: 'Barlow Condensed', sans-serif;
+  --font-blade: 'Orbitron', 'Barlow Condensed', sans-serif;
   --font-body: 'Barlow', sans-serif;
 }
 
@@ -646,3 +648,23 @@ select option { background: var(--deep-mid); }
 ::-webkit-scrollbar-track { background: var(--deep); }
 ::-webkit-scrollbar-thumb { background: var(--deep-light); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--sky-dim); }
+
+/* ── BLADE RUNNER FONT ── */
+.blade-name {
+  font-family: var(--font-blade);
+  font-weight: 900;
+  font-size: 2rem;
+  color: var(--sky);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(56,189,248,0.4);
+  line-height: 1.1;
+}
+
+.nav-team-name {
+  font-family: var(--font-blade) !important;
+}
+
+.hero h1 {
+  font-family: var(--font-blade) !important;
+}
