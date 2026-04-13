@@ -5,12 +5,15 @@ var POS_LABELS = { pos_P:'P',pos_C:'C',pos_1B:'1B',pos_2B:'2B',pos_3B:'3B',pos_S
 var LIVE_STATS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=633884296&single=true&output=csv';
 var LIVE_BOX_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=2094714956&single=true&output=csv';
 var SCHEDULE_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
+var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1865025073&single=true&output=csv';
+var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1865025073&single=true&output=csv';
 var STANDINGS_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1569850367&single=true&output=csv';
 var LIVE_SEASON    = 2026.1;
 var LIVE_LABEL     = 'Spring 2026';
 var DATA = { players: [], stats: [], logs: [] };
 var SEASON_RECORDS = [];
-
+var SEA_CREATURES=['&#127992;','&#128025;','&#128026;','&#129447;','&#128027;','&#129429;','&#128031;','&#129416;','&#128032;','&#129306;','&#129408;','&#128028;'];
+function seaCreature(id){var sum=0;for(var ci=0;ci<id.length;ci++)sum+=id.charCodeAt(ci);return SEA_CREATURES[sum%SEA_CREATURES.length];}
 // ── DATA LOADING ──────────────────────────────────────────────────────────
 async function loadData() {
   var res = await Promise.all([
@@ -28,6 +31,7 @@ async function loadData() {
     mergeLiveStats(live[0]);
     mergeLiveBox(live[1]);
     cacheSchedule(live[2]);
+    loadNews();
   } catch(e) { console.warn('Live data unavailable:', e); }
   DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
@@ -188,7 +192,7 @@ function makeAvatarImg(id) {
     'if(t===1)this.src="img/players/'+id+'.jpeg";'+
     'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
     'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
-    'else{this.onerror=null;this.parentElement.innerHTML="&#129410;";}';
+    'else{this.onerror=null;this.parentElement.innerHTML=seaCreature("'+id+'");}';
   return '<img src="img/players/'+id+'.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
 }
 
@@ -198,7 +202,7 @@ function makeLeaderPhoto(id) {
     'if(t===1)this.src="img/players/'+id+'.jpeg";'+
     'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
     'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
-    'else{this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.padding="3px";this.style.background="white";}';
+    'else{this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.background="white";this.style.padding="3px";}';
   return '<img src="img/players/'+id+'.jpg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
 }
 
@@ -232,6 +236,17 @@ function computeAllCareerTotals() {
   return tots;
 }
 
+function nameWithFace(id) {
+  var lo=id.toLowerCase();
+  var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
+    'if(t===1)this.src="img/players/'+id+'.jpeg";'+
+    'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
+    'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
+    'else{this.onerror=null;this.outerHTML="<span style=font-size:.9rem>"+seaCreature("'+id+'")+"</span>";}';
+  return '<img src="img/players/'+id+'.jpg" '+
+    'style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright)" '+
+    'onerror=\''+err+'\' alt="">'+displayName(id);
+}
 // ── ROUTING ───────────────────────────────────────────────────────────────
 function navigate(route, param) {
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -250,7 +265,7 @@ function buildBoxTable(rows, showDateOpp) {
   var body=rows.map(function(l){
     var fc=showDateOpp
       ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
-      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+displayName(l.player_id)+'</a></td>';
+      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a></td>';
     return '<tr>'+fc+'<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td><td>'+fmtRV(l.RV,2)+'</td></tr>';
@@ -268,7 +283,7 @@ function buildBoxTableWithPos(rows, showDateOpp) {
     var posStr=POS_COLS.filter(function(k){return l[k]&&l[k]>0;}).map(function(k){return POS_LABELS[k];}).join('/')||'&mdash;';
     var fc=showDateOpp
       ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
-      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+displayName(l.player_id)+'</a></td>';
+      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a></td>';
     return '<tr>'+fc+'<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
       '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
@@ -277,6 +292,32 @@ function buildBoxTableWithPos(rows, showDateOpp) {
   return '<div class="table-wrap"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
     '<tbody>'+body+'</tbody></table></div>';
+}
+
+async function loadNews() {
+  try {
+    var text = await fetch(NEWS_URL).then(function(r){return r.text();});
+    var lines = text.trim().replace(/\r/g,'').split('\n');
+    var headers = dedupeHeaders(parseLine(lines[0]));
+    window._newsRows = lines.slice(1).map(function(line){
+      var vals=parseLine(line),obj={};
+      headers.forEach(function(h,i){obj[h]=vals[i]||'';});
+      return obj;
+    }).filter(function(r){return r['Title']&&r['Title'].trim();});
+    renderNews();
+  } catch(e) { console.warn('News unavailable:', e); }
+}
+
+function renderNews() {
+  var el = document.getElementById('home-news');
+  if(!el||!window._newsRows||!window._newsRows.length) return;
+  el.innerHTML = window._newsRows.slice(0,5).map(function(r){
+    return '<div class="news-item">'+
+      '<div class="news-date">'+(r['Date']||'')+'</div>'+
+      '<div class="news-title">'+(r['Title']||'')+'</div>'+
+      (r['Body']?'<div class="news-body">'+(r['Body']||'')+'</div>':'')+
+    '</div>';
+  }).join('');
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────
@@ -690,7 +731,7 @@ function renderSeasonStats() {
       '<th onclick="sortSeason(16)">RV</th></tr>';
     tbody.innerHTML=sorted.map(function(s){
       return '<tr>'+
-        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+displayName(s.player_id)+'</a></td>'+
+        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+nameWithFace(s.player_id)+'</a></td>'+
         '<td style="text-align:left;color:var(--sky-light)">'+primaryPos(s)+'</td>'+
         '<td>'+fmtStat(s.G)+'</td><td>'+fmtStat(s.AB)+'</td><td>'+fmtStat(s.R)+'</td>'+
         '<td>'+fmtStat(s.H)+'</td><td>'+fmtStat(s.RBI)+'</td>'+
@@ -708,7 +749,7 @@ function renderSeasonStats() {
       ?'<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:2rem">No pitching data for this season</td></tr>'
       :pit.map(function(s){
         return '<tr>'+
-          '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+displayName(s.player_id)+'</a></td>'+
+          '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+nameWithFace(s.player_id)+'</a></td>'+
           '<td>'+fmtStat(s.pit_G)+'</td><td>'+fmtStat(s.pit_GS)+'</td>'+
           '<td>'+fmtStat(s.pit_IP,1)+'</td><td>'+fmtStat(s.pit_RA)+'</td>'+
           '<td>'+fmtStat(s.pit_W)+'</td><td>'+fmtStat(s.pit_L)+'</td>'+
@@ -825,7 +866,7 @@ function renderCareerLeaderboards() {
     return sorted.slice(0,10).map(function(e,i){
       return '<tr>'+
         '<td style="text-align:left;color:var(--text-muted);width:1.5rem">'+(i+1)+'</td>'+
-        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+e[0]+'\')">'+displayName(e[0])+'</a></td>'+
+        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+e[0]+'\')">'+nameWithFace(e[0])+'</a></td>'+
         '<td>'+vfn(e[1])+'</td></tr>';
     }).join('');
   }
@@ -958,7 +999,8 @@ function renderLbTable() {
     var tds=cols.map(function(c){
       var style=c.left?'text-align:left':'';
       var extra=c.k==='name'?' onclick="navigate(\'profile\',\''+r.pid+'\')" style="'+style+';cursor:pointer"':' style="'+style+'"';
-      return '<td'+extra+'>'+c.fmt(r[c.k])+'</td>';
+      var cellVal = c.k==='name' ? nameWithFace(r.pid) : c.fmt(r[c.k]);
+      return '<td'+extra+'>'+(c.k==='name'?nameWithFace(r.pid):c.fmt(r[c.k]))+'</td>';
     }).join('');
     return '<tr>'+tds+'</tr>';
   }).join('');
