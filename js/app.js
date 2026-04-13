@@ -11,8 +11,130 @@ async function loadData() {
     fetch('data/game_logs.json').then(r=>r.json()),
   ]);
   DATA.players = p; DATA.stats = s; DATA.logs = l;
-  DATA.maxSeason = Math.max(...s.map(r=>r.season_sort));
-  DATA.pitchers = new Set(s.filter(r=>r.pit_G&&r.pit_G>0).map(r=>r.player_id));
+
+  // Fetch live 2026 data and merge in
+  try {
+    const [liveStats, liveBox] = await Promise.all([
+      fetch(LIVE_STATS_URL).then(r=>r.text()),
+      fetch(LIVE_BOX_URL).then(r=>r.text()),
+    ]);
+    mergeLiveStats(liveStats);
+    mergeLiveBox(liveBox);
+  } catch(e) {
+    console.warn('Live data unavailable:', e);
+  }
+
+  DATA.maxSeason = Math.max(...DATA.stats.map(r=>r.season_sort));
+  DATA.pitchers = new Set(DATA.stats.filter(r=>r.pit_G&&r.pit_G>0).map(r=>r.player_id));
+}
+
+function parseLiveStats(text) {
+  // Row 0: section labels, Row 1: actual headers, Row 2+: data
+  const lines = text.trim().replace(/\r/g,'').split('\n');
+  if(lines.length < 3) return [];
+  const rawHeaders = parseLine(lines[1]);
+  const seen = {};
+  const headers = rawHeaders.map(h => {
+    if(seen[h]!==undefined){seen[h]++;return h+'_'+seen[h];}
+    seen[h]=0;return h;
+  });
+  return lines.slice(2).map(line => {
+    const vals = parseLine(line);
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]||'');
+    return obj;
+  }).filter(r => r['Name'] && r['Name'].trim() !== '');
+}
+
+function parseLiveBox(text) {
+  // Row 0: headers (skip 'ONE' column), data from row 1
+  const lines = text.trim().replace(/\r/g,'').split('\n');
+  if(lines.length < 2) return [];
+  const rawHeaders = parseLine(lines[0]);
+  const seen = {};
+  const headers = rawHeaders.map(h => {
+    if(seen[h]!==undefined){seen[h]++;return h+'_'+seen[h];}
+    seen[h]=0;return h;
+  });
+  return lines.slice(1).map(line => {
+    const vals = parseLine(line);
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]||'');
+    return obj;
+  }).filter(r => r['Player'] && r['Player'].trim() !== '');
+}
+
+function mergeLiveStats(text) {
+  const rows = parseLiveStats(text);
+  // Remove any existing 2026.1 rows (in case of reload)
+  DATA.stats = DATA.stats.filter(s => s.season_sort !== LIVE_SEASON);
+  rows.forEach(r => {
+    const n = v => { const x=parseFloat(v); return isNaN(x)?null:x; };
+    DATA.stats.push({
+      season_sort:  LIVE_SEASON,
+      season_label: LIVE_LABEL,
+      season_year:  2026,
+      season_half:  'Spring',
+      player_id:    r['Name'].trim(),
+      G:    n(r['G']),    AB:   n(r['AB']),  R:    n(r['R']),
+      H:    n(r['H']),    RBI:  n(r['RBI']), dbl:  n(r['2B']),
+      trp:  n(r['3B']),   HR:   n(r['HR']),  BB:   n(r['BB']),
+      BA:   n(r['BA']),   OBP:  n(r['OBP']), SLG:  n(r['SLG']),
+      OPS:  n(r['OPS']),  MVP:  n(r['MVP']), RV:   n(r['RV']),
+      pos_P:  n(r['P']),  pos_C:  n(r['C']),   pos_1B: n(r['1B']),
+      // After dedup: batting 2B=2B, fielding 2B=2B_1; batting 3B=3B, fielding 3B=3B_1; pitching R=R_1
+      pos_2B: n(r['2B_1']), pos_3B: n(r['3B_1']),
+      pos_SS: n(r['SS']),   pos_LF: n(r['LF']),   pos_LC: n(r['LC']),
+      pos_RC: n(r['RC']),   pos_RF: n(r['RF']),   pos_DH: n(r['DH']),
+      pit_G:  n(r['GP']),   pit_GS: n(r['GS']),   pit_IP: n(r['IP']),
+      pit_RA: n(r['R_1']),  pit_W:  n(r['W']),    pit_L:  n(r['L']),
+      RIP:    n(r['RIP']), pit_S: null,
+    });
+  });
+  console.log('Live stats merged:', rows.length, 'players');
+}
+
+function mergeLiveBox(text) {
+  const rows = parseLiveBox(text);
+  // Remove existing live box rows
+  DATA.logs = DATA.logs.filter(l => !l.live);
+  let order = {};
+  rows.forEach((r,i) => {
+    const n = v => { const x=parseFloat(v); return isNaN(x)?null:x; };
+    const gameKey = (r['Game #']||'') + '||' + (r['Date']||'');
+    if(!order[gameKey]) order[gameKey] = 0;
+    order[gameKey]++;
+    DATA.logs.push({
+      live:         true,
+      player_id:    r['Player'].trim(),
+      game_num:     n(r['Game #']),
+      date:         fmtLiveDate(r['Date']||''),
+      opponent:     r['OPP']||'',
+      batting_order: order[gameKey],
+      AB:  n(r['AB']), R:   n(r['R']),  H:   n(r['H']),
+      RBI: n(r['RBI']),dbl: n(r['2B']), trp: n(r['3B']),
+      HR:  n(r['HR']), BB:  n(r['BB']), RV:  null,
+      pos_P:  n(r['PP']),  pos_C:  n(r['PC']),  pos_1B: n(r['P1']),
+      pos_2B: n(r['P2']),  pos_3B: n(r['P3']),  pos_SS: n(r['PSS']),
+      pos_LF: n(r['PLF']), pos_LC: n(r['PLC']), pos_RC: n(r['PRC']),
+      pos_RF: n(r['PRF']), pos_DH: n(r['PDH']),
+      pit_G:  n(r['GP']),  pit_GS: n(r['GS']),  pit_IP: n(r['IP']),
+      pit_RA: n(r['RA']),  pit_W:  n(r['W']),   pit_L:  n(r['L']),
+      pit_S:  n(r['S']),
+    });
+  });
+  console.log('Live box scores merged:', rows.length, 'rows');
+}
+
+function fmtLiveDate(d) {
+  // Convert M/D/YYYY to YYYY-MM-DD
+  if(!d) return '';
+  const parts = d.split('/');
+  if(parts.length === 3) {
+    const [m,day,y] = parts;
+    return `${y}-${m.padStart(2,'0')}-${day.padStart(2,'0')}`;
+  }
+  return d;
 }
 
 function getPlayer(id) { return DATA.players.find(p=>p.id===id); }
@@ -96,12 +218,58 @@ function showHome() {
     <div style="font-family:var(--font-blade);font-size:1.3rem;color:var(--sky)">${val}</div>
     <div style="font-size:0.82rem;color:var(--text-dim);margin-top:0.15rem">${displayName(id)}</div>
   </div>`).join('');
-  const latest=[...DATA.logs].sort((a,b)=>b.date.localeCompare(a.date)||b.game_num-a.game_num)[0];
-  if(latest){
-    const rows=DATA.logs.filter(l=>l.date===latest.date&&l.game_num===latest.game_num).sort((a,b)=>a.batting_order-b.batting_order);
-    document.getElementById('home-recent').innerHTML=
-      `<div class="section-title">Most Recent Game — ${latest.date} vs ${latest.opponent}</div>${buildBoxTable(rows,false)}`;
+
+  renderHomeGames();
+}
+
+function renderHomeGames() {
+  const today = new Date().toISOString().slice(0,10);
+
+  // Last completed game from logs
+  const latest = [...DATA.logs].sort((a,b)=>b.date.localeCompare(a.date)||b.game_num-a.game_num)[0];
+  let recentHTML = '';
+  if(latest) {
+    const rows = DATA.logs
+      .filter(l=>l.date===latest.date&&l.game_num===latest.game_num)
+      .sort((a,b)=>a.batting_order-b.batting_order);
+    recentHTML = `
+      <div class="section-title">Last Game — ${latest.date} vs ${latest.opponent}</div>
+      ${buildBoxTable(rows,false)}`;
   }
+
+  // Next two upcoming games from schedule (date >= today, no result)
+  let upcomingHTML = '';
+  if(window._scheduleRows && window._scheduleRows.length) {
+    const upcoming = window._scheduleRows
+      .filter(r => {
+        const d = schedDateToISO(r['Date']||'');
+        return d >= today && !(r['W/L']||'').trim();
+      })
+      .slice(0,2);
+    if(upcoming.length) {
+      upcomingHTML = `
+        <div class="section-title mt2">Upcoming</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem">
+          ${upcoming.map(r=>`
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem">
+              <div>
+                <span style="font-family:var(--font-display);font-weight:700;color:var(--text)">${r['Day']||''} ${r['Date']||''}</span>
+                <span style="color:var(--text-muted);margin-left:0.75rem;font-size:0.88rem">${r['H/A']==='H'?'vs':'@'} ${r['Opponent']||''}</span>
+              </div>
+              <span style="color:var(--text-muted);font-size:0.88rem">${r['Time']||''}</span>
+            </div>`).join('')}
+        </div>`;
+    }
+  }
+
+  document.getElementById('home-recent').innerHTML = recentHTML + upcomingHTML;
+}
+
+function schedDateToISO(d) {
+  // M/D/YYYY -> YYYY-MM-DD
+  const p = d.split('/');
+  if(p.length===3) return `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+  return d;
 }
 
 // ── PLAYERS ───────────────────────────────────────────────────────────────
@@ -543,9 +711,45 @@ function renderCustomLeaderboard() {
 }
 
 // ── CURRENT ───────────────────────────────────────────────────────────────
-function showCurrent(){document.getElementById('page-current').classList.add('active');}
+function showCurrent(){
+  document.getElementById('page-current').classList.add('active');
+  const liveStats = DATA.stats.filter(s=>s.season_sort===LIVE_SEASON);
+  const el = document.getElementById('current-content');
+  if(!liveStats.length){
+    el.innerHTML='<div class="empty-state">No stats yet for Spring 2026</div>';
+    return;
+  }
+  const sorted = [...liveStats].sort((a,b)=>(b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0));
+  el.innerHTML=`
+    <div class="section-title">Spring 2026 Batting</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">Player</th>
+        <th>G</th><th>AB</th><th>R</th><th>H</th><th>RBI</th>
+        <th>2B</th><th>3B</th><th>HR</th><th>BB</th>
+        <th>BA</th><th>OBP</th><th>SLG</th><th>OPS</th>
+        <th>MVP</th><th>RV</th>
+      </tr></thead>
+      <tbody>
+        ${sorted.map(s=>`<tr>
+          <td style="text-align:left"><a onclick="navigate('profile','${s.player_id}')">${displayName(s.player_id)}</a></td>
+          <td>${fmtStat(s.G)}</td><td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td>
+          <td>${fmtStat(s.H)}</td><td>${fmtStat(s.RBI)}</td>
+          <td>${fmtStat(s.dbl)}</td><td>${fmtStat(s.trp)}</td><td>${fmtStat(s.HR)}</td>
+          <td>${fmtStat(s.BB)}</td>
+          <td>${fmtBA(s.BA)}</td><td>${fmtBA(s.OBP)}</td><td>${fmtBA(s.SLG)}</td><td>${fmtBA(s.OPS)}</td>
+          <td>${s.MVP!=null?Number(s.MVP).toFixed(1):'—'}</td><td>${fmtRV(s.RV)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
 
 // ── SCHEDULE ──────────────────────────────────────────────────────────────
+const LIVE_STATS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=633884296&single=true&output=csv';
+const LIVE_BOX_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=2094714956&single=true&output=csv';
+const LIVE_SEASON    = 2026.1;
+const LIVE_LABEL     = 'Spring 2026';
+
 const SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
 
 function parseCSV(text) {
