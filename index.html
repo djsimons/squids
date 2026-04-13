@@ -8,10 +8,9 @@
 </head>
 <body>
 
-<!-- ── NAV ─────────────────────────────────────────────────────────────── -->
 <nav>
   <div class="nav-inner">
-    <a class="nav-logo" onclick="navigate('home')" style="cursor:pointer">
+    <a class="nav-logo" onclick="navigate('home')">
       <div class="nav-logo-placeholder">🦑</div>
       <span class="nav-team-name">The Fightin' Squids</span>
     </a>
@@ -20,11 +19,13 @@
     <a data-route="seasons" onclick="navigate('seasons')">Seasons</a>
     <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
     <a data-route="records" onclick="navigate('records')">Records</a>
+    <a data-route="schedule" onclick="navigate('schedule')">Schedule</a>
+    <a data-route="standings" onclick="navigate('standings')">Standings</a>
     <a data-route="current" onclick="navigate('current')" style="color:var(--green)">2026 ▶</a>
   </div>
 </nav>
 
-<!-- ── HOME ─────────────────────────────────────────────────────────────── -->
+<!-- HOME -->
 <div id="page-home" class="page">
   <div class="hero">
     <div class="hero-content">
@@ -51,29 +52,23 @@
   </div>
 </div>
 
-<!-- ── PLAYERS ───────────────────────────────────────────────────────────── -->
+<!-- PLAYERS -->
 <div id="page-players" class="page">
-  <div class="page-header">
-    <h2>All-Time Roster</h2>
-    <p>186 players · all seasons</p>
-  </div>
+  <div class="page-header"><h2>All-Time Roster</h2><p>186 players · all seasons</p></div>
   <div class="container">
     <div class="filter-bar">
       <input type="text" id="player-search" placeholder="Search by name..."
-        oninput="renderRoster(this.value, document.getElementById('gender-filter').value)"
-        style="width:220px">
+        oninput="renderRoster(this.value,document.getElementById('gender-filter').value)" style="width:220px">
       <span class="filter-label">Gender:</span>
-      <select id="gender-filter" onchange="renderRoster(document.getElementById('player-search').value, this.value)">
-        <option value="all">All</option>
-        <option value="M">M</option>
-        <option value="F">F</option>
+      <select id="gender-filter" onchange="renderRoster(document.getElementById('player-search').value,this.value)">
+        <option value="all">All</option><option value="M">M</option><option value="F">F</option>
       </select>
     </div>
     <div id="roster-grid" class="roster-grid"></div>
   </div>
 </div>
 
-<!-- ── SEASONS ───────────────────────────────────────────────────────────── -->
+<!-- SEASONS -->
 <div id="page-seasons" class="page">
   <div class="page-header"><h2>Season Stats</h2></div>
   <div class="container">
@@ -87,21 +82,16 @@
       </select>
     </div>
     <div class="section-title" id="season-label"></div>
-    <div class="table-wrap">
-      <table>
-        <thead id="season-thead"></thead>
-        <tbody id="season-tbody"></tbody>
-      </table>
-    </div>
+    <div class="table-wrap"><table>
+      <thead id="season-thead"></thead>
+      <tbody id="season-tbody"></tbody>
+    </table></div>
   </div>
 </div>
 
-<!-- ── GAME LOGS ─────────────────────────────────────────────────────────── -->
+<!-- GAME LOG -->
 <div id="page-gamelogs" class="page">
-  <div class="page-header">
-    <h2>Game Log</h2>
-    <p>Box scores · 2014–present · click a game to expand</p>
-  </div>
+  <div class="page-header"><h2>Game Log</h2><p>Box scores · 2014–present · click a game to expand</p></div>
   <div class="container">
     <div class="filter-bar">
       <span class="filter-label">Year:</span>
@@ -111,92 +101,125 @@
   </div>
 </div>
 
-<!-- ── RECORDS ───────────────────────────────────────────────────────────── -->
+<!-- RECORDS -->
 <div id="page-records" class="page">
-  <div class="page-header">
-    <h2>Records &amp; Leaders</h2>
-    <p>Career and single-season bests</p>
-  </div>
+  <div class="page-header"><h2>Records &amp; Leaders</h2></div>
   <div class="container">
     <div id="records-static"></div>
-
-    <!-- Custom Leaderboard -->
     <div class="section-title mt2">Custom Leaderboard</div>
     <div class="card mt1">
-      <div class="filter-bar" style="flex-wrap:wrap;gap:0.75rem">
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span class="filter-label">Stat:</span>
-          <select id="lb-stat" onchange="renderCustomLeaderboard()">
+      <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Stat</span>
+          <select id="lb-stat">
             <optgroup label="Batting">
-              <option value="G">G</option>
-              <option value="AB">AB</option>
-              <option value="H">H</option>
-              <option value="HR">HR</option>
-              <option value="RBI">RBI</option>
-              <option value="R">R</option>
-              <option value="dbl">2B</option>
-              <option value="trp">3B</option>
-              <option value="BB">BB</option>
-              <option value="BA">BA</option>
-              <option value="OBP">OBP</option>
-              <option value="SLG">SLG</option>
-              <option value="OPS">OPS</option>
-              <option value="RV">RV</option>
-              <option value="MVP">MVP</option>
+              <option value="AB">AB</option><option value="R">R</option>
+              <option value="H">H</option><option value="HR">HR</option>
+              <option value="RBI">RBI</option><option value="dbl">2B</option>
+              <option value="trp">3B</option><option value="BB">BB</option>
+              <option value="BA">BA</option><option value="OBP">OBP</option>
+              <option value="SLG">SLG</option><option value="OPS">OPS</option>
+              <option value="RV">RV</option><option value="MVP">MVP</option>
+              <option value="G">G (Games)</option>
             </optgroup>
             <optgroup label="Pitching">
-              <option value="pit_W">W</option>
-              <option value="pit_IP">IP</option>
+              <option value="pit_W">W</option><option value="pit_IP">IP</option>
               <option value="RIP">RIP (low=best)</option>
             </optgroup>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span class="filter-label">Scope:</span>
-          <select id="lb-scope" onchange="renderCustomLeaderboard()">
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Scope</span>
+          <select id="lb-scope">
             <option value="career">Career</option>
             <option value="season">Single Season</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span class="filter-label">Season:</span>
-          <select id="lb-season" onchange="renderCustomLeaderboard()"></select>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Season</span>
+          <select id="lb-season"></select>
         </div>
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span class="filter-label">Gender:</span>
-          <select id="lb-gender" onchange="renderCustomLeaderboard()">
-            <option value="all">All</option>
-            <option value="M">M</option>
-            <option value="F">F</option>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Gender</span>
+          <select id="lb-gender">
+            <option value="all">All</option><option value="M">M</option><option value="F">F</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span class="filter-label">Min AB:</span>
-          <input type="number" id="lb-minab" value="0" min="0" step="5"
-            oninput="renderCustomLeaderboard()" style="width:70px">
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <span class="filter-label">Min AB</span>
+          <input type="number" id="lb-minab" value="0" min="0" step="5" style="width:70px">
         </div>
+        <button class="submit-btn" onclick="renderCustomLeaderboard()">Show Leaders</button>
       </div>
       <div id="lb-results" class="mt1"></div>
     </div>
   </div>
 </div>
 
-<!-- ── CURRENT SEASON ────────────────────────────────────────────────────── -->
-<div id="page-current" class="page">
-  <div class="page-header">
-    <h2>Spring 2026</h2>
-    <p>Season in progress</p>
+<!-- SCHEDULE -->
+<div id="page-schedule" class="page">
+  <div class="page-header"><h2>Schedule</h2><p>Spring 2026</p></div>
+  <div class="container">
+    <div class="skeleton-notice">
+      Schedule data coming soon.<br>
+      <span style="font-size:0.8rem;color:var(--text-muted);text-transform:none;letter-spacing:0;display:block;margin-top:0.5rem">
+        Fields: G#, Day, Date, Time, H/A, Opponent, W/L, RS, RA, Record
+      </span>
+    </div>
+    <div class="table-wrap mt2"><table>
+      <thead><tr>
+        <th style="text-align:left">G#</th>
+        <th style="text-align:left">Day</th>
+        <th style="text-align:left">Date</th>
+        <th>Time</th>
+        <th>H/A</th>
+        <th style="text-align:left">Opponent</th>
+        <th>W/L</th>
+        <th>RS</th>
+        <th>RA</th>
+        <th style="text-align:left">Record</th>
+      </tr></thead>
+      <tbody id="schedule-tbody">
+        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">No schedule data yet</td></tr>
+      </tbody>
+    </table></div>
   </div>
+</div>
+
+<!-- STANDINGS -->
+<div id="page-standings" class="page">
+  <div class="page-header"><h2>Standings</h2><p>Spring 2026</p></div>
+  <div class="container">
+    <div class="skeleton-notice">
+      Standings data coming soon.<br>
+      <span style="font-size:0.8rem;color:var(--text-muted);text-transform:none;letter-spacing:0;display:block;margin-top:0.5rem">
+        Fields: Team, W, L, W%, GB
+      </span>
+    </div>
+    <div class="table-wrap mt2"><table>
+      <thead><tr>
+        <th style="text-align:left">Team</th>
+        <th>W</th><th>L</th><th>W%</th><th>GB</th>
+      </tr></thead>
+      <tbody id="standings-tbody">
+        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No standings data yet</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- CURRENT SEASON -->
+<div id="page-current" class="page">
+  <div class="page-header"><h2>Spring 2026</h2><p>Season in progress</p></div>
   <div class="container">
     <div class="empty-state" style="padding:4rem 1rem">
       <div style="font-size:2rem;margin-bottom:1rem">🦑</div>
-      Live season stats pipeline coming soon.<br>
-      <span style="font-size:0.85rem;color:var(--text-muted);text-transform:none;letter-spacing:0">Check back after the data pipeline is set up.</span>
+      Live season stats pipeline coming soon.
     </div>
   </div>
 </div>
 
-<!-- ── PROFILE (dynamic) ─────────────────────────────────────────────────── -->
+<!-- PROFILE -->
 <div id="page-profile" class="page"></div>
 
 <script src="js/app.js"></script>
