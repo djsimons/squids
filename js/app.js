@@ -617,8 +617,45 @@ async function showSchedule(){
 }
 
 // ── STANDINGS ─────────────────────────────────────────────────────────────
-function showStandings(){
+const STANDINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1569850367&single=true&output=csv';
+
+async function showStandings(){
   document.getElementById('page-standings').classList.add('active');
+  const tbody = document.getElementById('standings-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>';
+  try {
+    const res = await fetch(STANDINGS_URL);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    console.log('Standings headers:', Object.keys(rows[0]||{}));
+    if(!rows.length){
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">No standings data yet</td></tr>';
+      return;
+    }
+    // Find the right column keys flexibly
+    const sample = rows[0];
+    const keys = Object.keys(sample);
+    const teamKey = keys.find(k => /team/i.test(k)) || keys[0];
+    const wKey    = keys.find(k => /^w$/i.test(k.trim())) || keys[1];
+    const lKey    = keys.find(k => /^l$/i.test(k.trim())) || keys[2];
+    const pctKey  = keys.find(k => /win|pct|%/i.test(k)) || keys[3];
+
+    tbody.innerHTML = rows.map((r, i) => {
+      const team = r[teamKey]||'';
+      const w    = r[wKey]||'';
+      const l    = r[lKey]||'';
+      const pct  = r[pctKey] ? Number(r[pctKey]).toFixed(3).replace(/^0\./,'.') : '';
+      const isSquids = /squid/i.test(team);
+      return `<tr ${isSquids?'style="background:var(--surface-raised);border-left:3px solid var(--sky)"':''}>
+        <td style="text-align:left;font-weight:${isSquids?'700':'400'};color:${isSquids?'var(--sky)':'var(--text)'}">${team}</td>
+        <td>${w}</td>
+        <td>${l}</td>
+        <td>${pct}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red);padding:2rem">Failed to load standings</td></tr>';
+  }
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────
