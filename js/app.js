@@ -104,7 +104,7 @@ function mergeLiveBox(text) {
       date:fmtLiveDate(obj['Date']||''), opponent:obj['OPP']||'',
       batting_order:order[key],
       AB:n(obj['AB']),R:n(obj['R']),H:n(obj['H']),RBI:n(obj['RBI']),
-      dbl:n(obj['2B']),trp:n(obj['3B']),HR:n(obj['HR']),BB:n(obj['BB']),RV:null,
+      dbl:n(obj['2B']),trp:n(obj['3B']),HR:n(obj['HR']),BB:n(obj['BB']),RV:n(obj['RV']),
       pos_P:n(obj['PP']),pos_C:n(obj['PC']),pos_1B:n(obj['P1']),
       pos_2B:n(obj['P2']),pos_3B:n(obj['P3']),pos_SS:n(obj['PSS']),
       pos_LF:n(obj['PLF']),pos_LC:n(obj['PLC']),pos_RC:n(obj['PRC']),
@@ -329,9 +329,9 @@ function renderSeasonLeaders() {
   document.getElementById('home-leaders').innerHTML =
     leaderCard('Games',    function(r){return r.G||0;},   function(v){return v;}) +
     leaderCard('Hits',     function(r){return r.H||0;},   function(v){return v;}) +
-    leaderCard('Home Runs',function(r){return r.HR||0;},  function(v){return v;}) +
+    leaderCard('Runs',     function(r){return r.R||0;},   function(v){return v;}) +
     leaderCard('RBI',      function(r){return r.RBI||0;}, function(v){return v;}) +
-    leaderCard('BA (min '+minAB+' AB)', function(r){return (r.AB||0)>=minAB?r.BA:null;}, fmtBA) +
+    leaderCard('Home Runs',function(r){return r.HR||0;},  function(v){return v;}) +
     leaderCard('OBP (min '+minAB+' AB)',function(r){return (r.AB||0)>=minAB?r.OBP:null;}, fmtBA);
 }
 
