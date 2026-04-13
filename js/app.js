@@ -546,8 +546,64 @@ function renderCustomLeaderboard() {
 function showCurrent(){document.getElementById('page-current').classList.add('active');}
 
 // ── SCHEDULE ──────────────────────────────────────────────────────────────
-function showSchedule(){
+const SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    // handle quoted fields
+    const vals = [];
+    let cur = '', inQ = false;
+    for(let i=0; i<line.length; i++){
+      if(line[i]==='"') { inQ=!inQ; }
+      else if(line[i]===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+      else { cur+=line[i]; }
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]||'');
+    return obj;
+  }).filter(r => Object.values(r).some(v=>v!==''));
+}
+
+async function showSchedule(){
   document.getElementById('page-schedule').classList.add('active');
+  const tbody = document.getElementById('schedule-tbody');
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>';
+  try {
+    const res = await fetch(SCHEDULE_URL);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if(!rows.length){
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">No games scheduled yet</td></tr>';
+      return;
+    }
+    // Compute running record from W/L column
+    let w=0, l=0;
+    tbody.innerHTML = rows.map(r => {
+      const result = (r['W/L']||'').trim().toUpperCase();
+      if(result==='W') w++;
+      else if(result==='L') l++;
+      const hasResult = result==='W'||result==='L';
+      const resultColor = result==='W'?'var(--green)':result==='L'?'var(--red)':'var(--text)';
+      const rec = hasResult ? `${w}-${l}` : '';
+      return `<tr>
+        <td style="text-align:left">${r['G#']||''}</td>
+        <td style="text-align:left">${r['Day']||''}</td>
+        <td style="text-align:left;white-space:nowrap">${r['Date']||''}</td>
+        <td>${r['Time']||''}</td>
+        <td>${r['H/A']||''}</td>
+        <td style="text-align:left">${r['Opponent']||''}</td>
+        <td style="color:${resultColor};font-weight:600">${result||''}</td>
+        <td>${r['RS']||''}</td>
+        <td>${r['RA']||''}</td>
+        <td style="text-align:left">${r['Rec']||rec}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--red);padding:2rem">Failed to load schedule</td></tr>';
+  }
 }
 
 // ── STANDINGS ─────────────────────────────────────────────────────────────
