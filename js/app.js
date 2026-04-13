@@ -60,9 +60,10 @@ function careerPosDisplay(playerStats) {
 }
 
 // Photo: try player image, fall back to emoji
-function avatarImg(id, size=42) {
-  return `<img src="img/players/${id}.jpg" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"
-    onerror="this.parentElement.innerHTML='🦑'">`;
+function avatarImg(id) {
+  // Try jpg, jpeg, lowercase variants, then emoji fallback
+  const fallback = "if(this.dataset.t==(this.dataset.t||0)+1,this.dataset.t==1){this.src='img/players/'+id+'.jpeg';}else if(this.dataset.t==2){this.src='img/players/'+id.toLowerCase()+'.jpg';}else if(this.dataset.t==3){this.src='img/players/'+id.toLowerCase()+'.jpeg';}else{this.parentElement.innerHTML='🦑';}";
+  return '<img src="img/players/' + id + '.jpg" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.dataset.t=(this.dataset.t||0)+1;if(this.dataset.t==1){this.src=\'img/players/' + id + '.jpeg\';}else if(this.dataset.t==2){this.src=\'img/players/' + id.toLowerCase() + '.jpg\';}else if(this.dataset.t==3){this.src=\'img/players/' + id.toLowerCase() + '.jpeg\';}else{this.parentElement.innerHTML=\'🦑\';}">';
 }
 
 // ── ROUTING ───────────────────────────────────────────────────────────────
