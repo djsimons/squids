@@ -163,15 +163,26 @@ function showProfile(id) {
 
   // Batting stat headers in canonical order
   const batHeaders=`<th style="text-align:left">Season</th><th style="text-align:left">Pos</th>
-    <th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th>
+    <th>G</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th>
     <th>BA</th><th>OBP</th><th>SLG</th><th>OPS</th>
-    <th>P-C</th><th>1B</th><th>2B</th><th>3B</th><th>SS</th><th>LF</th><th>LC</th><th>RC</th><th>RF</th><th>DH</th>
+    <th>P</th><th>C</th><th>1B</th><th>2B</th><th>3B</th><th>SS</th><th>LF</th><th>LC</th><th>RC</th><th>RF</th><th>DH</th>
     <th>MVP</th><th>RV</th>
     ${isPitcher?'<th>GP</th><th>GS</th><th>IP</th><th>RA</th><th>W</th><th>L</th><th>S</th><th>RIP</th>':''}`;
 
   const batRow=(s,isCareer=false)=>{
-    const pos=isCareer?'':primaryPos(s);
-    // pitching: show 0 if they pitched 1+ career games; '-' if no games this season
+    if(isCareer){
+      const pitCareer=isPitcher?`<td>${career.pit_G||0}</td><td>${career.pit_GS||0}</td><td>${fmtStat(career.pit_IP,1)}</td><td>${career.pit_RA||0}</td><td>${career.pit_W||0}</td><td>${career.pit_L||0}</td><td>${career.pit_S||0}</td><td>${career.pit_IP>0?Number(career.pit_RA/career.pit_IP).toFixed(2):'—'}</td>`:'';
+      return `<tr class="career-row">
+        <td>CAREER</td><td>—</td>
+        <td>${career.G}</td><td>${career.AB}</td><td>${career.R}</td><td>${career.H}</td><td>${career.RBI}</td>
+        <td>${career.dbl}</td><td>${career.trp}</td><td>${career.HR}</td><td>${career.BB}</td>
+        <td>${fmtBA(career.BA)}</td><td>${fmtBA(career.OBP)}</td><td>${fmtBA(career.SLG)}</td><td>${fmtBA(career.OPS)}</td>
+        ${POS_COLS.map(k=>`<td>${career['p_'+k]||0}</td>`).join('')}
+        <td>—</td><td>${fmtRV(career.RV)}</td>
+        ${pitCareer}
+      </tr>`;
+    }
+    const pos=primaryPos(s);
     const pitCells=isPitcher?`
       <td>${s.pit_G>0?fmtStat(s.pit_G):'—'}</td>
       <td>${s.pit_G>0?fmtStat(s.pit_GS):'—'}</td>
@@ -181,22 +192,10 @@ function showProfile(id) {
       <td>${s.pit_G>0?fmtStat(s.pit_L):'—'}</td>
       <td>${s.pit_G>0?fmtStat(s.pit_S):'—'}</td>
       <td>${s.pit_G>0&&s.pit_IP>0?Number(s.pit_RA/s.pit_IP).toFixed(2):'—'}</td>`:'';
-    const posApps=POS_COLS.map(k=>`<td>${s[k]!=null&&s[k]>0?s[k]:isCareer?s[k]||0:'—'}</td>`).join('');
-    if(isCareer){
-      return `<tr class="career-row">
-        <td>CAREER</td><td>—</td>
-        <td>${career.AB}</td><td>${career.R}</td><td>${career.H}</td><td>${career.RBI}</td>
-        <td>${career.dbl}</td><td>${career.trp}</td><td>${career.HR}</td><td>${career.BB}</td>
-        <td>${fmtBA(career.BA)}</td><td>${fmtBA(career.OBP)}</td><td>${fmtBA(career.SLG)}</td><td>${fmtBA(career.OPS)}</td>
-        ${POS_COLS.map(k=>`<td>${career['p_'+k]||0}</td>`).join('')}
-        <td>—</td><td>${fmtRV(career.RV)}</td>
-        ${isPitcher?`<td>${career.pit_G||0}</td><td>${career.pit_GS||0}</td><td>${fmtStat(career.pit_IP,1)}</td><td>${career.pit_RA||0}</td><td>${career.pit_W||0}</td><td>${career.pit_L||0}</td><td>${career.pit_S||0}</td><td>${career.pit_IP>0?Number(career.pit_RA/career.pit_IP).toFixed(2):'—'}</td>`:''}
-      </tr>`;
-    }
     return `<tr>
       <td style="text-align:left;white-space:nowrap">${s.season_label}</td>
       <td style="text-align:left;color:var(--sky-light);font-weight:600">${pos}</td>
-      <td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td><td>${fmtStat(s.H)}</td><td>${fmtStat(s.RBI)}</td>
+      <td>${fmtStat(s.G)}</td><td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td><td>${fmtStat(s.H)}</td><td>${fmtStat(s.RBI)}</td>
       <td>${fmtStat(s.dbl)}</td><td>${fmtStat(s.trp)}</td><td>${fmtStat(s.HR)}</td><td>${fmtStat(s.BB)}</td>
       <td>${fmtBA(s.BA)}</td><td>${fmtBA(s.OBP)}</td><td>${fmtBA(s.SLG)}</td><td>${fmtBA(s.OPS)}</td>
       ${POS_COLS.map(k=>`<td>${s[k]!=null&&s[k]>0?s[k]:'—'}</td>`).join('')}
@@ -331,17 +330,17 @@ function renderSeasonStats() {
     const sorted=[...rows].sort((a,b)=>(b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0));
     thead.innerHTML=`<tr>
       <th onclick="sortSeason(0,true)" style="text-align:left">Player</th>
-      <th onclick="sortSeason(1)">AB</th><th onclick="sortSeason(2)">R</th>
-      <th onclick="sortSeason(3)">H</th><th onclick="sortSeason(4)">RBI</th>
-      <th onclick="sortSeason(5)">2B</th><th onclick="sortSeason(6)">3B</th>
-      <th onclick="sortSeason(7)">HR</th><th onclick="sortSeason(8)">BB</th>
-      <th onclick="sortSeason(9)">BA</th><th onclick="sortSeason(10)">OBP</th>
-      <th onclick="sortSeason(11)">SLG</th><th onclick="sortSeason(12)">OPS</th>
-      <th onclick="sortSeason(13)">MVP</th><th onclick="sortSeason(14)">RV</th>
+      <th onclick="sortSeason(1)">G</th><th onclick="sortSeason(2)">AB</th><th onclick="sortSeason(3)">R</th>
+      <th onclick="sortSeason(4)">H</th><th onclick="sortSeason(5)">RBI</th>
+      <th onclick="sortSeason(6)">2B</th><th onclick="sortSeason(7)">3B</th>
+      <th onclick="sortSeason(8)">HR</th><th onclick="sortSeason(9)">BB</th>
+      <th onclick="sortSeason(10)">BA</th><th onclick="sortSeason(11)">OBP</th>
+      <th onclick="sortSeason(12)">SLG</th><th onclick="sortSeason(13)">OPS</th>
+      <th onclick="sortSeason(14)">MVP</th><th onclick="sortSeason(15)">RV</th>
     </tr>`;
     tbody.innerHTML=sorted.map(s=>`<tr>
       <td style="text-align:left"><a onclick="navigate('profile','${s.player_id}')">${displayName(s.player_id)}</a></td>
-      <td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td><td>${fmtStat(s.H)}</td>
+      <td>${fmtStat(s.G)}</td><td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td><td>${fmtStat(s.H)}</td>
       <td>${fmtStat(s.RBI)}</td><td>${fmtStat(s.dbl)}</td><td>${fmtStat(s.trp)}</td>
       <td>${fmtStat(s.HR)}</td><td>${fmtStat(s.BB)}</td>
       <td>${fmtBA(s.BA)}</td><td>${fmtBA(s.OBP)}</td><td>${fmtBA(s.SLG)}</td><td>${fmtBA(s.OPS)}</td>
