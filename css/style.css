@@ -68,11 +68,14 @@ nav {
   flex-shrink: 0;
 }
 .nav-logo img {
-  height: 36px;
-  width: auto;
+  height: 38px;
+  width: 38px;
   display: block;
-  mix-blend-mode: multiply;
-  filter: drop-shadow(0 0 8px rgba(56,189,248,0.6)) brightness(0.85) saturate(1.5);
+  object-fit: contain;
+  border-radius: 50%;
+  background: white;
+  padding: 3px;
+  box-shadow: 0 0 10px rgba(56,189,248,0.5);
 }
 nav a {
   color: var(--text-dim);
