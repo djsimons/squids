@@ -566,8 +566,14 @@ function parseCSV(text) {
     return vals.map(v => v.replace(/^"|"$/g,'').trim());
   }
 
-  const headers = parseLine(lines[0]);
-  console.log('Schedule headers:', headers);  // debug
+  // Use first occurrence of any duplicate header
+  const rawHeaders = parseLine(lines[0]);
+  const seen = {};
+  const headers = rawHeaders.map(h => {
+    if(seen[h] !== undefined) { seen[h]++; return h + '_' + seen[h]; }
+    seen[h] = 0; return h;
+  });
+  console.log('Schedule headers:', headers);
 
   return lines.slice(1).map(line => {
     const vals = parseLine(line);
@@ -640,6 +646,8 @@ async function showStandings(){
     const lKey    = keys.find(k => /^l$/i.test(k.trim())) || keys[2];
     const pctKey  = keys.find(k => /win|pct|%/i.test(k)) || keys[3];
 
+    // Sort by Win% descending
+    rows.sort((a,b) => Number(b[pctKey]||0) - Number(a[pctKey]||0));
     tbody.innerHTML = rows.map((r, i) => {
       const team = r[teamKey]||'';
       const w    = r[wKey]||'';
@@ -647,10 +655,10 @@ async function showStandings(){
       const pct  = r[pctKey] ? Number(r[pctKey]).toFixed(3).replace(/^0\./,'.') : '';
       const isSquids = /squid/i.test(team);
       return `<tr ${isSquids?'style="background:var(--surface-raised);border-left:3px solid var(--sky)"':''}>
-        <td style="text-align:left;font-weight:${isSquids?'700':'400'};color:${isSquids?'var(--sky)':'var(--text)'}">${team}</td>
-        <td>${w}</td>
-        <td>${l}</td>
-        <td>${pct}</td>
+        <td style="text-align:left;font-weight:${isSquids?'700':'400'};color:${isSquids?'var(--sky)':'var(--text)'};white-space:nowrap">${team}</td>
+        <td style="width:2.5rem">${w}</td>
+        <td style="width:2.5rem">${l}</td>
+        <td style="width:3.5rem">${pct}</td>
       </tr>`;
     }).join('');
   } catch(e) {
