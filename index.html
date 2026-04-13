@@ -58,11 +58,25 @@
   <div class="container">
     <div class="filter-bar">
       <input type="text" id="player-search" placeholder="Search by name..."
-        oninput="renderRoster(this.value,document.getElementById('gender-filter').value)" style="width:220px">
+        oninput="applyRosterFilters()" style="width:200px">
       <span class="filter-label">Gender:</span>
-      <select id="gender-filter" onchange="renderRoster(document.getElementById('player-search').value,this.value)">
+      <select id="gender-filter" onchange="applyRosterFilters()">
         <option value="all">All</option><option value="M">M</option><option value="F">F</option>
       </select>
+      <span class="filter-label">Position:</span>
+      <select id="pos-filter" onchange="applyRosterFilters()">
+        <option value="all">All</option>
+        <option value="P">P</option><option value="C">C</option>
+        <option value="1B">1B</option><option value="2B">2B</option>
+        <option value="3B">3B</option><option value="SS">SS</option>
+        <option value="LF">LF</option><option value="LC">LC</option>
+        <option value="RC">RC</option><option value="RF">RF</option>
+        <option value="DH">DH</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">
+        <input type="checkbox" id="active-only" onchange="applyRosterFilters()" style="accent-color:var(--sky);width:14px;height:14px">
+        Active Only
+      </label>
     </div>
     <div id="roster-grid" class="roster-grid"></div>
   </div>

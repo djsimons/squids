@@ -12,14 +12,31 @@ async function loadData() {
   ]);
   DATA.players = p; DATA.stats = s; DATA.logs = l;
 
-  // Fetch live 2026 data and merge in
+  // Fetch live 2026 data and schedule in parallel
   try {
-    const [liveStats, liveBox] = await Promise.all([
+    const [liveStats, liveBox, schedText] = await Promise.all([
       fetch(LIVE_STATS_URL).then(r=>r.text()),
       fetch(LIVE_BOX_URL).then(r=>r.text()),
+      fetch(SCHEDULE_URL).then(r=>r.text()),
     ]);
     mergeLiveStats(liveStats);
     mergeLiveBox(liveBox);
+    // Cache schedule rows for home page upcoming games
+    try {
+      const schedLines = schedText.trim().replace(/\r/g,'').split('\n');
+      const schedHeaders = parseLine(schedLines[0]);
+      const seen = {};
+      const dedupHeaders = schedHeaders.map(h => {
+        if(seen[h]!==undefined){seen[h]++;return h+'_'+seen[h];}
+        seen[h]=0;return h;
+      });
+      window._scheduleRows = schedLines.slice(1).map(line => {
+        const vals = parseLine(line);
+        const obj = {};
+        dedupHeaders.forEach((h,i) => obj[h] = vals[i]||'');
+        return obj;
+      }).filter(r => Object.values(r).some(v=>v!==''));
+    } catch(e2) { console.warn('Schedule parse error:', e2); }
   } catch(e) {
     console.warn('Live data unavailable:', e);
   }
@@ -43,7 +60,7 @@ function parseLiveStats(text) {
     const obj = {};
     headers.forEach((h,i) => obj[h] = vals[i]||'');
     return obj;
-  }).filter(r => r['Name'] && r['Name'].trim() !== '');
+  }).filter(r => r['Name'] && r['Name'].trim() !== '' && r['Name'].trim().toLowerCase() !== 'total');
 }
 
 function parseLiveBox(text) {
@@ -277,12 +294,30 @@ function showPlayers() {
   document.getElementById('page-players').classList.add('active');
   renderRoster();
 }
-function renderRoster(filter='',gender='all') {
+function applyRosterFilters() {
+  const filter     = document.getElementById('player-search').value;
+  const gender     = document.getElementById('gender-filter').value;
+  const posFilter  = document.getElementById('pos-filter').value;
+  const activeOnly = document.getElementById('active-only').checked;
+  renderRoster(filter, gender, posFilter, activeOnly);
+}
+
+function renderRoster(filter='', gender='all', posFilter='all', activeOnly=false) {
   let players=[...DATA.players];
   if(filter){const q=filter.toLowerCase();players=players.filter(p=>(p.first+' '+p.last+p.id).toLowerCase().includes(q));}
   if(gender!=='all') players=players.filter(p=>p.gender===gender);
-  players.sort((a,b)=>a.last.localeCompare(b.last));
+
   const active=new Set(DATA.stats.filter(s=>s.season_sort===DATA.maxSeason).map(s=>s.player_id));
+
+  if(activeOnly) players=players.filter(p=>active.has(p.id));
+
+  if(posFilter!=='all') {
+    const posKey='pos_'+posFilter;
+    const posPlayers=new Set(DATA.stats.filter(s=>(s[posKey]||0)>0).map(s=>s.player_id));
+    players=players.filter(p=>posPlayers.has(p.id));
+  }
+
+  players.sort((a,b)=>a.last.localeCompare(b.last));
   const sums={};
   DATA.stats.forEach(s=>{
     if(!sums[s.player_id]) sums[s.player_id]={AB:0,H:0,HR:0,RBI:0,seasons:[]};
