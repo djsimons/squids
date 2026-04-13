@@ -375,8 +375,9 @@ button.submit-btn:hover { background: var(--sky); }
 }
 
 /* snug table columns */
-table td, table th { white-space: nowrap; }
-table td.wrap, table th.wrap { white-space: normal; }
+table th { white-space: nowrap; }
+table td { white-space: nowrap; max-width: 120px; }
+table td:first-child { max-width: 160px; }
 
 /* Force lowercase on all blade runner font usage */
 [style*="font-blade"], .blade-name, .nav-team-name, .hero h1, .page-header h2 {

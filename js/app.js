@@ -347,18 +347,27 @@ function renderHomeGames() {
       '</div>';
     }
   }
-  document.getElementById('home-wl').innerHTML=wlHTML;
+  // Build W-L block
+  var wlBlock='';
+  if(wins+losses>0){
+    wlBlock='<div style="margin-right:1.5rem;flex-shrink:0">'+
+      '<div class="filter-label">Record</div>'+
+      '<div style="font-family:var(--font-blade);font-size:2rem;text-transform:lowercase;color:var(--sky);line-height:1.1">'+wins+'-'+losses+'</div>'+
+      '<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem">'+seasonLabel(DATA.maxSeason)+'</div>'+
+    '</div>';
+  }
+  document.getElementById('home-wl').innerHTML='';
 
   // Upcoming
-  var upcomingHTML='';
+  var upcomingCards='';
   if(window._scheduleRows&&window._scheduleRows.length){
     var upcoming=window._scheduleRows.filter(function(r){
       return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
     }).slice(0,2);
     if(upcoming.length){
-      var cards=upcoming.map(function(r){
+      upcomingCards=upcoming.map(function(r){
         var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
-        return '<div class="card" style="flex:1;min-width:180px;display:flex;justify-content:space-between;align-items:center;padding:0.7rem 1rem">'+
+        return '<div class="card" style="flex:1;min-width:160px;display:flex;justify-content:space-between;align-items:center;padding:0.7rem 1rem">'+
           '<div>'+
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
@@ -366,8 +375,15 @@ function renderHomeGames() {
           '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem">'+fmtTime(r['Time']||'')+'</div>'+
         '</div>';
       }).join('');
-      upcomingHTML='<div class="section-title">Upcoming</div><div style="display:flex;gap:0.75rem;flex-wrap:wrap">'+cards+'</div>';
     }
+  }
+  var upcomingHTML='';
+  if(wlBlock||upcomingCards){
+    upcomingHTML='<div class="section-title">Upcoming</div>'+
+      '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
+        wlBlock+
+        '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+upcomingCards+'</div>'+
+      '</div>';
   }
   document.getElementById('home-upcoming').innerHTML=upcomingHTML;
 
@@ -485,12 +501,12 @@ function showProfile(id) {
 
   // Career milestones
   var milestones=[];
-  var thresholds={H:[50,100,200,300,500],HR:[5,10,20,30,50],RBI:[50,100,200,300],G:[50,100,150,200]};
+  var thresholds={H:[50,100,150,200,250,300,400,500],R:[50,100,150,200,300],RBI:[50,100,150,200,300],BB:[50,100,150],G:[50,100,150,200]};
   Object.keys(thresholds).forEach(function(stat){
     thresholds[stat].forEach(function(n){
       var val=career[stat]||0;
-      if(val>=n&&val<n+8) milestones.push('&#127881; Just hit '+n+' career '+stat+'!');
-      else if(val>=n-5&&val<n) milestones.push('&#9889; '+(n-val)+' '+stat+' away from '+n+' career '+stat);
+      if(val>=n&&val<n+10) milestones.push('&#127881; Just hit '+n+' career '+stat+'!');
+      else if(val>=n-10&&val<n) milestones.push('&#9889; '+(n-val)+' '+stat+' from '+n+' career '+stat);
     });
   });
 
@@ -499,16 +515,16 @@ function showProfile(id) {
     var hasPit=s.pit_G&&s.pit_G>0;
     var pitCells='';
     if(isPitcher){
-      pitCells='<td>'+(hasPit?fmtStat(s.pit_G):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_GS):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_IP,1):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_RA):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_W):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_L):'&mdash;')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_S):'&mdash;')+'</td>'+
-        '<td>'+(hasPit&&s.pit_IP>0?Number(s.pit_RA/s.pit_IP).toFixed(2):'&mdash;')+'</td>';
+      pitCells='<td>'+(hasPit?fmtStat(s.pit_G):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_GS):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_IP,1):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_RA):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_W):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_L):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_S):'')+'</td>'+
+        '<td>'+(hasPit&&s.pit_IP>0?Number(s.pit_RA/s.pit_IP).toFixed(2):'')+'</td>';
     }
-    var posCells=POS_COLS.map(function(k){return '<td>'+((s[k]!=null&&s[k]>0)?s[k]:'&mdash;')+'</td>';}).join('');
+    var posCells=POS_COLS.map(function(k){return '<td>'+((s[k]!=null&&s[k]>0)?s[k]:'')+'</td>';}).join('');
     return '<tr>'+
       '<td style="text-align:left;white-space:nowrap">'+s.season_label+'</td>'+
       '<td style="text-align:left;color:var(--sky-light);font-weight:600">'+pos+'</td>'+
@@ -526,15 +542,15 @@ function showProfile(id) {
   function careerRow() {
     var pitCells='';
     if(isPitcher){
-      pitCells='<td>'+(career.pit_G||0)+'</td><td>'+(career.pit_GS||0)+'</td>'+
-        '<td>'+fmtStat(career.pit_IP,1)+'</td><td>'+(career.pit_RA||0)+'</td>'+
-        '<td>'+(career.pit_W||0)+'</td><td>'+(career.pit_L||0)+'</td>'+
-        '<td>'+(career.pit_S||0)+'</td>'+
+      pitCells='<td>'+(career.pit_G||'')+'</td><td>'+(career.pit_GS||'')+'</td>'+
+        '<td>'+(career.pit_IP?fmtStat(career.pit_IP,1):'')+'</td><td>'+(career.pit_RA||'')+'</td>'+
+        '<td>'+(career.pit_W||'')+'</td><td>'+(career.pit_L||'')+'</td>'+
+        '<td>'+(career.pit_S||'')+'</td>'+
         '<td>'+(career.pit_IP>0?Number(career.pit_RA/career.pit_IP).toFixed(2):'&mdash;')+'</td>';
     }
-    var posCells=POS_COLS.map(function(k){return '<td>'+(career['p_'+k]||0)+'</td>';}).join('');
+    var posCells=POS_COLS.map(function(k){return '<td>'+(career['p_'+k]||'')+'</td>';}).join('');
     return '<tr class="career-row">'+
-      '<td>career</td><td>&mdash;</td>'+
+      '<td>career</td><td></td>'+
       '<td>'+career.G+'</td><td>'+career.AB+'</td><td>'+career.R+'</td>'+
       '<td>'+career.H+'</td><td>'+career.RBI+'</td>'+
       '<td>'+career.dbl+'</td><td>'+career.trp+'</td>'+
