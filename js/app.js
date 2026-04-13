@@ -319,7 +319,7 @@ function renderSeasonLeaders() {
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem">'+
         '<div style="display:flex;gap:2px">'+photoHTML+'</div>'+
         '<div>'+
-          '<div style="font-family:var(--font-blade);font-size:1.1rem;color:var(--sky);line-height:1">'+fmtFn(top)+'</div>'+
+          '<div style="font-family:var(--font-blade);text-transform:lowercase;font-size:1.1rem;color:var(--sky);line-height:1">'+fmtFn(top)+'</div>'+
           '<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.1rem">'+nameStr+'</div>'+
         '</div>'+
       '</div>'+
@@ -352,7 +352,7 @@ function renderHomeGames() {
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
           '</div>'+
-          '<div style="font-family:var(--font-blade);color:var(--sky);font-size:0.95rem">'+fmtTime(r['Time']||'')+'</div>'+
+          '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem">'+fmtTime(r['Time']||'')+'</div>'+
           '</div>';
       }).join('');
       upcomingHTML = '<div class="section-title">Upcoming</div><div style="display:flex;gap:0.75rem;flex-wrap:wrap">'+cards+'</div>';
@@ -380,7 +380,7 @@ function renderHomeGames() {
         var rs = sched['RS']||'', ra = sched['RA']||'';
         var color = wl==='W'?'var(--green)':'var(--red)';
         var score = (rs&&ra) ? rs+'\u2013'+ra : '';
-        resultHTML = '<div style="font-family:var(--font-blade);font-size:1.6rem;color:'+color+';line-height:1;margin-bottom:0.5rem">'+
+        resultHTML = '<div style="font-family:var(--font-blade);text-transform:lowercase;font-size:1.6rem;color:'+color+';line-height:1;margin-bottom:0.5rem">'+
           wl+(score?' <span style="font-size:1rem;color:var(--text-dim)">'+score+'</span>':'')+'</div>';
       }
     }
@@ -683,7 +683,7 @@ function renderGameList() {
     var mo=parseInt(g.date.slice(5,7));
     var season=yr+(mo<=7?' Spring':' Fall');
     if(season!==lastSeason){
-      html+='<div style="font-family:var(--font-blade);color:var(--sky);font-size:0.85rem;'+
+      html+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.85rem;'+
         'letter-spacing:0.08em;padding:0.6rem 0 0.3rem;border-top:1px solid var(--border-bright);'+
         'margin-top:'+(lastSeason?'1rem':'0')+'">'+season+'</div>';
       lastSeason=season;
