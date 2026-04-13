@@ -62,29 +62,12 @@ nav {
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1.2rem 0.6rem 0;
-  border-right: 1px solid var(--border);
-  margin-right: 0.5rem;
+  padding: 0.5rem 0.75rem 0.5rem 0;
   text-decoration: none;
   cursor: pointer;
+  flex-shrink: 0;
 }
-.nav-logo-placeholder {
-  width: 34px; height: 34px;
-  background: var(--deep-light);
-  border: 2px solid var(--sky-dim);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-}
-.nav-logo img { height: 34px; width: 34px; object-fit: contain; }
-.nav-team-name {
-  font-family: var(--font-blade);
-  font-size: 1.05rem;
-  color: var(--sky);
-  text-shadow: 0 0 12px rgba(56,189,248,0.5);
-  letter-spacing: 0.03em;
-}
+.nav-logo img { height: 36px; width: auto; display: block; filter: drop-shadow(0 0 6px rgba(56,189,248,0.4)); }
 nav a {
   color: var(--text-dim);
   text-decoration: none;
@@ -176,7 +159,7 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
 
 /* ── TABLES ── */
 .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
 thead th {
   background: var(--deep-mid);
   color: var(--sky);
@@ -378,3 +361,7 @@ button.submit-btn:hover { background: var(--sky); }
   text-align: center; color: var(--text-muted);
   font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.08em;
 }
+
+/* snug table columns */
+table td, table th { white-space: nowrap; }
+table td.wrap, table th.wrap { white-space: normal; }

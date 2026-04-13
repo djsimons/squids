@@ -210,31 +210,44 @@ function navigate(route, param=null) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('nav a[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));
   window.scrollTo(0,0);
-  const h={home:showHome,players:showPlayers,seasons:showSeasons,gamelogs:showGameLogs,records:showRecords,current:showCurrent,schedule:showSchedule,standings:showStandings};
+  const h={home:showHome,players:showPlayers,seasons:showSeasons,gamelogs:showGameLogs,records:showRecords,schedule:showSchedule,standings:showStandings};
   if(route==='profile'&&param) showProfile(param);
   else if(h[route]) h[route]();
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────
+function seasonLeaderCard(stat, rows, valFn, fmtFn, minG=1) {
+  // Filter to players with minG games, compute value, find top
+  const withVal = rows
+    .filter(r => (r.G||0) >= minG)
+    .map(r => ({ id: r.player_id, val: valFn(r) }))
+    .filter(r => r.val !== null && r.val !== undefined && !isNaN(r.val))
+    .sort((a,b) => b.val - a.val);
+  if(!withVal.length) return '';
+  const top = withVal[0].val;
+  const leaders = withVal.filter(r => r.val === top);
+  let nameStr;
+  if(leaders.length >= 3) nameStr = `${leaders.length} tied`;
+  else nameStr = leaders.map(l => displayName(l.id)).join(' / ');
+  const clickable = leaders.length === 1 ? `onclick="navigate('profile','${leaders[0].id}')" style="cursor:pointer"` : '';
+  return `<div class="card" ${clickable}>
+    <div class="card-title">${stat}</div>
+    <div style="font-family:var(--font-blade);font-size:1.3rem;color:var(--sky)">${fmtFn(top)}</div>
+    <div style="font-size:0.82rem;color:var(--text-dim);margin-top:0.15rem">${nameStr}</div>
+  </div>`;
+}
+
 function showHome() {
   document.getElementById('page-home').classList.add('active');
-  const tots = computeAllCareerTotals();
-  const entries = Object.entries(tots);
-  const qual = entries.filter(([,t])=>t.AB>=50);
-  const byHR  = [...entries].sort((a,b)=>b[1].HR-a[1].HR)[0];
-  const byRBI = [...entries].sort((a,b)=>b[1].RBI-a[1].RBI)[0];
-  const byBA  = [...qual].sort((a,b)=>(b[1].H/b[1].AB)-(a[1].H/a[1].AB))[0];
-  const byRV  = [...entries].sort((a,b)=>b[1].RV-a[1].RV)[0];
-  document.getElementById('home-leaders').innerHTML=[
-    ['Career HR',byHR[0],byHR[1].HR],
-    ['Career RBI',byRBI[0],byRBI[1].RBI],
-    ['Career BA',byBA[0],fmtBA(byBA[1].H/byBA[1].AB)],
-    ['Career RV',byRV[0],fmtRV(byRV[1].RV)],
-  ].map(([stat,id,val])=>`<div class="card" onclick="navigate('profile','${id}')" style="cursor:pointer">
-    <div class="card-title">${stat}</div>
-    <div style="font-family:var(--font-blade);font-size:1.3rem;color:var(--sky)">${val}</div>
-    <div style="font-size:0.82rem;color:var(--text-dim);margin-top:0.15rem">${displayName(id)}</div>
-  </div>`).join('');
+
+  // Season leaders from most recent season
+  const curRows = DATA.stats.filter(s => s.season_sort === DATA.maxSeason);
+  document.getElementById('home-leaders').innerHTML = [
+    seasonLeaderCard('G Played',   curRows, r=>r.G||0,        v=>v),
+    seasonLeaderCard('OBP',        curRows, r=>r.OBP,         v=>fmtBA(v), 5),
+    seasonLeaderCard('Hits',       curRows, r=>r.H||0,        v=>v),
+    seasonLeaderCard('Home Runs',  curRows, r=>r.HR||0,       v=>v),
+  ].join('');
 
   renderHomeGames();
 }
@@ -380,7 +393,7 @@ function showProfile(id) {
   page.classList.add('active');
   const player=getPlayer(id);
   if(!player){page.innerHTML='<div class="container"><p>Player not found.</p></div>';return;}
-  const pStats=DATA.stats.filter(s=>s.player_id===id).sort((a,b)=>a.season_sort-b.season_sort);
+  const pStats=DATA.stats.filter(s=>s.player_id===id).sort((a,b)=>b.season_sort-a.season_sort);
   const pLogs=DATA.logs.filter(l=>l.player_id===id).sort((a,b)=>b.date.localeCompare(a.date)||b.game_num-a.game_num);
   const career=computeCareerTotals(pStats);
   const isPitcher=DATA.pitchers.has(id);
@@ -436,12 +449,12 @@ function showProfile(id) {
 
   page.innerHTML=`
     <div class="profile-header"><a class="back-btn" onclick="navigate('players')">← All Players</a></div>
-    <div class="profile-header" style="padding-top:0.5rem">
+    <div class="profile-header" style="padding-top:0.5rem;flex-direction:column;align-items:center;text-align:center">
       <div class="profile-photo">${avatarImg(id)}</div>
-      <div class="profile-info">
+      <div class="profile-info" style="text-align:center">
         <div class="blade-name">${player.first} ${player.last}</div>
         ${akaStr?`<div class="aka">${akaStr}</div>`:''}
-        <div class="profile-meta">
+        <div class="profile-meta" style="justify-content:center">
           ${isActive?'<span class="badge badge-current">Active</span>':''}
           <span style="color:var(--text-dim);font-size:0.85rem">${player.gender} · Bats ${player.bat} · Throws ${player.throw}</span>
           ${posDisplay?`<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">${posDisplay}</span>`:''}
@@ -459,8 +472,8 @@ function showProfile(id) {
           <div class="table-wrap"><table>
             <thead><tr>${batHeaders}</tr></thead>
             <tbody>
-              ${pStats.map(s=>batRow(s)).join('')}
               ${batRow(null,true)}
+              ${pStats.map(s=>batRow(s)).join('')}
             </tbody>
           </table></div>
         </div>
@@ -557,19 +570,21 @@ function renderSeasonStats() {
   const tbody=document.getElementById('season-tbody');
   const thead=document.getElementById('season-thead');
   if(type==='batting'){
-    const sorted=[...rows].sort((a,b)=>(b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0));
+    const sorted=[...rows].filter(s=>(s.G||0)>0).sort((a,b)=>(b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0));
     thead.innerHTML=`<tr>
       <th onclick="sortSeason(0,true)" style="text-align:left">Player</th>
-      <th onclick="sortSeason(1)">G</th><th onclick="sortSeason(2)">AB</th><th onclick="sortSeason(3)">R</th>
-      <th onclick="sortSeason(4)">H</th><th onclick="sortSeason(5)">RBI</th>
-      <th onclick="sortSeason(6)">2B</th><th onclick="sortSeason(7)">3B</th>
-      <th onclick="sortSeason(8)">HR</th><th onclick="sortSeason(9)">BB</th>
-      <th onclick="sortSeason(10)">BA</th><th onclick="sortSeason(11)">OBP</th>
-      <th onclick="sortSeason(12)">SLG</th><th onclick="sortSeason(13)">OPS</th>
-      <th onclick="sortSeason(14)">MVP</th><th onclick="sortSeason(15)">RV</th>
+      <th onclick="sortSeason(1)" style="text-align:left">Pos</th>
+      <th onclick="sortSeason(2)">G</th><th onclick="sortSeason(3)">AB</th><th onclick="sortSeason(4)">R</th>
+      <th onclick="sortSeason(5)">H</th><th onclick="sortSeason(6)">RBI</th>
+      <th onclick="sortSeason(7)">2B</th><th onclick="sortSeason(8)">3B</th>
+      <th onclick="sortSeason(9)">HR</th><th onclick="sortSeason(10)">BB</th>
+      <th onclick="sortSeason(11)">BA</th><th onclick="sortSeason(12)">OBP</th>
+      <th onclick="sortSeason(13)">SLG</th><th onclick="sortSeason(14)">OPS</th>
+      <th onclick="sortSeason(15)">MVP</th><th onclick="sortSeason(16)">RV</th>
     </tr>`;
     tbody.innerHTML=sorted.map(s=>`<tr>
       <td style="text-align:left"><a onclick="navigate('profile','${s.player_id}')">${displayName(s.player_id)}</a></td>
+      <td style="text-align:left;color:var(--sky-light);font-size:0.82rem;white-space:nowrap">${primaryPos(s)}</td>
       <td>${fmtStat(s.G)}</td><td>${fmtStat(s.AB)}</td><td>${fmtStat(s.R)}</td><td>${fmtStat(s.H)}</td>
       <td>${fmtStat(s.RBI)}</td><td>${fmtStat(s.dbl)}</td><td>${fmtStat(s.trp)}</td>
       <td>${fmtStat(s.HR)}</td><td>${fmtStat(s.BB)}</td>
@@ -696,80 +711,132 @@ function renderCareerLeaderboards() {
 }
 
 function renderCustomLeaderboard() {
-  const statKey=document.getElementById('lb-stat').value;
-  const seasonVal=document.getElementById('lb-season').value;
-  const gender=document.getElementById('lb-gender').value;
-  const minAB=parseInt(document.getElementById('lb-minab').value)||0;
-  const scope=document.getElementById('lb-scope').value;
-  const statLabels={G:'G',AB:'AB',H:'H',HR:'HR',RBI:'RBI',R:'R',dbl:'2B',trp:'3B',BB:'BB',BA:'BA',OBP:'OBP',SLG:'SLG',OPS:'OPS',RV:'RV',MVP:'MVP',pit_W:'W',pit_IP:'IP',RIP:'RIP'};
-  const fmtVal=(k,v)=>{
-    if(v==null) return '—';
-    if(['BA','OBP','SLG','OPS'].includes(k)) return fmtBA(v);
-    if(k==='RIP') return Number(v).toFixed(2);
-    if(k==='RV') return fmtRV(v);
-    if(k==='MVP') return Number(v).toFixed(1);
-    if(k==='pit_IP') return Number(v).toFixed(1);
-    return String(Math.round(v));
-  };
-  const genderOk=id=>{if(gender==='all')return true;const p=getPlayer(id);return p&&p.gender===gender;};
+  const season   = document.getElementById('lb-season').value;
+  const gender   = document.getElementById('lb-gender').value;
+  const minAB    = parseInt(document.getElementById('lb-minab').value)||0;
+  const scope    = document.getElementById('lb-scope').value;
 
-  let results=[];
-  if(scope==='season'){
-    let rows=DATA.stats.filter(s=>{
-      if(seasonVal!=='all'&&String(s.season_sort)!==seasonVal) return false;
+  const genderOk = id => { if(gender==='all') return true; const p=getPlayer(id); return p&&p.gender===gender; };
+
+  // Build rows depending on scope
+  let rows = [];
+  if(scope==='season') {
+    rows = DATA.stats.filter(s => {
+      if(season!=='all'&&String(s.season_sort)!==season) return false;
       if(!genderOk(s.player_id)) return false;
       if(minAB>0&&(s.AB||0)<minAB) return false;
+      if((s.G||0)===0) return false;
       return true;
-    });
-    results=rows.map(s=>{
-      let v=statKey==='RIP'?(s.pit_IP>0?s.pit_RA/s.pit_IP:null):s[statKey];
-      return {player_id:s.player_id,season_label:s.season_label,val:v};
-    }).filter(r=>r.val!=null);
-    results.sort((a,b)=>statKey==='RIP'?a.val-b.val:b.val-a.val);
-    document.getElementById('lb-results').innerHTML=`<div class="table-wrap"><table>
-      <thead><tr><th style="text-align:left">#</th><th style="text-align:left">Player</th><th style="text-align:left">Season</th><th>${statLabels[statKey]||statKey}</th></tr></thead>
-      <tbody>${results.slice(0,25).map((r,i)=>`<tr>
-        <td style="text-align:left;color:var(--text-muted)">${i+1}</td>
-        <td style="text-align:left"><a onclick="navigate('profile','${r.player_id}')">${displayName(r.player_id)}</a></td>
-        <td style="text-align:left">${r.season_label}</td>
-        <td>${fmtVal(statKey,r.val)}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>`;
+    }).map(s => ({
+      name:       displayName(s.player_id),
+      pid:        s.player_id,
+      season:     s.season_label,
+      G:  s.G||0, AB: s.AB||0, R:  s.R||0,  H:   s.H||0,
+      RBI:s.RBI||0,dbl:s.dbl||0,trp:s.trp||0,HR: s.HR||0, BB: s.BB||0,
+      BA: s.BA, OBP:s.OBP, SLG:s.SLG, OPS:s.OPS,
+      MVP:s.MVP, RV:s.RV,
+      pit_W:s.pit_W||0, pit_IP:s.pit_IP||0,
+      RIP: s.pit_IP>0?s.pit_RA/s.pit_IP:null,
+    }));
   } else {
-    const tots={};
-    DATA.stats.forEach(s=>{
+    const tots = {};
+    DATA.stats.forEach(s => {
       if(!genderOk(s.player_id)) return;
-      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0,MVP_sum:0};
+      if(season!=='all'&&String(s.season_sort)!==season) return;
+      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0,MVP_sum:0,BB_sum:0};
       const t=tots[s.player_id];
       t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
       t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
       t.pit_W+=s.pit_W||0;t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;t.MVP_sum+=s.MVP||0;
     });
-    let ents=Object.entries(tots).filter(([,t])=>minAB===0||t.AB>=minAB).map(([id,t])=>{
-      let v;
-      if(statKey==='BA') v=t.AB>0?t.H/t.AB:null;
-      else if(statKey==='OBP') v=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
-      else if(statKey==='SLG'){const sg=t.H-t.dbl-t.trp-t.HR;v=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;}
-      else if(statKey==='OPS'){
-        const obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):0;
-        const sg=t.H-t.dbl-t.trp-t.HR;const slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:0;v=obp+slg;
-      }
-      else if(statKey==='RIP') v=t.pit_IP>0?t.pit_RA/t.pit_IP:null;
-      else if(statKey==='MVP') v=t.MVP_sum;
-      else v=t[statKey];
-      return [id,v];
-    }).filter(([,v])=>v!=null);
-    ents.sort((a,b)=>statKey==='RIP'?a[1]-b[1]:b[1]-a[1]);
-    document.getElementById('lb-results').innerHTML=`<div class="table-wrap"><table>
-      <thead><tr><th style="text-align:left">#</th><th style="text-align:left">Player</th><th>${statLabels[statKey]||statKey}</th></tr></thead>
-      <tbody>${ents.slice(0,25).map(([id,v],i)=>`<tr>
-        <td style="text-align:left;color:var(--text-muted)">${i+1}</td>
-        <td style="text-align:left"><a onclick="navigate('profile','${id}')">${displayName(id)}</a></td>
-        <td>${fmtVal(statKey,v)}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>`;
+    rows = Object.entries(tots)
+      .filter(([,t])=>minAB===0||t.AB>=minAB)
+      .filter(([,t])=>t.G>0)
+      .map(([id,t])=>{
+        const sg=t.H-t.dbl-t.trp-t.HR;
+        const ba=t.AB>0?t.H/t.AB:null;
+        const obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
+        const slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
+        return {
+          name:displayName(id), pid:id, season:'Career',
+          G:t.G, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
+          dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
+          BA:ba, OBP:obp, SLG:slg, OPS:(obp!=null&&slg!=null)?obp+slg:null,
+          MVP:t.MVP_sum, RV:t.RV,
+          pit_W:t.pit_W, pit_IP:t.pit_IP,
+          RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null,
+        };
+      });
   }
+
+  // Sort by G desc by default
+  rows.sort((a,b)=>(b.G||0)-(a.G||0));
+
+  const showSeason = scope==='season' && season==='all';
+  const cols = [
+    {k:'name',  label:'Player', fmt:v=>v, text:true, left:true},
+    ...(showSeason?[{k:'season', label:'Season', fmt:v=>v, text:true, left:true}]:[]),
+    {k:'G',   label:'G',    fmt:v=>v??'—'},
+    {k:'AB',  label:'AB',   fmt:v=>v??'—'},
+    {k:'R',   label:'R',    fmt:v=>v??'—'},
+    {k:'H',   label:'H',    fmt:v=>v??'—'},
+    {k:'RBI', label:'RBI',  fmt:v=>v??'—'},
+    {k:'dbl', label:'2B',   fmt:v=>v??'—'},
+    {k:'trp', label:'3B',   fmt:v=>v??'—'},
+    {k:'HR',  label:'HR',   fmt:v=>v??'—'},
+    {k:'BB',  label:'BB',   fmt:v=>v??'—'},
+    {k:'BA',  label:'BA',   fmt:v=>fmtBA(v)},
+    {k:'OBP', label:'OBP',  fmt:v=>fmtBA(v)},
+    {k:'SLG', label:'SLG',  fmt:v=>fmtBA(v)},
+    {k:'OPS', label:'OPS',  fmt:v=>fmtBA(v)},
+    {k:'MVP', label:'MVP',  fmt:v=>v!=null?Number(v).toFixed(1):'—'},
+    {k:'RV',  label:'RV',   fmt:v=>fmtRV(v)},
+    {k:'pit_W',  label:'W',   fmt:v=>v??'—'},
+    {k:'pit_IP', label:'IP',  fmt:v=>v!=null?Number(v).toFixed(1):'—'},
+    {k:'RIP',    label:'RIP', fmt:v=>v!=null?Number(v).toFixed(2):'—'},
+  ];
+
+  // Store rows for sort
+  window._lbRows = rows;
+  window._lbCols = cols;
+  window._lbSortCol = 'G';
+  window._lbSortAsc = false;
+  renderLbTable();
 }
+
+function renderLbTable() {
+  const rows = window._lbRows || [];
+  const cols = window._lbCols || [];
+  const sortCol = window._lbSortCol;
+  const asc = window._lbSortAsc;
+
+  const sorted = [...rows].sort((a,b)=>{
+    const av=a[sortCol], bv=b[sortCol];
+    if(av==null&&bv==null) return 0;
+    if(av==null) return 1; if(bv==null) return -1;
+    if(typeof av==='string') return asc?av.localeCompare(bv):bv.localeCompare(av);
+    return asc?av-bv:bv-av;
+  });
+
+  document.getElementById('lb-results').innerHTML=`<div class="table-wrap"><table>
+    <thead><tr>
+      ${cols.map((c,i)=>`<th onclick="lbSort('${c.k}')" style="${c.left?'text-align:left':''}${sortCol===c.k?' color:var(--gold)':''}">${c.label}${sortCol===c.k?(asc?' ▲':' ▼'):''}</th>`).join('')}
+    </tr></thead>
+    <tbody>
+      ${sorted.slice(0,50).map(r=>`<tr>
+        ${cols.map(c=>`<td style="${c.left?'text-align:left':''}${c.k==='name'?';cursor:pointer" onclick="navigate('profile',''+r.pid+'')"':'"'}>
+          ${c.fmt(r[c.k])}</td>`).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function lbSort(key) {
+  if(window._lbSortCol===key) window._lbSortAsc=!window._lbSortAsc;
+  else { window._lbSortCol=key; window._lbSortAsc=false; }
+  renderLbTable();
+}
+
 
 // ── CURRENT ───────────────────────────────────────────────────────────────
 function showCurrent(){
