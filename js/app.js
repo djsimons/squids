@@ -549,18 +549,28 @@ function showCurrent(){document.getElementById('page-current').classList.add('ac
 const SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
-  return lines.slice(1).map(line => {
-    // handle quoted fields
+  // Normalize Windows line endings
+  const lines = text.trim().replace(/\r/g,'').split('\n');
+
+  // Parse a single CSV line respecting quoted fields
+  function parseLine(line) {
     const vals = [];
     let cur = '', inQ = false;
     for(let i=0; i<line.length; i++){
-      if(line[i]==='"') { inQ=!inQ; }
-      else if(line[i]===',' && !inQ) { vals.push(cur.trim()); cur=''; }
-      else { cur+=line[i]; }
+      const ch = line[i];
+      if(ch==='"') { inQ=!inQ; }
+      else if(ch===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+      else { cur+=ch; }
     }
     vals.push(cur.trim());
+    return vals.map(v => v.replace(/^"|"$/g,'').trim());
+  }
+
+  const headers = parseLine(lines[0]);
+  console.log('Schedule headers:', headers);  // debug
+
+  return lines.slice(1).map(line => {
+    const vals = parseLine(line);
     const obj = {};
     headers.forEach((h,i) => obj[h] = vals[i]||'');
     return obj;
