@@ -389,3 +389,47 @@ table td:first-child { max-width: 160px; }
 .blade-name, .nav-team-name, .hero h1, .page-header h2, .career-row td:first-child {
   text-transform: lowercase !important;
 }
+
+/* ── FROZEN HEADERS & SCROLL ─────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+  position: relative;
+}
+.table-wrap table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface);
+}
+.table-wrap table thead th:first-child,
+.table-wrap table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+.table-wrap table thead th:first-child {
+  z-index: 4;
+}
+
+/* Scroll hint arrow */
+.scroll-hint {
+  position: relative;
+}
+.scroll-hint::after {
+  content: '▶';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sky);
+  font-size: 0.7rem;
+  background: linear-gradient(to right, transparent, var(--surface) 40%);
+  padding: 0.5rem 0.4rem 0.5rem 1.5rem;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+.scroll-hint.scrolled-right::after {
+  opacity: 0;
+}

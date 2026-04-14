@@ -12,7 +12,7 @@ var LIVE_SEASON    = 2026.1;
 var LIVE_LABEL     = 'Spring 2026';
 var DATA = { players: [], stats: [], logs: [] };
 var SEASON_RECORDS = [];
-var SEA_CREATURES=['&#127992;','&#128025;','&#128026;','&#129447;','&#128027;','&#129429;','&#128031;','&#129416;','&#128032;','&#129306;','&#129408;','&#128028;'];
+var SEA_CREATURES=['&#128025;','&#128026;','&#128031;','&#129416;','&#128032;','&#129408;','&#129425;','&#128033;','&#129424;','&#129438;','&#128044;','&#128051;','&#128011;','&#129453;'];
 function seaCreature(id){var sum=0;for(var ci=0;ci<id.length;ci++)sum+=id.charCodeAt(ci);return SEA_CREATURES[sum%SEA_CREATURES.length];}
 // ── DATA LOADING ──────────────────────────────────────────────────────────
 async function loadData() {
@@ -32,6 +32,11 @@ async function loadData() {
     mergeLiveBox(live[1]);
     cacheSchedule(live[2]);
     loadNews();
+    // Re-render home if it's active (schedule/live data now available)
+    if(document.getElementById('page-home').classList.contains('active')){
+      renderSeasonLeaders();
+      renderHomeGames();
+    }
   } catch(e) { console.warn('Live data unavailable:', e); }
   DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
@@ -518,18 +523,30 @@ function renderHomeGames() {
     var rows=DATA.logs.filter(function(l){return l.date===latest.date&&l.game_num===latest.game_num;})
       .sort(function(a,b){return a.batting_order-b.batting_order;});
     var resultHTML='';
+    var schedResult=null;
     if(window._scheduleRows){
-      var sched=window._scheduleRows.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
-      if(sched&&(sched['W/L']||'').trim()){
-        var wl=sched['W/L'].trim().toUpperCase();
-        var rs=sched['RS']||'',ra=sched['RA']||'';
-        var color=wl==='W'?'var(--green)':'var(--red)';
-        var score=(rs&&ra)?rs+'\u2013'+ra:'';
-        resultHTML='<div style="font-family:var(--font-blade);text-transform:lowercase;font-size:1.6rem;color:'+color+';line-height:1;margin-bottom:0.5rem">'+
-          wl+(score?' <span style="font-size:1rem;color:var(--text-dim)">'+score+'</span>':'')+'</div>';
-      }
+      schedResult=window._scheduleRows.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
     }
-    recentHTML='<div class="section-title" style="margin-top:1.25rem">Last Game &mdash; '+latest.date+' vs '+latest.opponent+'</div>'+
+    if(schedResult&&(schedResult['W/L']||'').trim()){
+      var wl=schedResult['W/L'].trim().toUpperCase();
+      var rs=schedResult['RS']||'',ra=schedResult['RA']||'';
+      var opp=schedResult['Opponent']||latest.opponent||'';
+      var color=wl==='W'?'var(--green)':'var(--red)';
+      var outcome=wl==='W'?'win over':'loss to';
+      // Format date as M-DD-YY
+      var dp=latest.date.split('-');
+      var fmtDate=parseInt(dp[1])+'-'+dp[2]+'-'+dp[0].slice(2);
+      var scoreStr=(rs&&ra)?rs+'\u2013'+ra+' ':'';
+      resultHTML='<div style="font-size:1rem;font-family:var(--font-display);font-weight:700;color:'+color+';margin-bottom:0.5rem">'+
+        scoreStr+outcome+' '+opp+
+        '<span style="color:var(--text-muted);font-weight:400;font-size:0.85rem;margin-left:0.5rem">'+fmtDate+'</span>'+
+      '</div>';
+    } else if(latest) {
+      var dp2=latest.date.split('-');
+      var fmtDate2=parseInt(dp2[1])+'-'+dp2[2]+'-'+dp2[0].slice(2);
+      resultHTML='<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem">'+fmtDate2+' vs '+latest.opponent+'</div>';
+    }
+    recentHTML='<div class="section-title" style="margin-top:1.25rem">Last Game</div>'+
       resultHTML+buildBoxTableWithPos(rows,false);
   }
   document.getElementById('home-recent').innerHTML=recentHTML;
@@ -538,6 +555,10 @@ function renderHomeGames() {
 // ── PLAYERS ───────────────────────────────────────────────────────────────
 function showPlayers() {
   document.getElementById('page-players').classList.add('active');
+  document.getElementById('player-search').value='';
+  document.getElementById('gender-filter').value='all';
+  document.getElementById('pos-filter').value='all';
+  document.getElementById('active-only').checked=false;
   renderRoster();
 }
 
@@ -701,7 +722,6 @@ function showProfile(id) {
         '</table></div></div>'+logsPanel;
 
   page.innerHTML=
-    '<div class="profile-header"><a class="back-btn" onclick="navigate(\'players\')">&#8592; All Players</a></div>'+
     '<div class="profile-header" style="padding-top:0.5rem;flex-direction:column;align-items:center;text-align:center">'+
       '<div class="profile-photo">'+makeAvatarImg(id)+'</div>'+
       '<div class="profile-info" style="text-align:center">'+
@@ -775,6 +795,66 @@ function renderSeasonRecap(selSeason) {
     '</div>';
 }
 
+
+function renderStatsLeaderboard() {
+  var seasonEl=document.getElementById('season-select');
+  var scopeEl=document.getElementById('lb-scope');
+  var genderEl=document.getElementById('lb-gender-s');
+  var minABEl=document.getElementById('lb-minab-s');
+  if(!seasonEl||!scopeEl) return;
+
+  var season=seasonEl.value;
+  var scope=scopeEl.value;
+  var gender=genderEl?genderEl.value:'all';
+  var minAB=minABEl?parseInt(minABEl.value)||0:0;
+
+  function gok(id){if(gender==='all')return true;var p=getPlayer(id);return p&&p.gender===gender;}
+
+  var rows=[];
+  if(scope==='season'){
+    rows=DATA.stats.filter(function(s){
+      if(String(s.season_sort)!==season) return false;
+      if(!gok(s.player_id)) return false;
+      if(minAB>0&&(s.AB||0)<minAB) return false;
+      if((s.G||0)===0) return false;
+      return true;
+    }).map(function(s){
+      return {name:displayName(s.player_id),pid:s.player_id,season:s.season_label,
+        G:s.G||0,AB:s.AB||0,R:s.R||0,H:s.H||0,RBI:s.RBI||0,
+        dbl:s.dbl||0,trp:s.trp||0,HR:s.HR||0,BB:s.BB||0,
+        BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,
+        MVP:s.MVP,RV:s.RV,pit_W:s.pit_W||0,pit_IP:s.pit_IP||0,
+        RIP:s.pit_IP>0?s.pit_RA/s.pit_IP:null};
+    });
+  } else {
+    var tots={};
+    DATA.stats.forEach(function(s){
+      if(!gok(s.player_id)) return;
+      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0,MVP_sum:0};
+      var t=tots[s.player_id];
+      t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
+      t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+      t.pit_W+=s.pit_W||0;t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;t.MVP_sum+=s.MVP||0;
+    });
+    rows=Object.entries(tots).filter(function(e){return (minAB===0||e[1].AB>=minAB)&&e[1].G>0;})
+      .map(function(e){
+        var id=e[0],t=e[1];
+        var sg=t.H-t.dbl-t.trp-t.HR;
+        var ba=t.AB>0?t.H/t.AB:null;
+        var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
+        var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
+        return {name:displayName(id),pid:id,season:'Career',
+          G:t.G,AB:t.AB,R:t.R,H:t.H,RBI:t.RBI,dbl:t.dbl,trp:t.trp,HR:t.HR,BB:t.BB,
+          BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,
+          MVP:t.MVP_sum,RV:t.RV,pit_W:t.pit_W,pit_IP:t.pit_IP,
+          RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
+      });
+  }
+  rows.sort(function(a,b){return (b.G||0)-(a.G||0);});
+  window._lbRows=rows; window._lbSortCol='G'; window._lbSortAsc=false;
+  renderLbTable();
+}
+
 // ── SEASONS / STATS ───────────────────────────────────────────────────────
 function showSeasons() {
   document.getElementById('page-seasons').classList.add('active');
@@ -782,13 +862,28 @@ function showSeasons() {
   document.getElementById('season-select').innerHTML=seasons.map(function(s){
     return '<option value="'+s+'">'+seasonLabel(s)+'</option>';
   }).join('');
+  // Sync lb-season dropdown if present
+  var lbSel=document.getElementById('lb-season');
+  if(lbSel){
+    lbSel.innerHTML='<option value="all">All Seasons</option>'+seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
+    lbSel.value=String(seasons[0]);
+  }
+  // Default lb filters
+  var lbScope=document.getElementById('lb-scope');
+  if(lbScope) lbScope.value='season';
+  var lbGender=document.getElementById('lb-gender-s');
+  if(lbGender) lbGender.value='all';
+  var lbMinAB=document.getElementById('lb-minab-s');
+  if(lbMinAB) lbMinAB.value='0';
   renderSeasonStats();
   renderSeasonRecap(parseFloat(document.getElementById('season-select').value));
+  renderStatsLeaderboard();
 }
 
 function renderSeasonStats() {
   var season=parseFloat(document.getElementById('season-select').value);
   renderSeasonRecap(season);
+  renderStatsLeaderboard();
   var type=document.getElementById('stat-type').value;
   var rows=DATA.stats.filter(function(s){return s.season_sort===season;});
   document.getElementById('season-label').textContent=seasonLabel(season);
@@ -1165,6 +1260,16 @@ function showStandings(){
     tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--red);padding:2rem">Failed to load standings</td></tr>';
   });
 }
+
+
+// ── SCROLL HINT ───────────────────────────────────────────────────────────
+document.addEventListener('scroll', function(e) {
+  var el = e.target;
+  if (el && el.classList && el.classList.contains('table-wrap')) {
+    if (el.scrollLeft > 20) el.classList.add('scrolled-right');
+    else el.classList.remove('scrolled-right');
+  }
+}, true);
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){
