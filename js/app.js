@@ -534,7 +534,10 @@ function renderHomeGames() {
       gameLabel=fd+' vs '+opp2+
         (wlStr?' <span style="color:'+wlColor2+';font-weight:700">('+wlStr+scoreStr2+')</span>':'');
     }
-    recentHTML='<div class="section-title" style="margin-top:1.25rem">'+gameLabel+'</div>'+
+    recentHTML='<div style="margin-top:1.25rem;margin-bottom:0.5rem">'+
+      '<span class="section-title" style="display:inline">Last game:</span> '+
+      '<span style="font-size:0.95rem;color:var(--text)">'+gameLabel+'</span>'+
+      '</div>'+
       buildBoxTableWithPos(rows,false);
   }
   document.getElementById('home-recent').innerHTML=recentHTML;
@@ -789,22 +792,33 @@ function renderSeasonRecap(selSeason, mode) {
     // Single season
     var key=seasonSortToKey(selSeason);
     var rec=SEASON_RECORDS.find(function(s){return s.s===key;});
+    var wl='&mdash;', isChamp=false, isRunner=false, champName='', runnerName='';
     if(rec){
-      var isChamp=rec.champ==='Squids',isRunner=rec.runner==='Squids';
-      var wl=(rec.w!=null&&rec.l!=null)?rec.w+'-'+rec.l:'&mdash;';
-      var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text)';
-      recapHTML=
-        '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
-          '<div><div class="filter-label">Record</div>'+
-            '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</div></div>'+
-          (rec.champ&&rec.champ!=='--'&&rec.champ!==null?
-            '<div><div class="filter-label">Champion</div>'+
-            '<div style="font-size:0.9rem;color:'+(isChamp?'var(--gold)':'var(--text)')+'">'+rec.champ+(isChamp?' &#127942;':'')+'</div></div>':'')+
-          (rec.runner&&rec.runner!=='--'&&rec.runner!==null?
-            '<div><div class="filter-label">Runner-up</div>'+
-            '<div style="font-size:0.9rem;color:'+(isRunner?'var(--sky)':'var(--text)')+'">'+rec.runner+(isRunner?' &#129352;':'')+'</div></div>':'')+
-        '</div>';
+      isChamp=rec.champ==='Squids'; isRunner=rec.runner==='Squids';
+      wl=(rec.w!=null&&rec.l!=null)?rec.w+'-'+rec.l:'&mdash;';
+      champName=rec.champ||''; runnerName=rec.runner||'';
     }
+    // For current/live season, pull W-L from schedule
+    if(Math.abs(selSeason-LIVE_SEASON)<0.001&&window._scheduleRows&&window._scheduleRows.length){
+      var liveW=0,liveL=0;
+      window._scheduleRows.forEach(function(r){
+        var res=(r['W/L']||'').trim().toUpperCase();
+        if(res==='W')liveW++;else if(res==='L')liveL++;
+      });
+      if(liveW+liveL>0) wl=liveW+'-'+liveL;
+    }
+    var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text)';
+    recapHTML=
+      '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
+        '<div><div class="filter-label">Record</div>'+
+          '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</div></div>'+
+        (champName&&champName!=='--'?
+          '<div><div class="filter-label">Champion</div>'+
+          '<div style="font-size:0.9rem;color:'+(isChamp?'var(--gold)':'var(--text)')+'">'+champName+(isChamp?' &#127942;':'')+'</div></div>':'')+
+        (runnerName&&runnerName!=='--'?
+          '<div><div class="filter-label">Runner-up</div>'+
+          '<div style="font-size:0.9rem;color:'+(isRunner?'var(--sky)':'var(--text)')+'">'+runnerName+(isRunner?' &#129352;':'')+'</div></div>':'')+
+      '</div>';
   }
 
   el.innerHTML=
