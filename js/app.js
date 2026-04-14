@@ -37,6 +37,12 @@ async function loadData() {
       renderSeasonLeaders();
       renderHomeGames();
     }
+    // Also re-render if home is already showing (handles delayed schedule load)
+    setTimeout(function(){
+      if(document.getElementById('page-home').classList.contains('active')){
+        renderHomeGames();
+      }
+    }, 500);
   } catch(e) { console.warn('Live data unavailable:', e); }
   DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
@@ -194,21 +200,17 @@ function careerPosDisplay(playerStats) {
 function makeAvatarImg(id) {
   var lo=id.toLowerCase();
   var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+id+'.jpeg";'+
-    'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
-    'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
+    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
     'else{this.onerror=null;this.parentElement.innerHTML=seaCreature("'+id+'");}';
-  return '<img src="img/players/'+id+'.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
+  return '<img src="img/players/'+lo+'.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
 }
 
 function makeLeaderPhoto(id) {
   var lo=id.toLowerCase();
   var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+id+'.jpeg";'+
-    'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
-    'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
+    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
     'else{this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.background="white";this.style.padding="3px";}';
-  return '<img src="img/players/'+id+'.jpg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
+  return '<img src="img/players/'+lo+'.jpg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
 }
 
 function computeCareerTotals(stats) {
@@ -244,11 +246,9 @@ function computeAllCareerTotals() {
 function nameWithFace(id) {
   var lo=id.toLowerCase();
   var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+id+'.jpeg";'+
-    'else if(t===2)this.src="img/players/'+lo+'.jpg";'+
-    'else if(t===3)this.src="img/players/'+lo+'.jpeg";'+
+    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
     'else{this.onerror=null;this.outerHTML="<span style=font-size:.9rem>"+seaCreature("'+id+'")+"</span>";}';
-  return '<img src="img/players/'+id+'.jpg" '+
+  return '<img src="img/players/'+lo+'.jpg" '+
     'style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright)" '+
     'onerror=\''+err+'\' alt="">'+displayName(id);
 }
@@ -797,18 +797,25 @@ function renderSeasonRecap(selSeason) {
 
 
 function renderStatsLeaderboard() {
-  var seasonEl=document.getElementById('season-select');
   var scopeEl=document.getElementById('lb-scope');
+  var seasonEl=document.getElementById('lb-season');
   var genderEl=document.getElementById('lb-gender-s');
+  var activeEl=document.getElementById('lb-active-s');
   var minABEl=document.getElementById('lb-minab-s');
-  if(!seasonEl||!scopeEl) return;
+  if(!scopeEl) return;
 
-  var season=seasonEl.value;
   var scope=scopeEl.value;
+  var season=seasonEl?seasonEl.value:'all';
   var gender=genderEl?genderEl.value:'all';
+  var activeOnly=activeEl?activeEl.checked:false;
   var minAB=minABEl?parseInt(minABEl.value)||0:0;
+  var activeSet=new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
 
-  function gok(id){if(gender==='all')return true;var p=getPlayer(id);return p&&p.gender===gender;}
+  function gok(id){
+    if(gender!=='all'){var p=getPlayer(id);if(!p||p.gender!==gender)return false;}
+    if(activeOnly&&!activeSet.has(id))return false;
+    return true;
+  }
 
   var rows=[];
   if(scope==='season'){
@@ -862,19 +869,14 @@ function showSeasons() {
   document.getElementById('season-select').innerHTML=seasons.map(function(s){
     return '<option value="'+s+'">'+seasonLabel(s)+'</option>';
   }).join('');
-  // Sync lb-season dropdown if present
+  // Sync lb-season dropdown
   var lbSel=document.getElementById('lb-season');
   if(lbSel){
     lbSel.innerHTML='<option value="all">All Seasons</option>'+seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
     lbSel.value=String(seasons[0]);
   }
-  // Default lb filters
   var lbScope=document.getElementById('lb-scope');
   if(lbScope) lbScope.value='season';
-  var lbGender=document.getElementById('lb-gender-s');
-  if(lbGender) lbGender.value='all';
-  var lbMinAB=document.getElementById('lb-minab-s');
-  if(lbMinAB) lbMinAB.value='0';
   renderSeasonStats();
   renderSeasonRecap(parseFloat(document.getElementById('season-select').value));
   renderStatsLeaderboard();
@@ -890,6 +892,8 @@ function renderSeasonStats() {
   var tbody=document.getElementById('season-tbody');
   var thead=document.getElementById('season-thead');
 
+  // Clear table first
+  thead.innerHTML=''; tbody.innerHTML='';
   if(type==='batting'){
     var sorted=rows.filter(function(s){return (s.G||0)>0;}).sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);});
     thead.innerHTML='<tr>'+
@@ -1026,7 +1030,6 @@ function toggleGameBox(el){
 function showRecords() {
   document.getElementById('page-records').classList.add('active');
   renderCareerLeaderboards();
-  renderCustomLeaderboard();
 }
 
 function renderCareerLeaderboards() {

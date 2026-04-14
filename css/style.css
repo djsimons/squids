@@ -390,46 +390,60 @@ table td:first-child { max-width: 160px; }
   text-transform: lowercase !important;
 }
 
-/* ── FROZEN HEADERS & SCROLL ─────────────────────────────────────────── */
+
+
+/* ── FROZEN HEADERS & SCROLL HINT ───────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
   position: relative;
+  max-height: 70vh;
+  overflow-y: auto;
 }
+
+/* Freeze header row */
+.table-wrap table { border-collapse: separate; border-spacing: 0; }
 .table-wrap table thead th {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: var(--surface);
+  background: #0d1b2a;
+  box-shadow: 0 1px 0 var(--border);
 }
-.table-wrap table thead th:first-child,
-.table-wrap table tbody td:first-child {
+
+/* Freeze first column */
+.table-wrap table th:first-child,
+.table-wrap table td:first-child {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: var(--surface);
+  background: #0d1b2a;
 }
+
+/* Top-left cell gets highest z-index */
 .table-wrap table thead th:first-child {
   z-index: 4;
 }
 
 /* Scroll hint arrow */
-.scroll-hint {
-  position: relative;
-}
+.scroll-hint { position: relative; }
 .scroll-hint::after {
-  content: '▶';
+  content: '▶ scroll';
   position: absolute;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0.6rem;
   color: var(--sky);
-  font-size: 0.7rem;
-  background: linear-gradient(to right, transparent, var(--surface) 40%);
-  padding: 0.5rem 0.4rem 0.5rem 1.5rem;
+  font-size: 0.62rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  background: linear-gradient(to right, transparent, #0d1b2a 35%);
+  padding: 0.25rem 0.4rem 0.25rem 1.5rem;
   pointer-events: none;
-  opacity: 1;
   transition: opacity 0.3s;
+  white-space: nowrap;
 }
-.scroll-hint.scrolled-right::after {
-  opacity: 0;
-}
+.scroll-hint.scrolled-right::after { opacity: 0; }
+
+/* lb-results is a scroll-hint div not a table-wrap, don't double-constrain */
+#lb-results.table-wrap { max-height: none; }
+#lb-results.scroll-hint { overflow-x: auto; overflow-y: visible; }

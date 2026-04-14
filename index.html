@@ -15,7 +15,7 @@
     <a class="nav-logo" onclick="navigate('home')" style="padding-right:1rem;margin-right:0.25rem;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:0.1rem;text-decoration:none">
       <img src="img/logo.png" alt="Squids"
         style="height:34px;width:auto;display:block;filter:drop-shadow(0 0 6px rgba(56,189,248,0.5))"
-        onerror="this.outerHTML='<div style=&quot;width:34px;height:34px;border-radius:50%;background:var(--deep-light);border:2px solid var(--sky-dim);display:flex;align-items:center;justify-content:center;font-size:18px&quot;>🦑</div>'">
+        onerror="this.outerHTML='<div style=&quot;width:34px;height:34px;border-radius:50%;background:var(--deep-light);border:2px solid var(--sky-dim);display:flex;align-items:center;justify-content:center;font-size:18px&quot;>&#129425;</div>'">
       <span style="font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-display);font-weight:600">Home</span>
     </a>
     <a data-route="players" onclick="navigate('players')">Players</a>
@@ -57,17 +57,17 @@
   <div class="page-header"><h2>All-Time Roster</h2><p>186 players · all seasons</p></div>
   <div class="container">
     <div class="filter-bar" style="align-items:flex-end;gap:0.75rem">
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">Search</span>
         <input type="text" id="player-search" placeholder="Name..." oninput="applyRosterFilters()" style="width:160px">
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">Gender</span>
         <select id="gender-filter" onchange="applyRosterFilters()">
           <option value="all">All</option><option value="M">M</option><option value="F">F</option>
         </select>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">Position</span>
         <select id="pos-filter" onchange="applyRosterFilters()">
           <option value="all">All</option>
@@ -79,7 +79,7 @@
           <option value="DH">DH</option>
         </select>
       </div>
-      <label style="display:flex;flex-direction:column;gap:0.25rem;cursor:pointer">
+      <label style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;cursor:pointer">
         <span class="filter-label">Active Only</span>
         <input type="checkbox" id="active-only" onchange="applyRosterFilters()"
           style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
@@ -94,36 +94,22 @@
   <div class="page-header"><h2>Stats</h2></div>
   <div class="container">
     <div id="season-recap"></div>
-    <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end">
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
+
+    <!-- Top filter bar: Season + View (batting/pitching) -->
+    <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end;margin-bottom:0.5rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">Season</span>
         <select id="season-select" onchange="renderSeasonStats()"></select>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">View</span>
         <select id="stat-type" onchange="renderSeasonStats()">
           <option value="batting">Batting</option>
           <option value="pitching">Pitching</option>
         </select>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
-        <span class="filter-label">Scope</span>
-        <select id="lb-scope" onchange="renderStatsLeaderboard()">
-          <option value="season">Single Season</option>
-          <option value="career">Career</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
-        <span class="filter-label">Gender</span>
-        <select id="lb-gender-s" onchange="renderStatsLeaderboard()">
-          <option value="all">All</option><option value="M">M</option><option value="F">F</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:0.25rem">
-        <span class="filter-label">Min AB</span>
-        <input type="number" id="lb-minab-s" value="0" min="0" step="5" style="width:65px" onchange="renderStatsLeaderboard()">
-      </div>
     </div>
+
     <div class="section-title" id="season-label"></div>
     <div class="table-wrap scroll-hint">
       <table>
@@ -131,7 +117,40 @@
         <tbody id="season-tbody"></tbody>
       </table>
     </div>
-    <div id="lb-results" class="mt1"></div>
+
+    <!-- Megatable filter bar: Scope + Gender + Active + MinAB + Submit -->
+    <div class="section-title mt2">Leaderboard</div>
+    <div class="card mt1">
+      <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Scope</span>
+          <select id="lb-scope">
+            <option value="season">Single Season</option>
+            <option value="career">Career</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Season</span>
+          <select id="lb-season"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Gender</span>
+          <select id="lb-gender-s">
+            <option value="all">All</option><option value="M">M</option><option value="F">F</option>
+          </select>
+        </div>
+        <label style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;cursor:pointer">
+          <span class="filter-label">Active Only</span>
+          <input type="checkbox" id="lb-active-s" style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
+        </label>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Min AB</span>
+          <input type="number" id="lb-minab-s" value="0" min="0" step="5" style="width:65px">
+        </div>
+        <button class="submit-btn" onclick="renderStatsLeaderboard()">Show</button>
+      </div>
+      <div id="lb-results" class="mt1 table-wrap scroll-hint"></div>
+    </div>
   </div>
 </div>
 
@@ -152,34 +171,6 @@
   <div class="page-header"><h2>Records &amp; Leaders</h2></div>
   <div class="container">
     <div id="records-static"></div>
-    <div class="section-title mt2">Leaderboard</div>
-    <div class="card mt1">
-      <div class="filter-bar" style="flex-wrap:wrap;gap:0.65rem;align-items:flex-end">
-        <div style="display:flex;flex-direction:column;gap:0.25rem">
-          <span class="filter-label">Scope</span>
-          <select id="lb-scope">
-            <option value="career">Career</option>
-            <option value="season">Single Season</option>
-          </select>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.25rem">
-          <span class="filter-label">Season</span>
-          <select id="lb-season"></select>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.25rem">
-          <span class="filter-label">Gender</span>
-          <select id="lb-gender">
-            <option value="all">All</option><option value="M">M</option><option value="F">F</option>
-          </select>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.25rem">
-          <span class="filter-label">Min AB</span>
-          <input type="number" id="lb-minab" value="0" min="0" step="5" style="width:70px">
-        </div>
-        <button class="submit-btn" onclick="renderCustomLeaderboard()">Show</button>
-      </div>
-      <div id="lb-results" class="mt1"></div>
-    </div>
   </div>
 </div>
 
