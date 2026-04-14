@@ -460,13 +460,13 @@ function renderHomeGames() {
     var cards=upcomingGames.map(function(r){
       var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
       var iso=schedDateToISO(r['Date']||'');
-      var wx=weatherMap?weatherMap[iso]:null;
+      var wx=(weatherMap&&weatherMap.hasOwnProperty(iso))?weatherMap[iso]:null;
       return '<div class="card" style="flex:1;min-width:200px;padding:0.7rem 1rem">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
           '<div>'+
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
-            (wx?weatherHTML(wx):(weatherMap?'':'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">&#x1F321; loading...</div>'))+
+            (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">&#x1F321; loading...</div>')+
           '</div>'+
           '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem;margin-left:0.5rem">'+fmtTime(r['Time']||'')+'</div>'+
         '</div>'+
@@ -506,28 +506,21 @@ function renderHomeGames() {
   if(latest){
     var rows=DATA.logs.filter(function(l){return l.date===latest.date&&l.game_num===latest.game_num;})
       .sort(function(a,b){return a.batting_order-b.batting_order;});
-    var resultHTML='';
     var schedResult=sched.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
-    if(schedResult&&(schedResult['W/L']||'').trim()){
-      var wl=schedResult['W/L'].trim().toUpperCase();
-      var rs=schedResult['RS']||'',ra=schedResult['RA']||'';
-      var opp=schedResult['Opponent']||latest.opponent||'';
-      var color=wl==='W'?'var(--green)':'var(--red)';
-      var outcome=wl==='W'?'win over':'loss to';
-      var dp=latest.date.split('-');
-      var fmtDate=parseInt(dp[1])+'-'+dp[2]+'-'+dp[0].slice(2);
-      var scoreStr=(rs&&ra)?rs+'–'+ra+' ':'';
-      resultHTML='<div style="font-size:1rem;font-family:var(--font-display);font-weight:700;color:'+color+';margin-bottom:0.5rem">'+
-        scoreStr+outcome+' '+opp+
-        '<span style="color:var(--text-muted);font-weight:400;font-size:0.85rem;margin-left:0.5rem">'+fmtDate+'</span>'+
-      '</div>';
-    } else {
-      var dp2=latest.date.split('-');
-      resultHTML='<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem">'+
-        parseInt(dp2[1])+'-'+dp2[2]+'-'+dp2[0].slice(2)+' vs '+latest.opponent+'</div>';
+    var gameLabel='Last Game';
+    if(schedResult){
+      var wlStr=(schedResult['W/L']||'').trim().toUpperCase();
+      var rs2=schedResult['RS']||'',ra2=schedResult['RA']||'';
+      var opp2=schedResult['Opponent']||latest.opponent||'';
+      var dp3=latest.date.split('-');
+      var fd=parseInt(dp3[1])+'-'+parseInt(dp3[2])+'-'+dp3[0].slice(2);
+      var scoreStr2=(rs2&&ra2)?', '+rs2+'–'+ra2:'';
+      var wlColor2=wlStr==='W'?'var(--green)':wlStr==='L'?'var(--red)':'var(--text-dim)';
+      gameLabel=fd+' vs '+opp2+
+        (wlStr?' <span style="color:'+wlColor2+';font-weight:700">('+wlStr+scoreStr2+')</span>':'');
     }
-    recentHTML='<div class="section-title" style="margin-top:1.25rem">Last Game</div>'+
-      resultHTML+buildBoxTableWithPos(rows,false);
+    recentHTML='<div class="section-title" style="margin-top:1.25rem">'+gameLabel+'</div>'+
+      buildBoxTableWithPos(rows,false);
   }
   document.getElementById('home-recent').innerHTML=recentHTML;
 }
@@ -710,7 +703,7 @@ function showProfile(id) {
         (akaStr?'<div class="aka">'+akaStr+'</div>':'')+
         '<div class="profile-meta" style="justify-content:center">'+
           (isActive?'<span class="badge badge-current">Active</span>':'')+
-          '<span style="color:var(--text-dim);font-size:0.85rem">'+player.gender+' &middot; Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
+          '<span style="color:var(--text-dim);font-size:0.85rem">Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
           (posDisplay?'<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">'+posDisplay+'</span>':'')+
           (nS>0?'<span style="color:var(--text-dim);font-size:0.85rem"><strong style="color:var(--text)">'+nS+'</strong> season'+(nS!==1?'s':'')+' &middot; '+rangeStr+'</span>':'')+
         '</div>'+
@@ -808,7 +801,13 @@ function renderStats() {
   if (!scopeEl) return;
 
   var scope    = scopeEl.value;
-  var season   = seasonEl ? seasonEl.value : 'all';
+  // Grey out season dropdown in career mode
+  if(seasonEl){
+    seasonEl.disabled = scope === 'career';
+    seasonEl.style.opacity = scope === 'career' ? '0.4' : '1';
+    if(scope === 'career') seasonEl.value = 'all';
+  }
+  var season   = (scope === 'career') ? 'all' : (seasonEl ? seasonEl.value : 'all');
   var view     = viewEl ? viewEl.value : 'batting';
   var gender   = genderEl ? genderEl.value : 'all';
   var activeOnly = activeEl ? activeEl.checked : false;
@@ -848,7 +847,7 @@ function renderStats() {
     if (scope === 'season') {
       // Single season or best in any season
       var pool = DATA.stats.filter(function(s){
-        if (season !== 'all' && String(s.season_sort) !== season) return false;
+        if (season !== 'all' && Math.abs(s.season_sort - parseFloat(season)) > 0.001) return false;
         if (!gok(s.player_id)) return false;
         if ((s.G||0) === 0) return false;
         if (minAB > 0 && (s.AB||0) < minAB) return false;
@@ -922,7 +921,7 @@ function renderStats() {
     var prows = [];
     if (scope === 'season') {
       var pool2 = DATA.stats.filter(function(s){
-        if (season !== 'all' && String(s.season_sort) !== season) return false;
+        if (season !== 'all' && Math.abs(s.season_sort - parseFloat(season)) > 0.001) return false;
         if (!gok(s.player_id)) return false;
         if (!s.pit_IP || s.pit_IP <= 0) return false;
         return true;
@@ -1360,9 +1359,5 @@ document.addEventListener('scroll', function(e) {
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){
   await Promise.all([loadData(), loadSeasonRecords()]);
-  var seasons=Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
-  document.getElementById('lb-season').innerHTML=
-    '<option value="all">All Seasons</option>'+
-    seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
   navigate('home');
 });
