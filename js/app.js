@@ -330,12 +330,16 @@ var _weatherCache = {};
 
 async function fetchWeather(dateStr) {
   // dateStr: YYYY-MM-DD
-  if (_weatherCache[dateStr] !== undefined) return _weatherCache[dateStr];
-  // Only fetch if within 16 days
-  var today = new Date();
-  var gameDate = new Date(dateStr + 'T00:00:00');
-  var diffDays = Math.round((gameDate - today) / 86400000);
-  if (diffDays < 0 || diffDays > 15) { _weatherCache[dateStr] = null; return null; }
+  // Don't cache nulls -- only cache successful results
+  if (_weatherCache[dateStr]) return _weatherCache[dateStr];
+  // Compare date strings directly to avoid timezone issues
+  var todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+  if (dateStr < todayStr) return null; // past game
+  // Check within 16-day forecast window
+  var todayMs = new Date(todayStr + 'T00:00:00').getTime();
+  var gameMs  = new Date(dateStr  + 'T00:00:00').getTime();
+  var diffDays = Math.round((gameMs - todayMs) / 86400000);
+  if (diffDays > 15) return null;
   try {
     var url = 'https://api.open-meteo.com/v1/forecast' +
       '?latitude=35.91&longitude=-79.07' +
@@ -344,11 +348,12 @@ async function fetchWeather(dateStr) {
       '&timezone=America%2FNew_York' +
       '&start_date=' + dateStr + '&end_date=' + dateStr;
     var data = await fetch(url).then(function(r){return r.json();});
-    // Find 7pm slot (index 19 in hourly array for that day)
     var times = data.hourly.time;
-    var target = dateStr + 'T19:00';
-    var idx = times.indexOf(target);
-    if (idx === -1) { _weatherCache[dateStr] = null; return null; }
+    // Try 7pm first, fall back to 6pm then 5pm
+    var idx = times.indexOf(dateStr + 'T19:00');
+    if (idx === -1) idx = times.indexOf(dateStr + 'T18:00');
+    if (idx === -1) idx = times.indexOf(dateStr + 'T17:00');
+    if (idx === -1) return null;
     var wx = {
       temp: Math.round(data.hourly.temperature_2m[idx]),
       precip: data.hourly.precipitation_probability[idx],
@@ -356,7 +361,7 @@ async function fetchWeather(dateStr) {
     };
     _weatherCache[dateStr] = wx;
     return wx;
-  } catch(e) { _weatherCache[dateStr] = null; return null; }
+  } catch(e) { console.warn('Weather fetch error:', e); return null; }
 }
 
 function comfortEmoji(wx) {
