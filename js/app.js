@@ -335,17 +335,14 @@ function renderNews() {
 var _weatherCache = {};
 
 async function fetchWeather(dateStr) {
-  // dateStr: YYYY-MM-DD
-  // Don't cache nulls -- only cache successful results
   if (_weatherCache[dateStr]) return _weatherCache[dateStr];
-  // Compare date strings directly to avoid timezone issues
-  var todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
-  if (dateStr < todayStr) return null; // past game
-  // Check within 16-day forecast window
+  var todayStr = new Date().toLocaleDateString('en-CA');
+  console.log('[wx] fetching', dateStr, 'today=', todayStr);
+  if (dateStr < todayStr) { console.log('[wx] skipping past date'); return null; }
   var todayMs = new Date(todayStr + 'T00:00:00').getTime();
   var gameMs  = new Date(dateStr  + 'T00:00:00').getTime();
   var diffDays = Math.round((gameMs - todayMs) / 86400000);
-  if (diffDays > 15) return null;
+  if (diffDays > 15) { console.log('[wx] too far out:', diffDays, 'days'); return null; }
   try {
     var url = 'https://api.open-meteo.com/v1/forecast' +
       '?latitude=35.91&longitude=-79.07' +
@@ -353,21 +350,23 @@ async function fetchWeather(dateStr) {
       '&temperature_unit=fahrenheit' +
       '&timezone=America%2FNew_York' +
       '&start_date=' + dateStr + '&end_date=' + dateStr;
+    console.log('[wx] url:', url);
     var data = await fetch(url).then(function(r){return r.json();});
+    console.log('[wx] got data, times[0]:', data.hourly && data.hourly.time && data.hourly.time[0]);
     var times = data.hourly.time;
-    // Try 7pm first, fall back to 6pm then 5pm
     var idx = times.indexOf(dateStr + 'T19:00');
     if (idx === -1) idx = times.indexOf(dateStr + 'T18:00');
     if (idx === -1) idx = times.indexOf(dateStr + 'T17:00');
-    if (idx === -1) return null;
+    if (idx === -1) idx = 19; // fallback to slot 19 (7pm)
     var wx = {
       temp: Math.round(data.hourly.temperature_2m[idx]),
       precip: data.hourly.precipitation_probability[idx],
       humidity: data.hourly.relative_humidity_2m[idx],
     };
+    console.log('[wx] result:', wx);
     _weatherCache[dateStr] = wx;
     return wx;
-  } catch(e) { console.warn('Weather fetch error:', e); return null; }
+  } catch(e) { console.warn('[wx] error:', e); return null; }
 }
 
 function comfortEmoji(wx) {
@@ -736,11 +735,15 @@ function switchProfileTab(btn,panelId) {
 }
 
 // ── SEASON RECORDS ────────────────────────────────────────────────────────
-function renderSeasonRecap(selSeason) {
+function renderSeasonRecap(selSeason, mode) {
+  // mode: 'season', 'career', 'all'
   var el=document.getElementById('season-recap');
   if(!el||!SEASON_RECORDS.length) return;
+
   var squidsChamps=SEASON_RECORDS.filter(function(s){return s.champ==='Squids';});
   var squidsRunners=SEASON_RECORDS.filter(function(s){return s.runner==='Squids';});
+
+  // Always show pennants
   var pennants=squidsChamps.map(function(s){
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:0.15rem">'+
       '<div style="font-size:1.4rem">&#127942;</div>'+
@@ -753,24 +756,50 @@ function renderSeasonRecap(selSeason) {
     '</div>';
   }).join('');
 
-  var key=selSeason?seasonSortToKey(selSeason):'';
-  var rec=SEASON_RECORDS.find(function(s){return s.s===key;});
   var recapHTML='';
-  if(rec){
-    var isChamp=rec.champ==='Squids',isRunner=rec.runner==='Squids';
-    var wl=(rec.w!=null&&rec.l!=null)?rec.w+'-'+rec.l:'&mdash;';
-    var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text)';
+
+  if(mode==='career') {
+    // All-time record
+    var totW=0,totL=0;
+    SEASON_RECORDS.forEach(function(s){if(s.w!=null)totW+=s.w;if(s.l!=null)totL+=s.l;});
     recapHTML=
       '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
-        '<div><div class="filter-label">Record</div>'+
-          '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</div></div>'+
-        (rec.champ&&rec.champ!=='--'&&rec.champ!==null?
-          '<div><div class="filter-label">Champion</div>'+
-          '<div style="font-size:0.9rem;color:'+(isChamp?'var(--gold)':'var(--text)')+'">'+rec.champ+(isChamp?' &#127942;':'')+'</div></div>':'')+
-        (rec.runner&&rec.runner!=='--'&&rec.runner!==null?
-          '<div><div class="filter-label">Runner-up</div>'+
-          '<div style="font-size:0.9rem;color:'+(isRunner?'var(--sky)':'var(--text)')+'">'+rec.runner+(isRunner?' &#129352;':'')+'</div></div>':'')+
+        '<div><div class="filter-label">All-Time Record</div>'+
+          '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:var(--text)">'+totW+'-'+totL+'</div></div>'+
+        '<div><div class="filter-label">Championships</div>'+
+          '<div style="font-size:1.1rem">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</div></div>'+
+        '<div><div class="filter-label">Runner-ups</div>'+
+          '<div style="font-size:1.1rem">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</div></div>'+
       '</div>';
+  } else if(mode==='all') {
+    // All seasons view - just show championships inline
+    recapHTML=
+      '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
+        '<div><div class="filter-label">Championships</div>'+
+          '<div style="font-size:1.1rem">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</div></div>'+
+        '<div><div class="filter-label">Runner-ups</div>'+
+          '<div style="font-size:1.1rem">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</div></div>'+
+      '</div>';
+  } else if(selSeason) {
+    // Single season
+    var key=seasonSortToKey(selSeason);
+    var rec=SEASON_RECORDS.find(function(s){return s.s===key;});
+    if(rec){
+      var isChamp=rec.champ==='Squids',isRunner=rec.runner==='Squids';
+      var wl=(rec.w!=null&&rec.l!=null)?rec.w+'-'+rec.l:'&mdash;';
+      var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text)';
+      recapHTML=
+        '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
+          '<div><div class="filter-label">Record</div>'+
+            '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</div></div>'+
+          (rec.champ&&rec.champ!=='--'&&rec.champ!==null?
+            '<div><div class="filter-label">Champion</div>'+
+            '<div style="font-size:0.9rem;color:'+(isChamp?'var(--gold)':'var(--text)')+'">'+rec.champ+(isChamp?' &#127942;':'')+'</div></div>':'')+
+          (rec.runner&&rec.runner!=='--'&&rec.runner!==null?
+            '<div><div class="filter-label">Runner-up</div>'+
+            '<div style="font-size:0.9rem;color:'+(isRunner?'var(--sky)':'var(--text)')+'">'+rec.runner+(isRunner?' &#129352;':'')+'</div></div>':'')+
+        '</div>';
+    }
   }
 
   el.innerHTML=
@@ -806,6 +835,16 @@ function showSeasons() {
   renderSeasonRecap(seasons[0]);
 }
 
+function onScopeChange() {
+  var scope = document.getElementById('stats-scope').value;
+  var seasonEl = document.getElementById('stats-season');
+  if (seasonEl) {
+    seasonEl.disabled = scope === 'career';
+    seasonEl.style.opacity = scope === 'career' ? '0.4' : '1';
+    if (scope === 'career') seasonEl.value = 'all';
+  }
+}
+
 function renderStats() {
   var scopeEl   = document.getElementById('stats-scope');
   var seasonEl  = document.getElementById('stats-season');
@@ -836,12 +875,13 @@ function renderStats() {
     return true;
   }
 
-  // Update recap
-  if (scope === 'season' && season !== 'all') {
-    renderSeasonRecap(parseFloat(season));
+  // Update recap - always render with appropriate mode
+  if (scope === 'career') {
+    renderSeasonRecap(null, 'career');
+  } else if (season === 'all') {
+    renderSeasonRecap(null, 'all');
   } else {
-    var el = document.getElementById('season-recap');
-    if (el) el.innerHTML = '';
+    renderSeasonRecap(parseFloat(season), 'season');
   }
 
   // Update season label

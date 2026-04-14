@@ -100,7 +100,7 @@
       <div class="filter-bar" style="flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Scope</span>
-          <select id="stats-scope">
+          <select id="stats-scope" onchange="onScopeChange()">
             <option value="season">Season</option>
             <option value="career">Career</option>
           </select>
@@ -135,7 +135,7 @@
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
           <span class="filter-label">&nbsp;</span>
-          <button class="submit-btn" onclick="renderStats()">Show</button>
+          <button class="submit-btn" onclick="renderStats()">Submit</button>
         </div>
       </div>
     </div>
