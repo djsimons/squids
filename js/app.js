@@ -433,23 +433,14 @@ function renderSeasonLeaders() {
 
 function renderHomeGames() {
   var today=new Date().toISOString().slice(0,10);
+  var sched=window._scheduleRows||[];
 
   // W-L record
-  var wlHTML='';
-  if(window._scheduleRows&&window._scheduleRows.length){
-    var wins=0,losses=0;
-    window._scheduleRows.forEach(function(r){
-      var res=(r['W/L']||'').trim().toUpperCase();
-      if(res==='W') wins++; else if(res==='L') losses++;
-    });
-    if(wins+losses>0){
-      wlHTML='<div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:1rem">'+
-        '<span style="font-family:var(--font-blade);font-size:2rem;text-transform:lowercase;color:var(--sky)">'+wins+'-'+losses+'</span>'+
-        '<span style="font-family:var(--font-display);font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)">'+seasonLabel(DATA.maxSeason)+'</span>'+
-      '</div>';
-    }
-  }
-  // Build W-L block
+  var wins=0,losses=0;
+  sched.forEach(function(r){
+    var res=(r['W/L']||'').trim().toUpperCase();
+    if(res==='W') wins++; else if(res==='L') losses++;
+  });
   var wlBlock='';
   if(wins+losses>0){
     wlBlock='<div style="margin-right:1.5rem;flex-shrink:0">'+
@@ -460,59 +451,52 @@ function renderHomeGames() {
   }
   document.getElementById('home-wl').innerHTML='';
 
-  // Upcoming
-  var upcomingGames=[];
-  if(window._scheduleRows&&window._scheduleRows.length){
-    upcomingGames=window._scheduleRows.filter(function(r){
-      return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
-    }).slice(0,2);
-  }
+  // Upcoming games
+  var upcomingGames=sched.filter(function(r){
+    return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
+  }).slice(0,2);
 
-  // Render placeholder cards immediately, then fill in weather
-  function renderUpcoming(weatherMap) {
-    var upcomingCards=upcomingGames.map(function(r){
+  function buildUpcomingHTML(weatherMap) {
+    var cards=upcomingGames.map(function(r){
       var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
       var iso=schedDateToISO(r['Date']||'');
-      var wx=weatherMap&&weatherMap[iso]?weatherMap[iso]:null;
+      var wx=weatherMap?weatherMap[iso]:null;
       return '<div class="card" style="flex:1;min-width:200px;padding:0.7rem 1rem">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
           '<div>'+
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
-            (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">loading weather...</div>')+
+            (wx?weatherHTML(wx):(weatherMap?'':'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">&#x1F321; loading...</div>'))+
           '</div>'+
           '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem;margin-left:0.5rem">'+fmtTime(r['Time']||'')+'</div>'+
         '</div>'+
       '</div>';
     }).join('');
 
-    var upcomingHTML='';
-    if(wlBlock||upcomingCards){
-      upcomingHTML='<div class="section-title" style="text-align:center">Upcoming</div>'+
-        '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
-          wlBlock+
-          '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+upcomingCards+'</div>'+
-        '</div>';
-    }
-    document.getElementById('home-upcoming').innerHTML=upcomingHTML;
+    if(!wlBlock&&!cards) return '';
+    return '<div class="section-title" style="text-align:center">Upcoming</div>'+
+      '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
+        wlBlock+
+        '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+cards+'</div>'+
+      '</div>';
   }
 
   // Render immediately without weather
-  renderUpcoming(null);
+  document.getElementById('home-upcoming').innerHTML=buildUpcomingHTML(null);
 
-  // Then fetch weather and re-render
+  // Fetch weather for each upcoming game, then re-render
   if(upcomingGames.length){
     Promise.all(upcomingGames.map(function(r){
       var iso=schedDateToISO(r['Date']||'');
       return fetchWeather(iso).then(function(wx){return {iso:iso,wx:wx};});
     })).then(function(results){
       var map={};
-      results.forEach(function(x){map[x.iso]=x.wx;});
-      renderUpcoming(map);
-    });
+      results.forEach(function(x){if(x.wx)map[x.iso]=x.wx;});
+      document.getElementById('home-upcoming').innerHTML=buildUpcomingHTML(map);
+    }).catch(function(e){console.warn('Weather fetch failed:',e);});
   }
 
-  // Last game
+  // Last game result
   var sortedLogs=DATA.logs.slice().sort(function(a,b){
     if(b.date!==a.date) return b.date.localeCompare(a.date);
     return b.game_num-a.game_num;
@@ -523,34 +507,31 @@ function renderHomeGames() {
     var rows=DATA.logs.filter(function(l){return l.date===latest.date&&l.game_num===latest.game_num;})
       .sort(function(a,b){return a.batting_order-b.batting_order;});
     var resultHTML='';
-    var schedResult=null;
-    if(window._scheduleRows){
-      schedResult=window._scheduleRows.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
-    }
+    var schedResult=sched.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
     if(schedResult&&(schedResult['W/L']||'').trim()){
       var wl=schedResult['W/L'].trim().toUpperCase();
       var rs=schedResult['RS']||'',ra=schedResult['RA']||'';
       var opp=schedResult['Opponent']||latest.opponent||'';
       var color=wl==='W'?'var(--green)':'var(--red)';
       var outcome=wl==='W'?'win over':'loss to';
-      // Format date as M-DD-YY
       var dp=latest.date.split('-');
       var fmtDate=parseInt(dp[1])+'-'+dp[2]+'-'+dp[0].slice(2);
-      var scoreStr=(rs&&ra)?rs+'\u2013'+ra+' ':'';
+      var scoreStr=(rs&&ra)?rs+'–'+ra+' ':'';
       resultHTML='<div style="font-size:1rem;font-family:var(--font-display);font-weight:700;color:'+color+';margin-bottom:0.5rem">'+
         scoreStr+outcome+' '+opp+
         '<span style="color:var(--text-muted);font-weight:400;font-size:0.85rem;margin-left:0.5rem">'+fmtDate+'</span>'+
       '</div>';
-    } else if(latest) {
+    } else {
       var dp2=latest.date.split('-');
-      var fmtDate2=parseInt(dp2[1])+'-'+dp2[2]+'-'+dp2[0].slice(2);
-      resultHTML='<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem">'+fmtDate2+' vs '+latest.opponent+'</div>';
+      resultHTML='<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem">'+
+        parseInt(dp2[1])+'-'+dp2[2]+'-'+dp2[0].slice(2)+' vs '+latest.opponent+'</div>';
     }
     recentHTML='<div class="section-title" style="margin-top:1.25rem">Last Game</div>'+
       resultHTML+buildBoxTableWithPos(rows,false);
   }
   document.getElementById('home-recent').innerHTML=recentHTML;
 }
+
 
 // ── PLAYERS ───────────────────────────────────────────────────────────────
 function showPlayers() {
@@ -796,164 +777,266 @@ function renderSeasonRecap(selSeason) {
 }
 
 
-function renderStatsLeaderboard() {
-  var scopeEl=document.getElementById('lb-scope');
-  var seasonEl=document.getElementById('lb-season');
-  var genderEl=document.getElementById('lb-gender-s');
-  var activeEl=document.getElementById('lb-active-s');
-  var minABEl=document.getElementById('lb-minab-s');
-  if(!scopeEl) return;
+function showSeasons() {
+  document.getElementById('page-seasons').classList.add('active');
+  var seasons = Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
 
-  var scope=scopeEl.value;
-  var season=seasonEl?seasonEl.value:'all';
-  var gender=genderEl?genderEl.value:'all';
-  var activeOnly=activeEl?activeEl.checked:false;
-  var minAB=minABEl?parseInt(minABEl.value)||0:0;
-  var activeSet=new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
+  // Populate season dropdown
+  var sel = document.getElementById('stats-season');
+  if (sel) {
+    sel.innerHTML = '<option value="all">All Seasons</option>' +
+      seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
+    sel.value = String(seasons[0]);
+  }
+  // Also keep season-select in sync for recap
+  var sel2 = document.getElementById('season-select');
+  if (sel2) {
+    sel2.innerHTML = seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
+  }
 
-  function gok(id){
-    if(gender!=='all'){var p=getPlayer(id);if(!p||p.gender!==gender)return false;}
-    if(activeOnly&&!activeSet.has(id))return false;
+  renderStats();
+  renderSeasonRecap(seasons[0]);
+}
+
+function renderStats() {
+  var scopeEl   = document.getElementById('stats-scope');
+  var seasonEl  = document.getElementById('stats-season');
+  var viewEl    = document.getElementById('stats-view');
+  var genderEl  = document.getElementById('stats-gender');
+  var activeEl  = document.getElementById('stats-active');
+  var minABEl   = document.getElementById('stats-minab');
+  if (!scopeEl) return;
+
+  var scope    = scopeEl.value;
+  var season   = seasonEl ? seasonEl.value : 'all';
+  var view     = viewEl ? viewEl.value : 'batting';
+  var gender   = genderEl ? genderEl.value : 'all';
+  var activeOnly = activeEl ? activeEl.checked : false;
+  var minAB    = minABEl ? (parseInt(minABEl.value)||0) : 0;
+
+  var activeSet = new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
+
+  function gok(id) {
+    if (gender !== 'all') { var p=getPlayer(id); if(!p||p.gender!==gender) return false; }
+    if (activeOnly && !activeSet.has(id)) return false;
     return true;
   }
 
-  var rows=[];
-  if(scope==='season'){
-    rows=DATA.stats.filter(function(s){
-      if(String(s.season_sort)!==season) return false;
-      if(!gok(s.player_id)) return false;
-      if(minAB>0&&(s.AB||0)<minAB) return false;
-      if((s.G||0)===0) return false;
-      return true;
-    }).map(function(s){
-      return {name:displayName(s.player_id),pid:s.player_id,season:s.season_label,
-        G:s.G||0,AB:s.AB||0,R:s.R||0,H:s.H||0,RBI:s.RBI||0,
-        dbl:s.dbl||0,trp:s.trp||0,HR:s.HR||0,BB:s.BB||0,
-        BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,
-        MVP:s.MVP,RV:s.RV,pit_W:s.pit_W||0,pit_IP:s.pit_IP||0,
-        RIP:s.pit_IP>0?s.pit_RA/s.pit_IP:null};
-    });
+  // Update recap
+  if (scope === 'season' && season !== 'all') {
+    renderSeasonRecap(parseFloat(season));
   } else {
-    var tots={};
-    DATA.stats.forEach(function(s){
-      if(!gok(s.player_id)) return;
-      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0,MVP_sum:0};
-      var t=tots[s.player_id];
-      t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
-      t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
-      t.pit_W+=s.pit_W||0;t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;t.MVP_sum+=s.MVP||0;
-    });
-    rows=Object.entries(tots).filter(function(e){return (minAB===0||e[1].AB>=minAB)&&e[1].G>0;})
-      .map(function(e){
-        var id=e[0],t=e[1];
-        var sg=t.H-t.dbl-t.trp-t.HR;
-        var ba=t.AB>0?t.H/t.AB:null;
-        var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
-        var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
-        return {name:displayName(id),pid:id,season:'Career',
-          G:t.G,AB:t.AB,R:t.R,H:t.H,RBI:t.RBI,dbl:t.dbl,trp:t.trp,HR:t.HR,BB:t.BB,
-          BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,
-          MVP:t.MVP_sum,RV:t.RV,pit_W:t.pit_W,pit_IP:t.pit_IP,
-          RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
+    var el = document.getElementById('season-recap');
+    if (el) el.innerHTML = '';
+  }
+
+  // Update season label
+  var labelEl = document.getElementById('season-label');
+  if (labelEl) {
+    if (scope === 'career') labelEl.textContent = 'Career';
+    else if (season === 'all') labelEl.textContent = 'Best single-season';
+    else labelEl.textContent = seasonLabel(parseFloat(season));
+  }
+
+  var thead = document.getElementById('season-thead');
+  var tbody = document.getElementById('season-tbody');
+  thead.innerHTML = ''; tbody.innerHTML = '';
+
+  // ── BATTING ──
+  if (view === 'batting') {
+    var rows = [];
+    if (scope === 'season') {
+      // Single season or best in any season
+      var pool = DATA.stats.filter(function(s){
+        if (season !== 'all' && String(s.season_sort) !== season) return false;
+        if (!gok(s.player_id)) return false;
+        if ((s.G||0) === 0) return false;
+        if (minAB > 0 && (s.AB||0) < minAB) return false;
+        return true;
       });
-  }
-  rows.sort(function(a,b){return (b.G||0)-(a.G||0);});
-  window._lbRows=rows; window._lbSortCol='G'; window._lbSortAsc=false;
-  renderLbTable();
-}
+      // If "all seasons", keep only each player's best (by OPS) row
+      if (season === 'all') {
+        var best = {};
+        pool.forEach(function(s){
+          if (!best[s.player_id] || (s.OPS||0) > (best[s.player_id].OPS||0)) best[s.player_id] = s;
+        });
+        pool = Object.values(best);
+      }
+      rows = pool.sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);}).map(function(s){
+        return {pid:s.player_id, seasonStr:s.season_label,
+          G:s.G,AB:s.AB,R:s.R,H:s.H,RBI:s.RBI,dbl:s.dbl,trp:s.trp,HR:s.HR,BB:s.BB,
+          BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,MVP:s.MVP,RV:s.RV};
+      });
+    } else {
+      // Career totals
+      var tots = {};
+      DATA.stats.forEach(function(s){
+        if (!gok(s.player_id)) return;
+        if (!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0};
+        var t=tots[s.player_id];
+        t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
+        t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+      });
+      rows = Object.entries(tots)
+        .filter(function(e){return e[1].G>0&&(minAB===0||e[1].AB>=minAB);})
+        .map(function(e){
+          var id=e[0],t=e[1];
+          var sg=t.H-t.dbl-t.trp-t.HR;
+          var ba=t.AB>0?t.H/t.AB:null;
+          var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
+          var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
+          return {pid:id, seasonStr:'Career',
+            G:t.G,AB:t.AB,R:t.R,H:t.H,RBI:t.RBI,dbl:t.dbl,trp:t.trp,HR:t.HR,BB:t.BB,
+            BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,MVP:null,RV:t.RV};
+        })
+        .sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);});
+    }
 
-// ── SEASONS / STATS ───────────────────────────────────────────────────────
-function showSeasons() {
-  document.getElementById('page-seasons').classList.add('active');
-  var seasons=Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
-  document.getElementById('season-select').innerHTML=seasons.map(function(s){
-    return '<option value="'+s+'">'+seasonLabel(s)+'</option>';
-  }).join('');
-  // Sync lb-season dropdown
-  var lbSel=document.getElementById('lb-season');
-  if(lbSel){
-    lbSel.innerHTML='<option value="all">All Seasons</option>'+seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
-    lbSel.value=String(seasons[0]);
-  }
-  var lbScope=document.getElementById('lb-scope');
-  if(lbScope) lbScope.value='season';
-  renderSeasonStats();
-  renderSeasonRecap(parseFloat(document.getElementById('season-select').value));
-  renderStatsLeaderboard();
-}
+    var showSeasonCol = (scope==='season' && season==='all');
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Player</th>'+
+      (showSeasonCol?'<th style="text-align:left">Season</th>':'')+
+      '<th onclick="sortStats(this)" data-col="G">G</th>'+
+      '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+      '<th onclick="sortStats(this)" data-col="R">R</th>'+
+      '<th onclick="sortStats(this)" data-col="H">H</th>'+
+      '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+      '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+      '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+      '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+      '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+      '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+      '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+      '<th onclick="sortStats(this)" data-col="SLG">SLG</th>'+
+      '<th onclick="sortStats(this)" data-col="OPS">OPS</th>'+
+      (showSeasonCol?'':'<th onclick="sortStats(this)" data-col="MVP">MVP</th>')+
+      '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+    '</tr>';
 
-function renderSeasonStats() {
-  var season=parseFloat(document.getElementById('season-select').value);
-  renderSeasonRecap(season);
-  renderStatsLeaderboard();
-  var type=document.getElementById('stat-type').value;
-  var rows=DATA.stats.filter(function(s){return s.season_sort===season;});
-  document.getElementById('season-label').textContent=seasonLabel(season);
-  var tbody=document.getElementById('season-tbody');
-  var thead=document.getElementById('season-thead');
+    window._statsRows = rows;
+    window._statsShowSeason = showSeasonCol;
+    renderStatsRows();
 
-  // Clear table first
-  thead.innerHTML=''; tbody.innerHTML='';
-  if(type==='batting'){
-    var sorted=rows.filter(function(s){return (s.G||0)>0;}).sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);});
-    thead.innerHTML='<tr>'+
-      '<th onclick="sortSeason(0,true)" style="text-align:left">Player</th>'+
-      '<th onclick="sortSeason(1)" style="text-align:left">Pos</th>'+
-      '<th onclick="sortSeason(2)">G</th><th onclick="sortSeason(3)">AB</th>'+
-      '<th onclick="sortSeason(4)">R</th><th onclick="sortSeason(5)">H</th>'+
-      '<th onclick="sortSeason(6)">RBI</th><th onclick="sortSeason(7)">2B</th>'+
-      '<th onclick="sortSeason(8)">3B</th><th onclick="sortSeason(9)">HR</th>'+
-      '<th onclick="sortSeason(10)">BB</th><th onclick="sortSeason(11)">BA</th>'+
-      '<th onclick="sortSeason(12)">OBP</th><th onclick="sortSeason(13)">SLG</th>'+
-      '<th onclick="sortSeason(14)">OPS</th><th onclick="sortSeason(15)">MVP</th>'+
-      '<th onclick="sortSeason(16)">RV</th></tr>';
-    tbody.innerHTML=sorted.map(function(s){
-      return '<tr>'+
-        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+nameWithFace(s.player_id)+'</a></td>'+
-        '<td style="text-align:left;color:var(--sky-light)">'+primaryPos(s)+'</td>'+
-        '<td>'+fmtStat(s.G)+'</td><td>'+fmtStat(s.AB)+'</td><td>'+fmtStat(s.R)+'</td>'+
-        '<td>'+fmtStat(s.H)+'</td><td>'+fmtStat(s.RBI)+'</td>'+
-        '<td>'+fmtStat(s.dbl)+'</td><td>'+fmtStat(s.trp)+'</td>'+
-        '<td>'+fmtStat(s.HR)+'</td><td>'+fmtStat(s.BB)+'</td>'+
-        '<td>'+fmtBA(s.BA)+'</td><td>'+fmtBA(s.OBP)+'</td>'+
-        '<td>'+fmtBA(s.SLG)+'</td><td>'+fmtBA(s.OPS)+'</td>'+
-        '<td>'+(s.MVP!=null?Number(s.MVP).toFixed(1):'&mdash;')+'</td>'+
-        '<td>'+fmtRV(s.RV)+'</td></tr>';
-    }).join('');
+  // ── PITCHING ──
   } else {
-    var pit=rows.filter(function(s){return s.pit_IP&&s.pit_IP>0;}).sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
-    thead.innerHTML='<tr><th style="text-align:left">Player</th><th>G</th><th>GS</th><th>IP</th><th>RA</th><th>W</th><th>L</th><th>S</th><th>RIP</th></tr>';
-    tbody.innerHTML=pit.length===0
-      ?'<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:2rem">No pitching data for this season</td></tr>'
-      :pit.map(function(s){
-        return '<tr>'+
-          '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+s.player_id+'\')">'+nameWithFace(s.player_id)+'</a></td>'+
-          '<td>'+fmtStat(s.pit_G)+'</td><td>'+fmtStat(s.pit_GS)+'</td>'+
-          '<td>'+fmtStat(s.pit_IP,1)+'</td><td>'+fmtStat(s.pit_RA)+'</td>'+
-          '<td>'+fmtStat(s.pit_W)+'</td><td>'+fmtStat(s.pit_L)+'</td>'+
-          '<td>'+fmtStat(s.pit_S)+'</td>'+
-          '<td>'+(s.RIP!=null?Number(s.RIP).toFixed(2):'&mdash;')+'</td></tr>';
-      }).join('');
+    var prows = [];
+    if (scope === 'season') {
+      var pool2 = DATA.stats.filter(function(s){
+        if (season !== 'all' && String(s.season_sort) !== season) return false;
+        if (!gok(s.player_id)) return false;
+        if (!s.pit_IP || s.pit_IP <= 0) return false;
+        return true;
+      });
+      if (season === 'all') {
+        var best2 = {};
+        pool2.forEach(function(s){
+          if (!best2[s.player_id]||(s.pit_IP||0)>(best2[s.player_id].pit_IP||0)) best2[s.player_id]=s;
+        });
+        pool2 = Object.values(best2);
+      }
+      prows = pool2.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);}).map(function(s){
+        return {pid:s.player_id,seasonStr:s.season_label,
+          pit_G:s.pit_G,pit_GS:s.pit_GS,pit_IP:s.pit_IP,pit_RA:s.pit_RA,
+          pit_W:s.pit_W,pit_L:s.pit_L,pit_S:s.pit_S,
+          RIP:s.pit_IP>0?s.pit_RA/s.pit_IP:null};
+      });
+    } else {
+      var ptots = {};
+      DATA.stats.forEach(function(s){
+        if (!gok(s.player_id)) return;
+        if (!s.pit_IP||s.pit_IP<=0) return;
+        if (!ptots[s.player_id]) ptots[s.player_id]={pit_G:0,pit_GS:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0};
+        var t=ptots[s.player_id];
+        t.pit_G+=s.pit_G||0;t.pit_GS+=s.pit_GS||0;t.pit_IP+=s.pit_IP||0;
+        t.pit_RA+=s.pit_RA||0;t.pit_W+=s.pit_W||0;t.pit_L+=s.pit_L||0;t.pit_S+=s.pit_S||0;
+      });
+      prows = Object.values(ptots).filter(function(t){return t.pit_IP>0;})
+        .map(function(t,i){
+          var id=Object.keys(ptots)[i];
+          return {pid:id,seasonStr:'Career',
+            pit_G:t.pit_G,pit_GS:t.pit_GS,pit_IP:t.pit_IP,pit_RA:t.pit_RA,
+            pit_W:t.pit_W,pit_L:t.pit_L,pit_S:t.pit_S,
+            RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
+        })
+        .sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
+    }
+
+    var showSeasonCol2 = (scope==='season' && season==='all');
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Player</th>'+
+      (showSeasonCol2?'<th style="text-align:left">Season</th>':'')+
+      '<th onclick="sortStats(this)" data-col="pit_G">G</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_GS">GS</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
+    '</tr>';
+
+    window._statsRows = prows;
+    window._statsShowSeason = showSeasonCol2;
+    window._statsPitching = true;
+    renderStatsRows();
+    return;
   }
+  window._statsPitching = false;
 }
 
-function sortSeason(col,isText){
-  var tbody=document.getElementById('season-tbody');
-  var rows=Array.from(tbody.querySelectorAll('tr'));
-  var asc=tbody.dataset.sortCol==col&&tbody.dataset.sortDir==='asc';
-  tbody.dataset.sortCol=col;tbody.dataset.sortDir=asc?'desc':'asc';
-  rows.sort(function(a,b){
-    var av=a.cells[col]?a.cells[col].textContent.trim():'';
-    var bv=b.cells[col]?b.cells[col].textContent.trim():'';
-    if(isText) return asc?bv.localeCompare(av):av.localeCompare(bv);
-    return asc?(parseFloat(av)||-Infinity)-(parseFloat(bv)||-Infinity):(parseFloat(bv)||-Infinity)-(parseFloat(av)||-Infinity);
-  });
-  rows.forEach(function(r){tbody.appendChild(r);});
-  document.querySelectorAll('#season-thead th').forEach(function(th,i){
-    th.classList.remove('sort-asc','sort-desc');
-    if(i===col) th.classList.add(asc?'sort-desc':'sort-asc');
-  });
+function renderStatsRows() {
+  var rows = window._statsRows || [];
+  var showSeasonCol = window._statsShowSeason;
+  var isPitching = window._statsPitching;
+  var tbody = document.getElementById('season-tbody');
+
+  tbody.innerHTML = rows.slice(0,100).map(function(r){
+    var cells = '';
+    if (isPitching) {
+      if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
+      cells += '<td>'+fmtStat(r.pit_G)+'</td><td>'+fmtStat(r.pit_GS)+'</td>'+
+        '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
+        '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
+        '<td>'+fmtStat(r.pit_S)+'</td>'+
+        '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>';
+    } else {
+      if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
+      cells += '<td>'+fmtStat(r.G)+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td>'+
+        '<td>'+fmtStat(r.H)+'</td><td>'+fmtStat(r.RBI)+'</td>'+
+        '<td>'+fmtStat(r.dbl)+'</td><td>'+fmtStat(r.trp)+'</td>'+
+        '<td>'+fmtStat(r.HR)+'</td><td>'+fmtStat(r.BB)+'</td>'+
+        '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
+        '<td>'+fmtBA(r.SLG)+'</td><td>'+fmtBA(r.OPS)+'</td>'+
+        (showSeasonCol?'':'<td>'+(r.MVP!=null?Number(r.MVP).toFixed(1):'&mdash;')+'</td>')+
+        '<td>'+fmtRV(r.RV)+'</td>';
+    }
+    return '<tr>'+
+      '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
+      cells+'</tr>';
+  }).join('');
 }
+
+function sortStats(th) {
+  var col = th.dataset.col;
+  var tbody = document.getElementById('season-tbody');
+  var asc = th.classList.contains('sort-asc');
+  document.querySelectorAll('#season-thead th').forEach(function(t){t.classList.remove('sort-asc','sort-desc');});
+  th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+  var rows = (window._statsRows||[]).slice();
+  rows.sort(function(a,b){
+    var av=a[col],bv=b[col];
+    if(av==null&&bv==null) return 0;
+    if(av==null) return 1; if(bv==null) return -1;
+    return asc ? av-bv : bv-av;
+  });
+  window._statsRows = rows;
+  renderStatsRows();
+}
+
+// Stub for old calls
+function renderSeasonStats() { renderStats(); }
+function renderStatsLeaderboard() { renderStats(); }
+
 
 // ── GAME LOGS ─────────────────────────────────────────────────────────────
 function showGameLogs() {
