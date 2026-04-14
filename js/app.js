@@ -31,6 +31,7 @@ async function loadData() {
     mergeLiveStats(live[0]);
     mergeLiveBox(live[1]);
     cacheSchedule(live[2]);
+    updateDerivedData();
     loadNews();
     // Re-render home if it's active (schedule/live data now available)
     if(document.getElementById('page-home').classList.contains('active')){
@@ -44,6 +45,11 @@ async function loadData() {
       }
     }, 500);
   } catch(e) { console.warn('Live data unavailable:', e); }
+  DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
+  DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
+}
+
+function updateDerivedData() {
   DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
 }
@@ -783,8 +789,12 @@ function showSeasons() {
   var sel = document.getElementById('stats-season');
   if (sel) {
     sel.innerHTML = '<option value="all">All Seasons</option>' +
-      seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
-    sel.value = String(seasons[0]);
+      seasons.map(function(s){
+        // Use toFixed(1) to avoid float representation issues like 2013.1000000001
+        var v = s.toFixed(1);
+        return '<option value="'+v+'">'+seasonLabel(s)+'</option>';
+      }).join('');
+    sel.value = seasons[0].toFixed(1);
   }
   // Also keep season-select in sync for recap
   var sel2 = document.getElementById('season-select');
@@ -838,7 +848,7 @@ function renderStats() {
   var labelEl = document.getElementById('season-label');
   if (labelEl) {
     if (scope === 'career') labelEl.textContent = 'Career';
-    else if (season === 'all') labelEl.textContent = 'Best single-season';
+    else if (season === 'all') labelEl.textContent = 'All Seasons — every player-season';
     else labelEl.textContent = seasonLabel(parseFloat(season));
   }
 
@@ -852,20 +862,12 @@ function renderStats() {
     if (scope === 'season') {
       // Single season or best in any season
       var pool = DATA.stats.filter(function(s){
-        if (season !== 'all' && Math.abs(s.season_sort - parseFloat(season)) > 0.001) return false;
+        if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
         if ((s.G||0) === 0) return false;
         if (minAB > 0 && (s.AB||0) < minAB) return false;
         return true;
       });
-      // If "all seasons", keep only each player's best (by OPS) row
-      if (season === 'all') {
-        var best = {};
-        pool.forEach(function(s){
-          if (!best[s.player_id] || (s.OPS||0) > (best[s.player_id].OPS||0)) best[s.player_id] = s;
-        });
-        pool = Object.values(best);
-      }
       rows = pool.sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);}).map(function(s){
         return {pid:s.player_id, seasonStr:s.season_label,
           G:s.G,AB:s.AB,R:s.R,H:s.H,RBI:s.RBI,dbl:s.dbl,trp:s.trp,HR:s.HR,BB:s.BB,
@@ -926,18 +928,11 @@ function renderStats() {
     var prows = [];
     if (scope === 'season') {
       var pool2 = DATA.stats.filter(function(s){
-        if (season !== 'all' && Math.abs(s.season_sort - parseFloat(season)) > 0.001) return false;
+        if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
         if (!s.pit_IP || s.pit_IP <= 0) return false;
         return true;
       });
-      if (season === 'all') {
-        var best2 = {};
-        pool2.forEach(function(s){
-          if (!best2[s.player_id]||(s.pit_IP||0)>(best2[s.player_id].pit_IP||0)) best2[s.player_id]=s;
-        });
-        pool2 = Object.values(best2);
-      }
       prows = pool2.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);}).map(function(s){
         return {pid:s.player_id,seasonStr:s.season_label,
           pit_G:s.pit_G,pit_GS:s.pit_GS,pit_IP:s.pit_IP,pit_RA:s.pit_RA,
