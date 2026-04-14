@@ -157,6 +157,11 @@ function fmtLiveDate(d) {
 function schedDateToISO(d) {
   var p=d.split('/');
   if(p.length===3) return p[2]+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0');
+  if(p.length===2) {
+    // M/D with no year -- assume current year
+    var yr = new Date().getFullYear();
+    return yr+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0');
+  }
   return d;
 }
 
