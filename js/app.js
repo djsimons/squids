@@ -320,6 +320,62 @@ function renderNews() {
   }).join('');
 }
 
+// ── WEATHER ───────────────────────────────────────────────────────────────
+var _weatherCache = {};
+
+async function fetchWeather(dateStr) {
+  // dateStr: YYYY-MM-DD
+  if (_weatherCache[dateStr] !== undefined) return _weatherCache[dateStr];
+  // Only fetch if within 16 days
+  var today = new Date();
+  var gameDate = new Date(dateStr + 'T00:00:00');
+  var diffDays = Math.round((gameDate - today) / 86400000);
+  if (diffDays < 0 || diffDays > 15) { _weatherCache[dateStr] = null; return null; }
+  try {
+    var url = 'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=35.91&longitude=-79.07' +
+      '&hourly=temperature_2m,precipitation_probability,relative_humidity_2m' +
+      '&temperature_unit=fahrenheit' +
+      '&timezone=America%2FNew_York' +
+      '&start_date=' + dateStr + '&end_date=' + dateStr;
+    var data = await fetch(url).then(function(r){return r.json();});
+    // Find 7pm slot (index 19 in hourly array for that day)
+    var times = data.hourly.time;
+    var target = dateStr + 'T19:00';
+    var idx = times.indexOf(target);
+    if (idx === -1) { _weatherCache[dateStr] = null; return null; }
+    var wx = {
+      temp: Math.round(data.hourly.temperature_2m[idx]),
+      precip: data.hourly.precipitation_probability[idx],
+      humidity: data.hourly.relative_humidity_2m[idx],
+    };
+    _weatherCache[dateStr] = wx;
+    return wx;
+  } catch(e) { _weatherCache[dateStr] = null; return null; }
+}
+
+function comfortEmoji(wx) {
+  if (wx.precip > 50) return '&#127783;';          // rain likely
+  if (wx.temp > 85 && wx.humidity > 70) return '&#129397;'; // heat index danger
+  if (wx.temp > 85) return '&#128531;';            // just hot
+  if (wx.temp >= 65) return '&#128513;';           // perfect
+  if (wx.temp >= 55) return '&#128578;';           // nice/cool
+  if (wx.temp >= 45) return '&#128560;';           // chilly
+  return '&#129398;';                              // cold
+}
+
+function weatherHTML(wx) {
+  if (!wx) return '';
+  var precipColor = wx.precip > 50 ? 'var(--red)' : wx.precip > 25 ? 'var(--gold)' : 'var(--green)';
+  return '<div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;flex-wrap:wrap">' +
+    '<span style="font-size:1.2rem">' + comfortEmoji(wx) + '</span>' +
+    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:var(--sky)">&#127777; ' + wx.temp + '&deg;F</span>' +
+    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:' + precipColor + '">&#9928; ' + wx.precip + '%</span>' +
+    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:var(--text-muted)">&#128167; ' + wx.humidity + '%</span>' +
+  '</div>';
+}
+
+
 // ── HOME ──────────────────────────────────────────────────────────────────
 function showHome() {
   document.getElementById('page-home').classList.add('active');
@@ -400,33 +456,56 @@ function renderHomeGames() {
   document.getElementById('home-wl').innerHTML='';
 
   // Upcoming
-  var upcomingCards='';
+  var upcomingGames=[];
   if(window._scheduleRows&&window._scheduleRows.length){
-    var upcoming=window._scheduleRows.filter(function(r){
+    upcomingGames=window._scheduleRows.filter(function(r){
       return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
     }).slice(0,2);
-    if(upcoming.length){
-      upcomingCards=upcoming.map(function(r){
-        var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
-        return '<div class="card" style="flex:1;min-width:160px;display:flex;justify-content:space-between;align-items:center;padding:0.7rem 1rem">'+
+  }
+
+  // Render placeholder cards immediately, then fill in weather
+  function renderUpcoming(weatherMap) {
+    var upcomingCards=upcomingGames.map(function(r){
+      var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
+      var iso=schedDateToISO(r['Date']||'');
+      var wx=weatherMap&&weatherMap[iso]?weatherMap[iso]:null;
+      return '<div class="card" style="flex:1;min-width:200px;padding:0.7rem 1rem">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
           '<div>'+
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
+            (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">loading weather...</div>')+
           '</div>'+
-          '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem">'+fmtTime(r['Time']||'')+'</div>'+
-        '</div>';
-      }).join('');
-    }
-  }
-  var upcomingHTML='';
-  if(wlBlock||upcomingCards){
-    upcomingHTML='<div class="section-title">Upcoming</div>'+
-      '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
-        wlBlock+
-        '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+upcomingCards+'</div>'+
+          '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem;margin-left:0.5rem">'+fmtTime(r['Time']||'')+'</div>'+
+        '</div>'+
       '</div>';
+    }).join('');
+
+    var upcomingHTML='';
+    if(wlBlock||upcomingCards){
+      upcomingHTML='<div class="section-title" style="text-align:center">Upcoming</div>'+
+        '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
+          wlBlock+
+          '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+upcomingCards+'</div>'+
+        '</div>';
+    }
+    document.getElementById('home-upcoming').innerHTML=upcomingHTML;
   }
-  document.getElementById('home-upcoming').innerHTML=upcomingHTML;
+
+  // Render immediately without weather
+  renderUpcoming(null);
+
+  // Then fetch weather and re-render
+  if(upcomingGames.length){
+    Promise.all(upcomingGames.map(function(r){
+      var iso=schedDateToISO(r['Date']||'');
+      return fetchWeather(iso).then(function(wx){return {iso:iso,wx:wx};});
+    })).then(function(results){
+      var map={};
+      results.forEach(function(x){map[x.iso]=x.wx;});
+      renderUpcoming(map);
+    });
+  }
 
   // Last game
   var sortedLogs=DATA.logs.slice().sort(function(a,b){
