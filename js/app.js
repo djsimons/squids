@@ -426,7 +426,7 @@ function renderSeasonLeaders() {
     }
     var clickAttr=leaders.length===1?' onclick="navigate(\'profile\',\''+leaders[0].id+'\')" style="cursor:pointer"':'';
     // Photos in 2-wide grid
-    var photoGrid='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;justify-items:center;max-width:72px;margin:0.2rem auto">';
+    var photoGrid='<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin:0.2rem auto;width:100%">';
     leaders.forEach(function(l){ photoGrid+=makeLeaderPhoto(l.id); });
     photoGrid+='</div>';
     // Names stacked
@@ -1416,13 +1416,37 @@ function showStandings(){
 
 
 // ── SCROLL HINT ───────────────────────────────────────────────────────────
+function updateScheduleHint() {
+  var el = document.getElementById('schedule-wrap');
+  if (!el) return;
+  var overflows = el.scrollWidth > el.clientWidth + 4;
+  if (overflows) {
+    el.classList.add('has-overflow');
+    if (el.scrollLeft > 20) el.classList.add('no-hint');
+    else el.classList.remove('no-hint');
+  } else {
+    el.classList.remove('has-overflow');
+    el.classList.remove('no-hint');
+  }
+}
+
 document.addEventListener('scroll', function(e) {
   var el = e.target;
+  if (el && el.id === 'schedule-wrap') {
+    updateScheduleHint();
+  }
   if (el && el.classList && el.classList.contains('table-wrap')) {
     if (el.scrollLeft > 20) el.classList.add('scrolled-right');
     else el.classList.remove('scrolled-right');
   }
 }, true);
+
+// Check overflow after schedule renders
+var _origShowSchedule = showSchedule;
+function showSchedule() {
+  _origShowSchedule();
+  setTimeout(updateScheduleHint, 300);
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){
