@@ -425,11 +425,19 @@ function renderSeasonLeaders() {
       photoHTML=leaders.map(function(l){return makeLeaderPhoto(l.id);}).join('');
     }
     var clickAttr=leaders.length===1?' onclick="navigate(\'profile\',\''+leaders[0].id+'\')" style="cursor:pointer"':'';
-    return '<div class="card"'+clickAttr+' style="text-align:center;padding:0.6rem 0.5rem">'+
-      '<div style="font-family:var(--font-display);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
-      '<div style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.15rem 0">'+fmtFn(top)+'</div>'+
-      '<div style="display:flex;justify-content:center;gap:3px;margin:0.2rem 0">'+photoHTML+'</div>'+
-      '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nameStr+'</div>'+
+    // Photos in 2-wide grid
+    var photoGrid='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;justify-items:center;max-width:72px;margin:0.2rem auto">';
+    leaders.forEach(function(l){ photoGrid+=makeLeaderPhoto(l.id); });
+    photoGrid+='</div>';
+    // Names stacked
+    var nameLines=leaders.length===1
+      ?displayName(leaders[0].id)
+      :leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
+    return '<div class="card"'+clickAttr+'>'+
+      '<div style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
+      '<div style="font-size:1.2rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.1rem 0">'+fmtFn(top)+'</div>'+
+      photoGrid+
+      '<div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem;line-height:1.3;overflow:hidden">'+nameLines+'</div>'+
     '</div>';
   }
 
@@ -439,7 +447,7 @@ function renderSeasonLeaders() {
     leaderCard('Runs',    function(r){return r.R||0;},  function(v){return v;})+
     leaderCard('RBI',     function(r){return r.RBI||0;},function(v){return v;})+
     leaderCard('Home Runs',function(r){return r.HR||0;},function(v){return v;})+
-    leaderCard('OBP (min '+Math.floor(maxG*1.5)+' PA)',function(r){return ((r.AB||0)+(r.BB||0))>=(Math.floor(maxG*1.5))?r.OBP:null;},fmtBA);
+    leaderCard('OBP (min '+(maxG*1.5)+' PA)',function(r){return ((r.AB||0)+(r.BB||0))>=(maxG*1.5)?r.OBP:null;},fmtBA);
 }
 
 function renderHomeGames() {
@@ -927,7 +935,7 @@ function renderStats() {
         if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
         if ((s.G||0) === 0) return false;
-        if (minAB > 0 && (s.AB||0) < minAB) return false;
+        if (minAB > 0 && ((s.AB||0)+(s.BB||0)) < minAB) return false;
         return true;
       });
       rows = pool.sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);}).map(function(s){
