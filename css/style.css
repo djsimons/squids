@@ -447,3 +447,29 @@ table td:first-child { max-width: 160px; }
 /* lb-results is a scroll-hint div not a table-wrap, don't double-constrain */
 #lb-results.table-wrap { max-height: none; }
 #lb-results.scroll-hint { overflow-x: auto; overflow-y: visible; }
+
+/* ── MOBILE & TABLE FIXES ─────────────────────────────────────────── */
+/* Box score table on home page - scrollable */
+#home-recent .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Freeze career totals row when scrolling down profile table */
+.career-row td {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #111e2e;
+  box-shadow: 0 2px 0 var(--border);
+}
+.career-row td:first-child {
+  z-index: 3;
+}
+
+/* Leader cards grid - tighter on mobile */
+@media (max-width: 600px) {
+  #home-leaders {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+}

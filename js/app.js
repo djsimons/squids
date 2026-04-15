@@ -387,11 +387,11 @@ function comfortEmoji(wx) {
 function weatherHTML(wx) {
   if (!wx) return '';
   var precipColor = wx.precip > 50 ? 'var(--red)' : wx.precip > 25 ? 'var(--gold)' : 'var(--green)';
-  return '<div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;flex-wrap:wrap">' +
-    '<span style="font-size:1.2rem">' + comfortEmoji(wx) + '</span>' +
-    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:var(--sky)">&#127777; ' + wx.temp + '&deg;F</span>' +
-    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:' + precipColor + '">&#9928; ' + wx.precip + '%</span>' +
-    '<span style="font-size:0.78rem;font-family:var(--font-display);letter-spacing:0.05em;color:var(--text-muted)">&#128167; ' + wx.humidity + '%</span>' +
+  return '<div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.4rem;flex-wrap:nowrap;white-space:nowrap">' +
+    '<span style="font-size:1rem">' + comfortEmoji(wx) + '</span>' +
+    '<span style="font-size:0.72rem;font-family:var(--font-display);color:var(--sky)">&#127777;' + wx.temp + '&deg;</span>' +
+    '<span style="font-size:0.72rem;font-family:var(--font-display);color:' + precipColor + '">&#9928;' + wx.precip + '%</span>' +
+    '<span style="font-size:0.72rem;font-family:var(--font-display);color:var(--text-muted)">&#128167;' + wx.humidity + '%</span>' +
   '</div>';
 }
 
@@ -417,7 +417,7 @@ function renderSeasonLeaders() {
     if(!withVal.length) return '';
     var top=withVal[0].val;
     var leaders=withVal.filter(function(r){return r.val===top;});
-    var nameStr=leaders.length>=3?(leaders.length+' tied'):leaders.map(function(l){return displayName(l.id);}).join(' / ');
+    var nameStr=leaders.length>=3?(leaders.length+' tied'):leaders.length===2?'2 tied':displayName(leaders[0].id);
     var photoHTML;
     if(leaders.length>=3){
       photoHTML='<img src="img/logo.png" style="width:30px;height:30px;object-fit:contain;border-radius:50%;background:white;padding:3px" alt="">';
@@ -425,15 +425,11 @@ function renderSeasonLeaders() {
       photoHTML=leaders.map(function(l){return makeLeaderPhoto(l.id);}).join('');
     }
     var clickAttr=leaders.length===1?' onclick="navigate(\'profile\',\''+leaders[0].id+'\')" style="cursor:pointer"':'';
-    return '<div class="card"'+clickAttr+'>'+
-      '<div class="card-title">'+stat+'</div>'+
-      '<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem">'+
-        '<div style="display:flex;gap:2px">'+photoHTML+'</div>'+
-        '<div>'+
-          '<div style="font-family:var(--font-blade);font-size:1.1rem;text-transform:lowercase;color:var(--sky);line-height:1">'+fmtFn(top)+'</div>'+
-          '<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.1rem">'+nameStr+'</div>'+
-        '</div>'+
-      '</div>'+
+    return '<div class="card"'+clickAttr+' style="text-align:center;padding:0.6rem 0.5rem">'+
+      '<div style="font-family:var(--font-display);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
+      '<div style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.15rem 0">'+fmtFn(top)+'</div>'+
+      '<div style="display:flex;justify-content:center;gap:3px;margin:0.2rem 0">'+photoHTML+'</div>'+
+      '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nameStr+'</div>'+
     '</div>';
   }
 
@@ -476,24 +472,24 @@ function renderHomeGames() {
       var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
       var iso=schedDateToISO(r['Date']||'');
       var wx=(weatherMap&&weatherMap.hasOwnProperty(iso))?weatherMap[iso]:null;
-      return '<div class="card" style="flex:1;min-width:200px;padding:0.7rem 1rem">'+
+      return '<div class="card" style="flex:1;min-width:180px;padding:0.7rem 1rem">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-          '<div>'+
+          '<div style="min-width:0">'+
             '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
             '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
-            (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;font-family:var(--font-display)">&#x1F321; loading...</div>')+
           '</div>'+
-          '<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.95rem;margin-left:0.5rem">'+fmtTime(r['Time']||'')+'</div>'+
+          '<div style="font-family:var(--font-display);font-weight:700;color:var(--sky);font-size:0.95rem;margin-left:0.5rem;flex-shrink:0">'+fmtTime(r['Time']||'')+'</div>'+
         '</div>'+
+        (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem">&#x1F321; loading...</div>')+
       '</div>';
     }).join('');
 
     if(!wlBlock&&!cards) return '';
-    return '<div class="section-title" style="text-align:center">Upcoming</div>'+
-      '<div style="display:flex;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">'+
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">'+
+        '<div class="section-title" style="margin:0">Upcoming</div>'+
         wlBlock+
-        '<div style="display:flex;gap:0.75rem;flex:1;flex-wrap:wrap">'+cards+'</div>'+
-      '</div>';
+      '</div>'+
+      '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">'+cards+'</div>';
   }
 
   // Render immediately without weather
@@ -550,7 +546,7 @@ function showPlayers() {
   document.getElementById('player-search').value='';
   document.getElementById('gender-filter').value='all';
   document.getElementById('pos-filter').value='all';
-  document.getElementById('active-only').checked=false;
+  document.getElementById('active-only').checked=true;
   renderRoster();
 }
 
