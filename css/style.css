@@ -448,28 +448,67 @@ table td:first-child { max-width: 160px; }
 #lb-results.table-wrap { max-height: none; }
 #lb-results.scroll-hint { overflow-x: auto; overflow-y: visible; }
 
+
 /* ── MOBILE & TABLE FIXES ─────────────────────────────────────────── */
-/* Box score table on home page - scrollable */
-#home-recent .table-wrap {
+
+/* Box score on home: self-contained horizontal scroll, never bleeds out */
+.box-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  /* Prevent parent from expanding */
+  display: block;
+}
+/* Make sure the home-recent container doesn't overflow the page */
+#home-recent {
+  max-width: 100%;
+  overflow: hidden;
 }
 
-/* Freeze career totals row when scrolling down profile table */
+/* Freeze career totals row in profile table */
 .career-row td {
   position: sticky;
-  top: 0;
+  top: 37px; /* sit just below the frozen header row */
   z-index: 2;
-  background: #111e2e;
-  box-shadow: 0 2px 0 var(--border);
+  background: #0d1b2a;
+  box-shadow: 0 2px 0 rgba(56,189,248,0.15);
 }
 .career-row td:first-child {
   z-index: 3;
 }
 
-/* Leader cards grid - tighter on mobile */
-@media (max-width: 600px) {
-  #home-leaders {
-    grid-template-columns: 1fr 1fr 1fr !important;
-  }
+/* Leader cards: always 2 wide, 3 rows */
+#home-leaders {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.6rem;
+}
+#home-leaders .card {
+  text-align: center;
+}
+
+/* Schedule scroll hint - right arrow indicator */
+.schedule-wrap {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+.schedule-wrap::after {
+  content: '\276F more';
+  position: absolute;
+  right: 0;
+  top: 0.5rem;
+  font-size: 0.65rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.1em;
+  color: var(--sky);
+  background: linear-gradient(to right, transparent, var(--surface) 30%);
+  padding: 0.3rem 0.5rem 0.3rem 1.5rem;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.3s;
+}
+.schedule-wrap.no-hint::after {
+  opacity: 0;
 }

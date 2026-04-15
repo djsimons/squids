@@ -305,7 +305,7 @@ function buildBoxTableWithPos(rows, showDateOpp) {
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td><td>'+fmtRV(l.RV,2)+'</td></tr>';
   }).join('');
-  return '<div class="table-wrap"><table>'+
+  return '<div class="table-wrap box-scroll"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
     '<tbody>'+body+'</tbody></table></div>';
 }
@@ -439,7 +439,7 @@ function renderSeasonLeaders() {
     leaderCard('Runs',    function(r){return r.R||0;},  function(v){return v;})+
     leaderCard('RBI',     function(r){return r.RBI||0;},function(v){return v;})+
     leaderCard('Home Runs',function(r){return r.HR||0;},function(v){return v;})+
-    leaderCard('OBP (min '+minAB+' AB)',function(r){return (r.AB||0)>=minAB?r.OBP:null;},fmtBA);
+    leaderCard('OBP (min '+Math.floor(maxG*1.5)+' PA)',function(r){return ((r.AB||0)+(r.BB||0))>=(Math.floor(maxG*1.5))?r.OBP:null;},fmtBA);
 }
 
 function renderHomeGames() {
@@ -560,7 +560,14 @@ function applyRosterFilters() {
 }
 
 function renderRoster(filter,gender,posFilter,activeOnly) {
-  filter=filter||'';gender=gender||'all';posFilter=posFilter||'all';activeOnly=!!activeOnly;
+  filter=filter||'';gender=gender||'all';posFilter=posFilter||'all';
+  // Default to checkbox state if not explicitly passed
+  if(activeOnly===undefined){
+    var cb=document.getElementById('active-only');
+    activeOnly=cb?cb.checked:true;
+  } else {
+    activeOnly=!!activeOnly;
+  }
   var players=DATA.players.slice();
   if(filter){var q=filter.toLowerCase();players=players.filter(function(p){return (p.first+' '+p.last+p.id).toLowerCase().includes(q);});}
   if(gender!=='all') players=players.filter(function(p){return p.gender===gender;});
