@@ -559,3 +559,16 @@ table td:first-child { max-width: 160px; }
 #page-schedule thead th:nth-child(1),
 #page-schedule thead th:nth-child(2),
 #page-schedule thead th:nth-child(3) { z-index: 4; }
+
+/* Leader cards: 3-column grid */
+#home-leaders {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 0.6rem !important;
+}
+#home-leaders .card {
+  text-align: center !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-wrap: break-word !important;
+}

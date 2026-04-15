@@ -461,10 +461,9 @@ function renderHomeGames() {
   });
   var wlBlock='';
   if(wins+losses>0){
-    wlBlock='<div style="margin-left:auto;flex-shrink:0">'+
-      '<div class="filter-label" style="text-align:right">Record</div>'+
-      '<div style="font-family:var(--font-blade);font-size:1.8rem;text-transform:lowercase;color:var(--sky);line-height:1.1">'+wins+'-'+losses+'</div>'+
-      '<div style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase">'+seasonLabel(DATA.maxSeason)+'</div>'+
+    wlBlock='<div style="text-align:right">'+
+      '<div style="font-size:0.65rem;font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+seasonLabel(DATA.maxSeason)+' Record</div>'+
+      '<div style="font-family:var(--font-blade);font-size:2rem;text-transform:lowercase;color:var(--sky);line-height:1.1">'+wins+'-'+losses+'</div>'+
     '</div>';
   }
   document.getElementById('home-wl').innerHTML=wlBlock;
