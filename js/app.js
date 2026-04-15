@@ -433,71 +433,12 @@ function renderSeasonLeaders() {
     var nameLines=leaders.length===1
       ?displayName(leaders[0].id)
       :leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
-    return '<div class="card"'+clickAttr+' style="flex:1;min-width:calc(50% - 0.5rem);max-width:calc(50% - 0.25rem);text-align:center;box-sizing:border-box">'+
+    return '<div class="card"'+clickAttr+' style="flex:1;min-width:calc(50% - 0.5rem);max-width:calc(50% - 0.25rem);text-align:center;box-sizing:border-box;display:flex;flex-direction:column;align-items:center">'+
       '<div style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
       '<div style="font-size:1.2rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.1rem 0">'+fmtFn(top)+'</div>'+
       photoGrid+
-      '<div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem;line-height:1.3;overflow:hidden">'+nameLines+'</div>'+
+      '<div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem;line-height:1.3;text-align:center;width:100%">'+nameLines+'</div>'+
     '</div>';
-  }
-
-  document.getElementById('home-leaders').innerHTML=
-    leaderCard('Games',   function(r){return r.G||0;},  function(v){return v;})+
-    leaderCard('Hits',    function(r){return r.H||0;},  function(v){return v;})+
-    leaderCard('Runs',    function(r){return r.R||0;},  function(v){return v;})+
-    leaderCard('RBI',     function(r){return r.RBI||0;},function(v){return v;})+
-    leaderCard('Home Runs',function(r){return r.HR||0;},function(v){return v;})+
-    leaderCard('OBP (min '+(maxG*1.5)+' PA)',function(r){return ((r.AB||0)+(r.BB||0))>=(maxG*1.5)?r.OBP:null;},fmtBA);
-}
-
-function renderHomeGames() {
-  var today=new Date().toISOString().slice(0,10);
-  var sched=window._scheduleRows||[];
-
-  // W-L record
-  var wins=0,losses=0;
-  sched.forEach(function(r){
-    var res=(r['W/L']||'').trim().toUpperCase();
-    if(res==='W') wins++; else if(res==='L') losses++;
-  });
-  var wlBlock='';
-  if(wins+losses>0){
-    wlBlock='<div style="margin-right:1.5rem;flex-shrink:0">'+
-      '<div class="filter-label">Record</div>'+
-      '<div style="font-family:var(--font-blade);font-size:2rem;text-transform:lowercase;color:var(--sky);line-height:1.1">'+wins+'-'+losses+'</div>'+
-      '<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem">'+seasonLabel(DATA.maxSeason)+'</div>'+
-    '</div>';
-  }
-  document.getElementById('home-wl').innerHTML='';
-
-  // Upcoming games
-  var upcomingGames=sched.filter(function(r){
-    return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
-  }).slice(0,2);
-
-  function buildUpcomingHTML(weatherMap) {
-    var cards=upcomingGames.map(function(r){
-      var ha=(r['H/A']||'').trim()==='H'?'vs':'@';
-      var iso=schedDateToISO(r['Date']||'');
-      var wx=(weatherMap&&weatherMap.hasOwnProperty(iso))?weatherMap[iso]:null;
-      return '<div class="card" style="flex:1;min-width:180px;padding:0.7rem 1rem">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-          '<div style="min-width:0">'+
-            '<div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;color:var(--text)">'+(r['Day']||'')+' '+(r['Date']||'')+'</div>'+
-            '<div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.1rem">'+ha+' '+(r['Opponent']||'')+'</div>'+
-          '</div>'+
-          '<div style="font-family:var(--font-display);font-weight:700;color:var(--sky);font-size:0.95rem;margin-left:0.5rem;flex-shrink:0">'+fmtTime(r['Time']||'')+'</div>'+
-        '</div>'+
-        (wx?weatherHTML(wx):'<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem">&#x1F321; loading...</div>')+
-      '</div>';
-    }).join('');
-
-    if(!wlBlock&&!cards) return '';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">'+
-        '<div class="section-title" style="margin:0">Upcoming</div>'+
-        wlBlock+
-      '</div>'+
-      '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">'+cards+'</div>';
   }
 
   // Render immediately without weather

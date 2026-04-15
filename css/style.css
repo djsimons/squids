@@ -497,12 +497,16 @@ table td:first-child { max-width: 160px; }
   background: #0d1b2a;
 }
 
-/* Leader cards handled by inline flex style */
+/* Leader cards: equal height, centered */
 #home-leaders .card {
   text-align: center !important;
   min-width: 0;
   overflow: hidden;
   word-break: break-word;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 #home-leaders .card {
   text-align: center;
@@ -537,3 +541,24 @@ table td:first-child { max-width: 160px; }
 .schedule-wrap.no-hint::after {
   opacity: 0;
 }
+
+/* Schedule: freeze first 3 columns */
+#schedule-tbody td:nth-child(1),
+#schedule-tbody td:nth-child(2),
+#schedule-tbody td:nth-child(3),
+#page-schedule thead th:nth-child(1),
+#page-schedule thead th:nth-child(2),
+#page-schedule thead th:nth-child(3) {
+  position: sticky;
+  z-index: 2;
+  background: #0d1b2a;
+}
+#schedule-tbody td:nth-child(1),
+#page-schedule thead th:nth-child(1) { left: 0; min-width: 2rem; }
+#schedule-tbody td:nth-child(2),
+#page-schedule thead th:nth-child(2) { left: 2.5rem; min-width: 2.5rem; }
+#schedule-tbody td:nth-child(3),
+#page-schedule thead th:nth-child(3) { left: 5.2rem; min-width: 5rem; }
+#page-schedule thead th:nth-child(1),
+#page-schedule thead th:nth-child(2),
+#page-schedule thead th:nth-child(3) { z-index: 4; }
