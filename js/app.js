@@ -467,7 +467,8 @@ function renderHomeGames() {
       '<div style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase">'+seasonLabel(DATA.maxSeason)+'</div>'+
     '</div>';
   }
-  document.getElementById('home-wl').innerHTML='';
+  document.getElementById('home-wl').innerHTML=wlBlock;
+  wlBlock=''; // Don't show in upcoming section
 
   var upcomingGames=sched.filter(function(r){
     return schedDateToISO(r['Date']||'')>=today&&!(r['W/L']||'').trim();
@@ -490,11 +491,8 @@ function renderHomeGames() {
       '</div>';
     }).join('');
 
-    if(!wlBlock&&!cards) return '';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">'+
-        '<div class="section-title" style="margin:0">Upcoming</div>'+
-        wlBlock+
-      '</div>'+
+    if(!cards) return '';
+    return '<div class="section-title">Upcoming</div>'+
       '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">'+cards+'</div>';
   }
 
