@@ -433,7 +433,7 @@ function renderSeasonLeaders() {
     var nameLines=leaders.length===1
       ?displayName(leaders[0].id)
       :leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
-    return '<div class="card"'+clickAttr+' style="width:calc(50% - 0.375rem);flex-shrink:0;flex-grow:0;text-align:center;display:flex;flex-direction:column;align-items:center;min-width:0;box-sizing:border-box">'+
+    return '<div class="card"'+clickAttr+' style="text-align:center;display:flex;flex-direction:column;align-items:center;min-width:0;box-sizing:border-box">'+
       '<div style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
       '<div style="font-size:1.2rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.1rem 0">'+fmtFn(top)+'</div>'+
       photoGrid+
@@ -1377,6 +1377,7 @@ function showSchedule(){
   }).catch(function(){
     tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--red);padding:2rem">Failed to load schedule</td></tr>';
   });
+  setTimeout(updateScheduleHint, 400);
 }
 
 // ── STANDINGS ─────────────────────────────────────────────────────────────
@@ -1441,12 +1442,7 @@ document.addEventListener('scroll', function(e) {
   }
 }, true);
 
-// Check overflow after schedule renders
-var _origShowSchedule = showSchedule;
-function showSchedule() {
-  _origShowSchedule();
-  setTimeout(updateScheduleHint, 300);
-}
+// Schedule hint updated inside showSchedule directly
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){
