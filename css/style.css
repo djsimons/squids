@@ -27,7 +27,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--deep);
@@ -36,7 +36,6 @@ body {
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
-  overflow-x: hidden;
   background-image:
     radial-gradient(ellipse at 20% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 100%, rgba(12, 35, 64, 0.9) 0%, transparent 60%);
@@ -460,10 +459,20 @@ table td:first-child { max-width: 160px; }
   /* Prevent parent from expanding */
   display: block;
 }
-/* Box score container - bounded scroll */
+/* Home box score: isolated scroll container */
 #home-recent {
   max-width: 100%;
   min-width: 0;
+  contain: layout;
+}
+#home-recent .box-scroll,
+#home-recent .table-wrap {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  box-sizing: border-box;
 }
 #home-recent .box-scroll {
   max-width: 100%;
@@ -474,24 +483,39 @@ table td:first-child { max-width: 160px; }
   width: 100%;
 }
 
-/* Freeze career totals row in profile table */
+/* Freeze career totals row - sits below header, above body */
 .career-row td {
   position: sticky;
-  top: 37px; /* sit just below the frozen header row */
+  top: 36px;
   z-index: 2;
   background: #0d1b2a;
-  box-shadow: 0 2px 0 rgba(56,189,248,0.15);
+  box-shadow: 0 1px 0 rgba(56,189,248,0.2);
 }
+/* First column of career row: must be above other sticky td:first-child cells */
 .career-row td:first-child {
-  z-index: 3;
+  position: sticky;
+  left: 0;
+  top: 36px;
+  z-index: 5 !important;
+  background: #0d1b2a;
 }
 
-/* Leader cards: 2 wide, each exactly half viewport minus gap/padding */
+/* Leader cards: 2-column grid, self-contained */
 #home-leaders {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 0.5rem;
   width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+#home-leaders .card {
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 0.5rem 0.4rem !important;
+  word-break: break-word;
 }
 #home-leaders .card {
   text-align: center;

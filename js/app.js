@@ -305,7 +305,7 @@ function buildBoxTableWithPos(rows, showDateOpp) {
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td><td>'+fmtRV(l.RV,2)+'</td></tr>';
   }).join('');
-  return '<div class="table-wrap box-scroll"><table>'+
+  return '<div class="table-wrap"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
     '<tbody>'+body+'</tbody></table></div>';
 }
