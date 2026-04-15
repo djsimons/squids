@@ -604,15 +604,15 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
     }
     return '<div class="roster-card" onclick="navigate(\'profile\',\''+p.id+'\')">'+
       '<div class="roster-avatar">'+makeAvatarImg(p.id)+'</div>'+
-      '<div style="min-width:0">'+
-        '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
-        '<div class="roster-sub">'+
-          (isActive?'<span class="badge badge-current">Active</span> ':'')+
-          (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
-          (rangeStr?'<span style="color:var(--text-muted);font-size:0.7rem;margin-left:0.3rem">'+rangeStr+'</span>':'')+
-          (statsStr?'<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.1rem">'+statsStr+'</div>':
-            '<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.1rem">No stats yet</div>')+
-        '</div></div></div>';
+      '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
+      '<div class="roster-sub">'+
+        (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
+        (isActive?'<span class="badge badge-current">Active</span>':'')+
+      '</div>'+
+      (rangeStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+rangeStr+'</div>':'')+
+      (statsStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+statsStr+'</div>':
+        '<div style="font-size:0.65rem;color:var(--text-muted)">No stats yet</div>')+
+    '</div>';
   }).join('')||'<div class="empty-state">No players found</div>';
 }
 
