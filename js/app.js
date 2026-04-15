@@ -433,7 +433,7 @@ function renderSeasonLeaders() {
     var nameLines=leaders.length===1
       ?displayName(leaders[0].id)
       :leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
-    return '<div class="card"'+clickAttr+'>'+
+    return '<div class="card"'+clickAttr+' style="flex:1;min-width:calc(50% - 0.5rem);max-width:calc(50% - 0.25rem);text-align:center;box-sizing:border-box">'+
       '<div style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
       '<div style="font-size:1.2rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.1rem 0">'+fmtFn(top)+'</div>'+
       photoGrid+

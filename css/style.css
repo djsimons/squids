@@ -459,20 +459,17 @@ table td:first-child { max-width: 160px; }
   /* Prevent parent from expanding */
   display: block;
 }
-/* Home box score: isolated scroll container */
+/* Home box score: proper isolated scroll */
 #home-recent {
-  max-width: 100%;
-  min-width: 0;
-  contain: layout;
-}
-#home-recent .box-scroll,
-#home-recent .table-wrap {
-  max-width: 100%;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+#home-recent .table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  display: block;
-  box-sizing: border-box;
 }
 #home-recent .box-scroll {
   max-width: 100%;
@@ -500,21 +497,11 @@ table td:first-child { max-width: 160px; }
   background: #0d1b2a;
 }
 
-/* Leader cards: 2-column grid, self-contained */
-#home-leaders {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 0.5rem;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
+/* Leader cards handled by inline flex style */
 #home-leaders .card {
-  text-align: center;
+  text-align: center !important;
   min-width: 0;
   overflow: hidden;
-  box-sizing: border-box;
-  padding: 0.5rem 0.4rem !important;
   word-break: break-word;
 }
 #home-leaders .card {
