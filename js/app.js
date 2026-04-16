@@ -217,6 +217,7 @@ function imgError(el, id, size) {
   el._t++;
   var lo = id.toLowerCase();
   if(el._t === 1) { el.src = 'img/players/' + lo + '.jpeg'; return; }
+  if(el._t === 2) { el.src = 'img/players/' + lo + '.jpg'; return; }
   el.onerror = null;
   var p = getPlayer(id);
   var ini = (p ? (p.first.charAt(0)+p.last.charAt(0)) : id.slice(0,2)).toUpperCase();
