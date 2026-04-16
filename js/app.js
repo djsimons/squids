@@ -581,6 +581,7 @@ function renderHomeGames() {
       '</div>'+
       buildBoxTableWithPos(rows,false);
   }
+  if(recentHTML) recentHTML+='<div style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-display);margin-top:0.4rem">&#129425; Squid of the Game (top RV per gender)</div>';
   document.getElementById('home-recent').innerHTML=recentHTML;
 }
 
@@ -749,7 +750,29 @@ function showProfile(id) {
     '<th>MVP</th><th>RV</th>'+pitHeaders;
 
   var logsTab=pLogs.length>0?'<button class="tab-btn" onclick="switchProfileTab(this,\'tab-gamelogs\')">Game Log</button>':'';
-  var logsPanel=pLogs.length>0?'<div id="tab-gamelogs" class="tab-panel">'+buildBoxTableWithPos(pLogs,true)+'</div>':'';
+  // Build game log with season separators
+  var logsPanel='';
+  if(pLogs.length>0){
+    var logHTML='<div id="tab-gamelogs" class="tab-panel">';
+    logHTML+='<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:0.5rem">&#129425; Squid of the Game (top RV per gender)</div>';
+    // Group by season
+    var lastSeason='';
+    var seasonGroups={};
+    var seasonOrder=[];
+    pLogs.forEach(function(l){
+      var yr=l.date.slice(0,4);
+      var mo=parseInt(l.date.slice(5,7));
+      var seas=yr+(mo<=7?' Spring':' Fall');
+      if(!seasonGroups[seas]){seasonGroups[seas]=[];seasonOrder.push(seas);}
+      seasonGroups[seas].push(l);
+    });
+    seasonOrder.forEach(function(seas,i){
+      logHTML+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em;padding:'+(i>0?'0.8rem':0)+' 0 0.3rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">'+seas+'</div>';
+      logHTML+=buildBoxTableWithPos(seasonGroups[seas],true);
+    });
+    logHTML+='</div>';
+    logsPanel=logHTML;
+  }
   var statsContent=pStats.length===0
     ?'<div class="empty-state">No official stats yet &mdash; Spring 2026 in progress!</div>'
     :'<div class="tabs">'+
@@ -1301,6 +1324,7 @@ function showGameLogs() {
 
 function renderGameList() {
   var year=document.getElementById('log-year-select').value;
+  var squidLegend='<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:0.75rem">&#129425; Squid of the Game (top RV per gender)</div>';
   var games=window._gameList.filter(function(g){return year==='all'||g.date.startsWith(year);});
   var schedMap={};
   if(window._scheduleRows){
@@ -1345,7 +1369,7 @@ function renderGameList() {
       '</div>':'')+
     '</div>';
   });
-  document.getElementById('game-list').innerHTML=html||'<div class="empty-state">No games found</div>';
+  document.getElementById('game-list').innerHTML=(html?squidLegend+html:'')||'<div class="empty-state">No games found</div>';
 }
 
 function toggleGameBox(el){

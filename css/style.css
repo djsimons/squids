@@ -466,7 +466,8 @@ table td:first-child { max-width: 160px; }
 #home-recent {
   width: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 #home-recent .table-wrap {
   width: 100%;
@@ -574,4 +575,10 @@ table td:first-child { max-width: 160px; }
   min-width: 0 !important;
   box-sizing: border-box !important;
   overflow-wrap: break-word !important;
+}
+
+/* Home box score: no vertical scroll, show all rows */
+#home-recent .table-wrap {
+  max-height: none !important;
+  overflow-y: visible !important;
 }
