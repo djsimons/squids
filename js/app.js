@@ -212,17 +212,39 @@ function careerPosDisplay(playerStats) {
   return result.map(function(k){return POS_LABELS[k];}).join('/');
 }
 
+function imgError(el, id, size) {
+  if(!el._t) el._t=0;
+  el._t++;
+  var lo = id.toLowerCase();
+  if(el._t === 1) { el.src = 'img/players/' + lo + '.jpeg'; return; }
+  el.onerror = null;
+  var p = getPlayer(id);
+  var ini = (p ? (p.first.charAt(0)+p.last.charAt(0)) : id.slice(0,2)).toUpperCase();
+  if(size === 'leader') {
+    el.src = 'img/logo.png'; el.style.objectFit='contain'; el.style.background='white'; el.style.padding='3px';
+  } else if(size === 'inline') {
+    el.style.display = 'none';
+    var s = document.createElement('span');
+    s.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0c2340;color:#38bdf8;font-weight:700;font-size:8px;vertical-align:middle;margin-right:3px;flex-shrink:0';
+    s.textContent = ini;
+    el.parentNode.insertBefore(s, el.nextSibling);
+  } else {
+    el.style.display = 'none';
+    var d = document.createElement('div');
+    d.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0c2340;color:#38bdf8;font-weight:700;font-size:1.1em;border-radius:50%';
+    d.textContent = ini;
+    el.parentNode.appendChild(d);
+  }
+}
+
 function makeAvatarImg(id) {
   var lo=id.toLowerCase();
-  var sc=seaCreature(id);
-  var err='this.onerror=null;this.parentElement.innerHTML="'+sc+'"';
-  return '<img src="img/players/'+lo+'.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
+  return '<img src="img/players/'+lo+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="imgError(this,\''+id+'\',\'avatar\')" alt="">';
 }
 
 function makeLeaderPhoto(id) {
   var lo=id.toLowerCase();
-  var err='this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.background="white";this.style.padding="3px"';
-  return '<img src="img/players/'+lo+'.jpeg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
+  return '<img src="img/players/'+lo+'" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror="imgError(this,\''+id+'\',\'leader\')" alt="">';
 }
 
 function computeCareerTotals(stats) {
@@ -257,11 +279,7 @@ function computeAllCareerTotals() {
 
 function nameWithFace(id) {
   var lo=id.toLowerCase();
-  var sc=seaCreature(id);
-  var p2=getPlayer(id);
-  var ini2=p2?(p2.first.charAt(0)+p2.last.charAt(0)).toUpperCase():id.slice(0,2).toUpperCase();
-  var err='this.onerror=null;this.outerHTML="<span style=display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0c2340;color:#38bdf8;font-family:var(--font-display);font-weight:700;font-size:8px;vertical-align:middle;margin-right:3px>'+ini2+'</span>"';
-  return '<img src="img/players/'+lo+'.jpeg" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">'+displayName(id);
+  return '<img src="img/players/'+lo+'" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+id+'\',\'inline\')" alt="">'+displayName(id);
 }
 // ── ROUTING ───────────────────────────────────────────────────────────────
 function navigate(route, param) {
