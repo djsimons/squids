@@ -12,8 +12,12 @@ var LIVE_SEASON    = 2026.1;
 var LIVE_LABEL     = 'Spring 2026';
 var DATA = { players: [], stats: [], logs: [] };
 var SEASON_RECORDS = [];
-var SEA_CREATURES=['&#128025;','&#128026;','&#128031;','&#129416;','&#128032;','&#129408;','&#129425;','&#128033;','&#129424;','&#129438;','&#128044;','&#128051;','&#128011;','&#129453;'];
-function seaCreature(id){var sum=0;for(var ci=0;ci<id.length;ci++)sum+=id.charCodeAt(ci);return SEA_CREATURES[sum%SEA_CREATURES.length];}
+function seaCreature(id){
+  // Return initials avatar HTML - dark navy bg, sky blue text
+  var p=getPlayer(id);
+  var initials=p?(p.first.charAt(0)+p.last.charAt(0)).toUpperCase():id.slice(0,2).toUpperCase();
+  return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0c2340;color:#38bdf8;font-family:var(--font-display);font-weight:700;font-size:0.85em;border-radius:50%;line-height:1">'+initials+'</div>';
+}
 // ── DATA LOADING ──────────────────────────────────────────────────────────
 async function loadData() {
   var res = await Promise.all([
@@ -210,18 +214,15 @@ function careerPosDisplay(playerStats) {
 
 function makeAvatarImg(id) {
   var lo=id.toLowerCase();
-  var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
-    'else{this.onerror=null;this.parentElement.innerHTML=seaCreature("'+id+'");}';
-  return '<img src="img/players/'+lo+'.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
+  var sc=seaCreature(id);
+  var err='this.onerror=null;this.parentElement.innerHTML="'+sc+'"';
+  return '<img src="img/players/'+lo+'.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror=\''+err+'\' alt="">';
 }
 
 function makeLeaderPhoto(id) {
   var lo=id.toLowerCase();
-  var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
-    'else{this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.background="white";this.style.padding="3px";}';
-  return '<img src="img/players/'+lo+'.jpg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
+  var err='this.onerror=null;this.src="img/logo.png";this.style.objectFit="contain";this.style.background="white";this.style.padding="3px"';
+  return '<img src="img/players/'+lo+'.jpeg" style="width:30px;height:30px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">';
 }
 
 function computeCareerTotals(stats) {
@@ -256,12 +257,11 @@ function computeAllCareerTotals() {
 
 function nameWithFace(id) {
   var lo=id.toLowerCase();
-  var err='if(!this.dataset.t)this.dataset.t=0;this.dataset.t=+this.dataset.t+1;var t=+this.dataset.t;'+
-    'if(t===1)this.src="img/players/'+lo+'.jpeg";'+
-    'else{this.onerror=null;this.outerHTML="<span style=font-size:.9rem>"+seaCreature("'+id+'")+"</span>";}';
-  return '<img src="img/players/'+lo+'.jpg" '+
-    'style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright)" '+
-    'onerror=\''+err+'\' alt="">'+displayName(id);
+  var sc=seaCreature(id);
+  var p2=getPlayer(id);
+  var ini2=p2?(p2.first.charAt(0)+p2.last.charAt(0)).toUpperCase():id.slice(0,2).toUpperCase();
+  var err='this.onerror=null;this.outerHTML="<span style=display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0c2340;color:#38bdf8;font-family:var(--font-display);font-weight:700;font-size:8px;vertical-align:middle;margin-right:3px>'+ini2+'</span>"';
+  return '<img src="img/players/'+lo+'.jpeg" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright)" onerror=\''+err+'\' alt="">'+displayName(id);
 }
 // ── ROUTING ───────────────────────────────────────────────────────────────
 function navigate(route, param) {
