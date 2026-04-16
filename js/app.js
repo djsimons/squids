@@ -288,6 +288,14 @@ function navigateFromHash() {
 window.addEventListener('popstate', navigateFromHash);
 
 // ── BOX TABLES ────────────────────────────────────────────────────────────
+function calcRV(l) {
+  if(l.RV != null) return l.RV;
+  var ab=l.AB||0, h=l.H||0, d=l.dbl||0, t=l.trp||0, hr=l.HR||0, bb=l.BB||0;
+  if(ab===0 && h===0 && bb===0) return null;
+  return Math.round((-0.28*(ab-h) + 0.65*(h-d-t-hr) + 0.96*d + 1.07*t + 1.57*hr + 0.56*bb + 0.02)*100)/100;
+}
+
+
 function buildBoxTable(rows, showDateOpp) {
   var nameCol=showDateOpp
     ?'<th style="text-align:left">Date</th><th style="text-align:left">Opp</th>'
@@ -322,22 +330,22 @@ function buildBoxTableWithPos(rows, showDateOpp) {
     :'<th style="text-align:left">Player</th>';
   var body=rows.map(function(l){
     var posStr=POS_COLS.filter(function(k){return l[k]&&l[k]>0;}).map(function(k){return POS_LABELS[k];}).join('/')||'&mdash;';
-    var fc=showDateOpp
-      ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
-      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a></td>';
     // Squid for top RV per gender
     var squid = '';
     if(anyRV){
       var rv = calcRV(l);
-      var p = getPlayer(l.player_id);
-      var g = p ? p.gender : null;
-      if(rv !== null && g && genderRV[g] !== null && Math.abs(rv - genderRV[g]) < 0.001) squid = ' &#129425;';
+      var p2 = getPlayer(l.player_id);
+      var g2 = p2 ? p2.gender : null;
+      if(rv !== null && g2 && genderRV[g2] !== null && Math.abs(rv - genderRV[g2]) < 0.001) squid = ' &#129425;';
     }
+    var fc=showDateOpp
+      ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
+      :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a>'+squid+'</td>';
     return '<tr>'+fc+'<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
       '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
-      '<td>'+fmtRV(calcRV(l),2)+squid+'</td></tr>';
+      '<td>'+fmtRV(calcRV(l),2)+'</td></tr>';
   }).join('');
   return '<div class="table-wrap"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
