@@ -268,10 +268,24 @@ function navigate(route, param) {
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('nav a[data-route]').forEach(function(a){a.classList.toggle('active',a.dataset.route===route);});
   window.scrollTo(0,0);
+  // Update URL hash for shareable links
+  var hash = '#' + route + (param ? '/' + param : '');
+  if(window.location.hash !== hash) history.pushState(null, '', hash);
   var h={home:showHome,players:showPlayers,seasons:showSeasons,gamelogs:showGameLogs,records:showRecords,schedule:showSchedule,standings:showStandings};
   if(route==='profile'&&param) showProfile(param);
   else if(h[route]) h[route]();
 }
+
+function navigateFromHash() {
+  var hash = window.location.hash.slice(1); // remove #
+  if(!hash) { navigate('home'); return; }
+  var parts = hash.split('/');
+  var route = parts[0];
+  var param = parts.slice(1).join('/');
+  navigate(route, param || undefined);
+}
+
+window.addEventListener('popstate', navigateFromHash);
 
 // ── BOX TABLES ────────────────────────────────────────────────────────────
 function buildBoxTable(rows, showDateOpp) {
@@ -292,6 +306,17 @@ function buildBoxTable(rows, showDateOpp) {
 }
 
 function buildBoxTableWithPos(rows, showDateOpp) {
+  // Find top RV per gender for squid emoji
+  var genderRV = {M: null, F: null};
+  rows.forEach(function(l){
+    var rv = calcRV(l);
+    if(rv === null) return;
+    var p = getPlayer(l.player_id);
+    var g = p ? p.gender : null;
+    if(g && (genderRV[g] === null || rv > genderRV[g])) genderRV[g] = rv;
+  });
+  var anyRV = genderRV.M !== null || genderRV.F !== null;
+
   var nameCol=showDateOpp
     ?'<th style="text-align:left">Date</th><th style="text-align:left">Opp</th>'
     :'<th style="text-align:left">Player</th>';
@@ -300,10 +325,19 @@ function buildBoxTableWithPos(rows, showDateOpp) {
     var fc=showDateOpp
       ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
       :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a></td>';
+    // Squid for top RV per gender
+    var squid = '';
+    if(anyRV){
+      var rv = calcRV(l);
+      var p = getPlayer(l.player_id);
+      var g = p ? p.gender : null;
+      if(rv !== null && g && genderRV[g] !== null && Math.abs(rv - genderRV[g]) < 0.001) squid = ' &#129425;';
+    }
     return '<tr>'+fc+'<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
       '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
       '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
-      '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td><td>'+fmtRV(l.RV,2)+'</td></tr>';
+      '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
+      '<td>'+fmtRV(calcRV(l),2)+squid+'</td></tr>';
   }).join('');
   return '<div class="table-wrap"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
@@ -748,6 +782,29 @@ function switchProfileTab(btn,panelId) {
   if(el) el.classList.add('active');
 }
 
+
+function getGameLogs() {
+  // Combine static logs + live logs
+  return DATA.logs;
+}
+
+function calcGameTeamRows() {
+  // Aggregate all player lines per game into team totals
+  var games = {};
+  getGameLogs().forEach(function(l){
+    var key = l.date + '||' + (l.game_num||'');
+    if(!games[key]){
+      games[key] = {date:l.date, game_num:l.game_num, opponent:l.opponent,
+        AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0};
+    }
+    var g = games[key];
+    g.AB+=l.AB||0; g.R+=l.R||0; g.H+=l.H||0; g.RBI+=l.RBI||0;
+    g.dbl+=l.dbl||0; g.trp+=l.trp||0; g.HR+=l.HR||0; g.BB+=l.BB||0;
+    g.RV+=calcRV(l)||0;
+  });
+  return Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date);});
+}
+
 // ── SEASON RECORDS ────────────────────────────────────────────────────────
 function renderSeasonRecap(selSeason, mode) {
   // mode: 'season', 'career', 'all'
@@ -880,13 +937,14 @@ function renderStats() {
   if (!scopeEl) return;
 
   var scope    = scopeEl.value;
-  // Grey out season dropdown in career mode
+  // Grey out season dropdown in career/game modes
+  var isGameMode = scope === 'game-player' || scope === 'game-team';
   if(seasonEl){
-    seasonEl.disabled = scope === 'career';
-    seasonEl.style.opacity = scope === 'career' ? '0.4' : '1';
-    if(scope === 'career') seasonEl.value = 'all';
+    seasonEl.disabled = scope === 'career' || isGameMode;
+    seasonEl.style.opacity = (scope === 'career' || isGameMode) ? '0.4' : '1';
+    if(scope === 'career' || isGameMode) seasonEl.value = 'all';
   }
-  var season   = (scope === 'career') ? 'all' : (seasonEl ? seasonEl.value : 'all');
+  var season   = (scope === 'career' || isGameMode) ? 'all' : (seasonEl ? seasonEl.value : 'all');
   var view     = viewEl ? viewEl.value : 'batting';
   var gender   = genderEl ? genderEl.value : 'all';
   var activeOnly = activeEl ? activeEl.checked : false;
@@ -920,6 +978,10 @@ function renderStats() {
   var thead = document.getElementById('season-thead');
   var tbody = document.getElementById('season-tbody');
   thead.innerHTML = ''; tbody.innerHTML = '';
+
+  // ── GAME MODES ──
+  if (scope === 'game-player') { renderGamePlayerRows(gender, activeOnly, activeSet, minAB); return; }
+  if (scope === 'game-team') { renderGameTeamRows(); return; }
 
   // ── BATTING ──
   if (view === 'batting') {
@@ -1048,21 +1110,128 @@ function renderStats() {
   window._statsPitching = false;
 }
 
+function renderGamePlayerRows(gender, activeOnly, activeSet, minAB) {
+  // All individual game log lines
+  var rows = getGameLogs().filter(function(l){
+    if(gender !== 'all'){ var p=getPlayer(l.player_id); if(!p||p.gender!==gender) return false; }
+    if(activeOnly && !activeSet.has(l.player_id)) return false;
+    if((l.AB||0)===0 && (l.H||0)===0 && (l.BB||0)===0) return false;
+    if(minAB > 0 && ((l.AB||0)+(l.BB||0)) < minAB) return false;
+    return true;
+  }).map(function(l){
+    return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
+      G:1, AB:l.AB||0, R:l.R||0, H:l.H||0, RBI:l.RBI||0,
+      dbl:l.dbl||0, trp:l.trp||0, HR:l.HR||0, BB:l.BB||0,
+      BA:(l.AB||0)>0?(l.H||0)/(l.AB||0):null,
+      OBP:((l.AB||0)+(l.BB||0))>0?((l.H||0)+(l.BB||0))/((l.AB||0)+(l.BB||0)):null,
+      RV:calcRV(l)};
+  });
+  rows.sort(function(a,b){return (b.AB||0)-(a.AB||0);});
+  window._statsRows = rows;
+  window._statsShowSeason = true; // show date+opp columns
+  window._statsPitching = false;
+  window._statsGameMode = 'player';
+
+  var thead = document.getElementById('season-thead');
+  var labelEl = document.getElementById('season-label');
+  if(labelEl) labelEl.textContent = 'Best Individual Game Lines';
+  thead.innerHTML = '<tr>'+
+    '<th style="text-align:left">Player</th>'+
+    '<th style="text-align:left">Date</th>'+
+    '<th style="text-align:left">Opp</th>'+
+    '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+    '<th onclick="sortStats(this)" data-col="R">R</th>'+
+    '<th onclick="sortStats(this)" data-col="H">H</th>'+
+    '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+    '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+    '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+    '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+    '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+    '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+    '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+    '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+  '</tr>';
+  renderStatsRows();
+}
+
+function renderGameTeamRows() {
+  var rows = calcGameTeamRows().map(function(g){
+    return {pid:null, date:g.date, opponent:g.opponent,
+      AB:g.AB, R:g.R, H:g.H, RBI:g.RBI,
+      dbl:g.dbl, trp:g.trp, HR:g.HR, BB:g.BB,
+      BA:g.AB>0?g.H/g.AB:null,
+      OBP:(g.AB+g.BB)>0?(g.H+g.BB)/(g.AB+g.BB):null,
+      RV:g.RV};
+  });
+  rows.sort(function(a,b){return (b.R||0)-(a.R||0);});
+  window._statsRows = rows;
+  window._statsShowSeason = false;
+  window._statsPitching = false;
+  window._statsGameMode = 'team';
+
+  var thead = document.getElementById('season-thead');
+  var labelEl = document.getElementById('season-label');
+  if(labelEl) labelEl.textContent = 'Team Game Totals';
+  thead.innerHTML = '<tr>'+
+    '<th style="text-align:left">Date</th>'+
+    '<th style="text-align:left">Opponent</th>'+
+    '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+    '<th onclick="sortStats(this)" data-col="R">R</th>'+
+    '<th onclick="sortStats(this)" data-col="H">H</th>'+
+    '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+    '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+    '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+    '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+    '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+    '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+    '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+    '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+  '</tr>';
+  renderStatsRows();
+}
+
 function renderStatsRows() {
   var rows = window._statsRows || [];
   var showSeasonCol = window._statsShowSeason;
   var isPitching = window._statsPitching;
+  var gameMode = window._statsGameMode; // 'player', 'team', or undefined
   var tbody = document.getElementById('season-tbody');
 
-  tbody.innerHTML = rows.slice(0,100).map(function(r){
+  tbody.innerHTML = rows.slice(0,200).map(function(r){
     var cells = '';
-    if (isPitching) {
+    if (gameMode === 'team') {
+      // Team game row: date, opp, then stats
+      return '<tr>'+
+        '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+        '<td style="text-align:left">'+r.opponent+'</td>'+
+        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
+        '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtStat(r.dbl)+'</td><td>'+fmtStat(r.trp)+'</td>'+
+        '<td>'+fmtStat(r.HR)+'</td><td>'+fmtStat(r.BB)+'</td>'+
+        '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
+        '<td>'+fmtRV(r.RV)+'</td>'+
+      '</tr>';
+    } else if (gameMode === 'player') {
+      // Player game row: player, date, opp, stats
+      return '<tr>'+
+        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
+        '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+        '<td style="text-align:left">'+r.opponent+'</td>'+
+        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
+        '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtStat(r.dbl)+'</td><td>'+fmtStat(r.trp)+'</td>'+
+        '<td>'+fmtStat(r.HR)+'</td><td>'+fmtStat(r.BB)+'</td>'+
+        '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
+        '<td>'+fmtRV(r.RV)+'</td>'+
+      '</tr>';
+    } else if (isPitching) {
       if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
       cells += '<td>'+fmtStat(r.pit_G)+'</td><td>'+fmtStat(r.pit_GS)+'</td>'+
         '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
         '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
         '<td>'+fmtStat(r.pit_S)+'</td>'+
         '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>';
+      return '<tr>'+
+        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
+        cells+'</tr>';
     } else {
       if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
       cells += '<td>'+fmtStat(r.G)+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td>'+
@@ -1073,10 +1242,10 @@ function renderStatsRows() {
         '<td>'+fmtBA(r.SLG)+'</td><td>'+fmtBA(r.OPS)+'</td>'+
         (showSeasonCol?'':'<td>'+(r.MVP!=null?Number(r.MVP).toFixed(1):'&mdash;')+'</td>')+
         '<td>'+fmtRV(r.RV)+'</td>';
+      return '<tr>'+
+        '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
+        cells+'</tr>';
     }
-    return '<tr>'+
-      '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
-      cells+'</tr>';
   }).join('');
 }
 
@@ -1444,5 +1613,5 @@ document.addEventListener('scroll', function(e) {
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){
   await Promise.all([loadData(), loadSeasonRecords()]);
-  navigate('home');
+  navigateFromHash();
 });
