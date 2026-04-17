@@ -803,10 +803,15 @@ function showProfile(id) {
       var ba=tot.AB>0?fmtBA(tot.H/tot.AB):'&mdash;';
       var obp=(tot.AB+tot.BB)>0?fmtBA((tot.H+tot.BB)/(tot.AB+tot.BB)):'&mdash;';
       // Season header
-      logHTML+='<div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;padding:'+(i>0?'0.8rem':0)+' 0 0.3rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">';
-      logHTML+='<span style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em">'+seas+'</span>';
-      logHTML+='<span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-display)">'+rows.length+'G &middot; '+tot.H+'H &middot; '+tot.R+'R &middot; '+tot.RBI+'RBI &middot; '+tot.HR+'HR &middot; BA:'+ba+' &middot; OBP:'+obp+' &middot; RV:'+fmtRV(tot.RV)+'</span>';
-      logHTML+='</div>';
+      logHTML+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em;padding:'+(i>0?'0.8rem':0)+' 0 0.2rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">';
+      logHTML+=seas+'</div>';
+      // Season totals row styled like career row
+      logHTML+='<div class="table-wrap profile-log-table" style="margin-bottom:0.25rem"><table>';
+      logHTML+='<thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Opp</th><th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>';
+      logHTML+='<tbody><tr class="career-row"><td colspan="3" style="text-align:left">'+seas+' totals</td>';
+      logHTML+='<td>'+tot.AB+'</td><td>'+tot.R+'</td><td>'+tot.H+'</td><td>'+tot.RBI+'</td>';
+      logHTML+='<td>'+tot.dbl+'</td><td>'+tot.trp+'</td><td>'+tot.HR+'</td><td>'+tot.BB+'</td>';
+      logHTML+='<td>'+fmtRV(tot.RV)+'</td></tr>';
       // Build table rows with squid
       // For each game this player appeared in, check if they're squid
       // We need all players in that game to determine top RV per gender
@@ -816,7 +821,7 @@ function showProfile(id) {
         var dp=key.split('||');
         var gdate=dp[0],gnum=dp[1];
         // Get all players in this game from DATA.logs
-        var gameRows=DATA.logs.filter(function(l){return l.date===gdate&&String(l.game_num||'')===gnum;});
+        var gameRows=DATA.logs.filter(function(l){return l.date===gdate&&String(l.game_num||'')==String(gnum);});
         // Check if forfeit (everyone has 0 stats)
         var totalAB=gameRows.reduce(function(s,l){return s+(l.AB||0);},0);
         var totalH=gameRows.reduce(function(s,l){return s+(l.H||0);},0);
@@ -838,13 +843,12 @@ function showProfile(id) {
         });
         gameSquids[key]=squids;
       });
-      // Build table with squid column
-      var thead='<thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Opp</th><th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>';
-      var tbody=rows.map(function(l){
+      // Game rows (continuing same table opened with totals row)
+      rows.forEach(function(l){
         var key=l.date+'||'+(l.game_num||'');
         var isSquid=gameSquids[key]&&gameSquids[key][l.player_id];
         var posStr=POS_COLS.filter(function(k){return l[k]&&l[k]>0;}).map(function(k){return POS_LABELS[k];}).join('/')||'&mdash;';
-        return '<tr>'+
+        logHTML+='<tr>'+
           '<td style="text-align:left;white-space:nowrap">'+(isSquid?'&#129425; ':'')+l.date+'</td>'+
           '<td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'+
           '<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
@@ -852,8 +856,8 @@ function showProfile(id) {
           '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
           '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
           '<td>'+fmtRV(calcRV(l),2)+'</td></tr>';
-      }).join('');
-      logHTML+='<div class="table-wrap profile-log-table"><table>'+thead+'<tbody>'+tbody+'</tbody></table></div>';
+      });
+      logHTML+='</tbody></table></div>';
     });
     logHTML+='</div>';
     logsPanel=logHTML;
@@ -876,7 +880,7 @@ function showProfile(id) {
         '<div class="blade-name">'+player.first+' '+player.last+'</div>'+
         (akaStr?'<div class="aka">'+akaStr+'</div>':'')+
         '<div class="profile-meta" style="justify-content:center">'+
-          (p.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
+          (player.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
           '<span style="color:var(--text-dim);font-size:0.85rem">Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
           (posDisplay?'<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">'+posDisplay+'</span>':'')+
           (nS>0?'<span style="color:var(--text-dim);font-size:0.85rem"><strong style="color:var(--text)">'+nS+'</strong> season'+(nS!==1?'s':'')+' &middot; '+rangeStr+'</span>':'')+
