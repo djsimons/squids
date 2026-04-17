@@ -332,16 +332,29 @@ function buildBoxTable(rows, showDateOpp) {
     '<tbody>'+body+'</tbody></table></div>';
 }
 
-function buildBoxTableWithPos(rows, showDateOpp) {
-  // Find top RV per gender for squid emoji
-  var genderRV = {M: null, F: null};
-  rows.forEach(function(l){
-    var rv = calcRV(l);
-    if(rv === null) return;
-    var p = getPlayer(l.player_id);
-    var g = p ? p.gender : null;
-    if(g && (genderRV[g] === null || rv > genderRV[g])) genderRV[g] = rv;
+function isForfeitGame(rows) {
+  // A forfeit is when every player in the box has 0 for all counting stats
+  return rows.every(function(l){
+    return (l.AB||0)===0 && (l.H||0)===0 && (l.R||0)===0 && (l.RBI||0)===0 &&
+           (l.BB||0)===0 && (l.HR||0)===0 && (l.dbl||0)===0 && (l.trp||0)===0;
   });
+}
+
+function buildBoxTableWithPos(rows, showDateOpp, noScroll) {
+  // Forfeit check: if all stats are 0, no squid awarded
+  var forfeit = isForfeitGame(rows);
+
+  // Find top RV per gender for squid emoji (skip forfeits)
+  var genderRV = {M: null, F: null};
+  if(!forfeit){
+    rows.forEach(function(l){
+      var rv = calcRV(l);
+      if(rv === null) return;
+      var p = getPlayer(l.player_id);
+      var g = p ? p.gender : null;
+      if(g && (genderRV[g] === null || rv > genderRV[g])) genderRV[g] = rv;
+    });
+  }
   var anyRV = genderRV.M !== null || genderRV.F !== null;
 
   var nameCol=showDateOpp
@@ -358,7 +371,7 @@ function buildBoxTableWithPos(rows, showDateOpp) {
       if(rv !== null && g2 && genderRV[g2] !== null && Math.abs(rv - genderRV[g2]) < 0.001) squid = ' &#129425;';
     }
     var fc=showDateOpp
-      ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
+      ?'<td style="text-align:left;white-space:nowrap">'+l.date+squid+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
       :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a>'+squid+'</td>';
     return '<tr>'+fc+'<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
       '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
@@ -366,7 +379,9 @@ function buildBoxTableWithPos(rows, showDateOpp) {
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
       '<td>'+fmtRV(calcRV(l),2)+'</td></tr>';
   }).join('');
-  return '<div class="table-wrap"><table>'+
+  var wrapClass = 'table-wrap';
+  var wrapStyle = noScroll ? ' style="max-height:none;overflow:visible"' : '';
+  return '<div class="'+wrapClass+'"'+wrapStyle+'><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
     '<tbody>'+body+'</tbody></table></div>';
 }
@@ -669,7 +684,7 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
       '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
       '<div class="roster-sub">'+
         (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
-        (isActive?'<span class="badge badge-current">Active</span>':'')+
+        (isActive?(p.id==='Wise'?'<span class="badge" style="background:rgba(220,80,80,0.15);color:#f87171;border:1px solid rgba(220,80,80,0.3)">Injured</span>':'<span class="badge badge-current">Active</span>'):'')+
       '</div>'+
       (rangeStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+rangeStr+'</div>':'')+
       (statsStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+statsStr+'</div>':
@@ -699,6 +714,7 @@ function showProfile(id) {
     rangeStr=loY===hiY?String(loY):String(loY)+'\u2013'+String(hiY).slice(2);
   }
   var isActive=pStats.some(function(s){return s.season_sort===DATA.maxSeason;});
+  var isInjured = id === 'Wise'; // April Wise is currently injured
 
   // Career milestones
   var milestones=[];
@@ -787,7 +803,20 @@ function showProfile(id) {
     });
     seasonOrder.forEach(function(seas,i){
       logHTML+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em;padding:'+(i>0?'0.8rem':0)+' 0 0.3rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">'+seas+'</div>';
-      logHTML+=buildBoxTableWithPos(seasonGroups[seas],true);
+      // Season totals for this player in this season
+      var sg=seasonGroups[seas];
+      var tot={AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0};
+      sg.forEach(function(l){
+        tot.AB+=(l.AB||0);tot.R+=(l.R||0);tot.H+=(l.H||0);tot.RBI+=(l.RBI||0);
+        tot.dbl+=(l.dbl||0);tot.trp+=(l.trp||0);tot.HR+=(l.HR||0);tot.BB+=(l.BB||0);
+        tot.RV+=calcRV(l)||0;
+      });
+      var ba=tot.AB>0?fmtBA(tot.H/tot.AB):'&mdash;';
+      logHTML+='<div style="font-size:0.72rem;font-family:var(--font-display);color:var(--text-muted);margin-bottom:0.25rem;letter-spacing:0.04em">'+
+        tot.AB+' AB &middot; '+tot.H+' H &middot; '+tot.R+' R &middot; '+tot.RBI+' RBI &middot; '+
+        tot.HR+' HR &middot; '+tot.dbl+' 2B &middot; '+tot.trp+' 3B &middot; '+tot.BB+' BB &middot; BA '+ba+' &middot; RV '+tot.RV.toFixed(1)+
+      '</div>';
+      logHTML+=buildBoxTableWithPos(sg,true,true);
     });
     logHTML+='</div>';
     logsPanel=logHTML;
@@ -810,7 +839,7 @@ function showProfile(id) {
         '<div class="blade-name">'+player.first+' '+player.last+'</div>'+
         (akaStr?'<div class="aka">'+akaStr+'</div>':'')+
         '<div class="profile-meta" style="justify-content:center">'+
-          (isActive?'<span class="badge badge-current">Active</span>':'')+
+          (isInjured?'<span class="badge" style="background:rgba(220,80,80,0.15);color:#f87171;border:1px solid rgba(220,80,80,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
           '<span style="color:var(--text-dim);font-size:0.85rem">Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
           (posDisplay?'<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">'+posDisplay+'</span>':'')+
           (nS>0?'<span style="color:var(--text-dim);font-size:0.85rem"><strong style="color:var(--text)">'+nS+'</strong> season'+(nS!==1?'s':'')+' &middot; '+rangeStr+'</span>':'')+
