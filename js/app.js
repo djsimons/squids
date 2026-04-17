@@ -676,7 +676,7 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
       '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
       '<div class="roster-sub">'+
         (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
-        (isActive?'<span class="badge badge-current">Active</span>':'')+
+        (p.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
       '</div>'+
       (rangeStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+rangeStr+'</div>':'')+
       (statsStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+statsStr+'</div>':
@@ -849,7 +849,7 @@ function showProfile(id) {
         var isSquid=gameSquids[key]&&gameSquids[key][l.player_id];
         var posStr=POS_COLS.filter(function(k){return l[k]&&l[k]>0;}).map(function(k){return POS_LABELS[k];}).join('/')||'&mdash;';
         logHTML+='<tr>'+
-          '<td style="text-align:left;white-space:nowrap">'+(isSquid?'&#129425; ':'')+l.date+'</td>'+
+          '<td style="text-align:left;white-space:nowrap">'+l.date+(isSquid?' &#129425;':'')+'</td>'+
           '<td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'+
           '<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
           '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
