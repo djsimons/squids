@@ -332,21 +332,15 @@ function buildBoxTable(rows, showDateOpp) {
     '<tbody>'+body+'</tbody></table></div>';
 }
 
-function isForfeitGame(rows) {
-  // A forfeit is when every player in the box has 0 for all counting stats
-  return rows.every(function(l){
-    return (l.AB||0)===0 && (l.H||0)===0 && (l.R||0)===0 && (l.RBI||0)===0 &&
-           (l.BB||0)===0 && (l.HR||0)===0 && (l.dbl||0)===0 && (l.trp||0)===0;
-  });
-}
-
-function buildBoxTableWithPos(rows, showDateOpp, noScroll) {
-  // Forfeit check: if all stats are 0, no squid awarded
-  var forfeit = isForfeitGame(rows);
-
-  // Find top RV per gender for squid emoji (skip forfeits)
+function buildBoxTableWithPos(rows, showDateOpp) {
+  // Find top RV per gender for squid emoji
+  // Skip if forfeit (everyone has 0 AB, H, BB)
+  var totalAB=rows.reduce(function(s,l){return s+(l.AB||0);},0);
+  var totalH=rows.reduce(function(s,l){return s+(l.H||0);},0);
+  var totalBB=rows.reduce(function(s,l){return s+(l.BB||0);},0);
+  var isForfeit = totalAB===0&&totalH===0&&totalBB===0;
   var genderRV = {M: null, F: null};
-  if(!forfeit){
+  if(!isForfeit){
     rows.forEach(function(l){
       var rv = calcRV(l);
       if(rv === null) return;
@@ -371,7 +365,7 @@ function buildBoxTableWithPos(rows, showDateOpp, noScroll) {
       if(rv !== null && g2 && genderRV[g2] !== null && Math.abs(rv - genderRV[g2]) < 0.001) squid = ' &#129425;';
     }
     var fc=showDateOpp
-      ?'<td style="text-align:left;white-space:nowrap">'+l.date+squid+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
+      ?'<td style="text-align:left">'+l.date+'</td><td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'
       :'<td style="text-align:left"><a onclick="navigate(\'profile\',\''+l.player_id+'\')">'+nameWithFace(l.player_id)+'</a>'+squid+'</td>';
     return '<tr>'+fc+'<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
       '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
@@ -379,9 +373,7 @@ function buildBoxTableWithPos(rows, showDateOpp, noScroll) {
       '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
       '<td>'+fmtRV(calcRV(l),2)+'</td></tr>';
   }).join('');
-  var wrapClass = 'table-wrap';
-  var wrapStyle = noScroll ? ' style="max-height:none;overflow:visible"' : '';
-  return '<div class="'+wrapClass+'"'+wrapStyle+'><table>'+
+  return '<div class="table-wrap"><table>'+
     '<thead><tr>'+nameCol+'<th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>'+
     '<tbody>'+body+'</tbody></table></div>';
 }
@@ -684,7 +676,7 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
       '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
       '<div class="roster-sub">'+
         (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
-        (isActive?(p.id==='Wise'?'<span class="badge" style="background:rgba(220,80,80,0.15);color:#f87171;border:1px solid rgba(220,80,80,0.3)">Injured</span>':'<span class="badge badge-current">Active</span>'):'')+
+        (isActive?'<span class="badge badge-current">Active</span>':'')+
       '</div>'+
       (rangeStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+rangeStr+'</div>':'')+
       (statsStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+statsStr+'</div>':
@@ -714,7 +706,6 @@ function showProfile(id) {
     rangeStr=loY===hiY?String(loY):String(loY)+'\u2013'+String(hiY).slice(2);
   }
   var isActive=pStats.some(function(s){return s.season_sort===DATA.maxSeason;});
-  var isInjured = id === 'Wise'; // April Wise is currently injured
 
   // Career milestones
   var milestones=[];
@@ -785,13 +776,12 @@ function showProfile(id) {
     '<th>MVP</th><th>RV</th>'+pitHeaders;
 
   var logsTab=pLogs.length>0?'<button class="tab-btn" onclick="switchProfileTab(this,\'tab-gamelogs\')">Game Log</button>':'';
-  // Build game log with season separators
+  // Build game log with season separators, totals, and squids
   var logsPanel='';
   if(pLogs.length>0){
     var logHTML='<div id="tab-gamelogs" class="tab-panel">';
-    logHTML+='<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:0.5rem">&#129425; Squid of the Game (top RV per gender)</div>';
+    logHTML+='<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:0.5rem">&#129425; Squid of the Game (top RV per gender in that game)</div>';
     // Group by season
-    var lastSeason='';
     var seasonGroups={};
     var seasonOrder=[];
     pLogs.forEach(function(l){
@@ -802,21 +792,68 @@ function showProfile(id) {
       seasonGroups[seas].push(l);
     });
     seasonOrder.forEach(function(seas,i){
-      logHTML+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em;padding:'+(i>0?'0.8rem':0)+' 0 0.3rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">'+seas+'</div>';
-      // Season totals for this player in this season
-      var sg=seasonGroups[seas];
+      var rows=seasonGroups[seas];
+      // Season totals
       var tot={AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0};
-      sg.forEach(function(l){
-        tot.AB+=(l.AB||0);tot.R+=(l.R||0);tot.H+=(l.H||0);tot.RBI+=(l.RBI||0);
-        tot.dbl+=(l.dbl||0);tot.trp+=(l.trp||0);tot.HR+=(l.HR||0);tot.BB+=(l.BB||0);
+      rows.forEach(function(l){
+        tot.AB+=l.AB||0;tot.R+=l.R||0;tot.H+=l.H||0;tot.RBI+=l.RBI||0;
+        tot.dbl+=l.dbl||0;tot.trp+=l.trp||0;tot.HR+=l.HR||0;tot.BB+=l.BB||0;
         tot.RV+=calcRV(l)||0;
       });
       var ba=tot.AB>0?fmtBA(tot.H/tot.AB):'&mdash;';
-      logHTML+='<div style="font-size:0.72rem;font-family:var(--font-display);color:var(--text-muted);margin-bottom:0.25rem;letter-spacing:0.04em">'+
-        tot.AB+' AB &middot; '+tot.H+' H &middot; '+tot.R+' R &middot; '+tot.RBI+' RBI &middot; '+
-        tot.HR+' HR &middot; '+tot.dbl+' 2B &middot; '+tot.trp+' 3B &middot; '+tot.BB+' BB &middot; BA '+ba+' &middot; RV '+tot.RV.toFixed(1)+
-      '</div>';
-      logHTML+=buildBoxTableWithPos(sg,true,true);
+      var obp=(tot.AB+tot.BB)>0?fmtBA((tot.H+tot.BB)/(tot.AB+tot.BB)):'&mdash;';
+      // Season header
+      logHTML+='<div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;padding:'+(i>0?'0.8rem':0)+' 0 0.3rem;'+(i>0?'border-top:1px solid var(--border-bright)':'')+'">';
+      logHTML+='<span style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.8rem;letter-spacing:0.08em">'+seas+'</span>';
+      logHTML+='<span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-display)">'+rows.length+'G &middot; '+tot.H+'H &middot; '+tot.R+'R &middot; '+tot.RBI+'RBI &middot; '+tot.HR+'HR &middot; BA:'+ba+' &middot; OBP:'+obp+' &middot; RV:'+fmtRV(tot.RV)+'</span>';
+      logHTML+='</div>';
+      // Build table rows with squid
+      // For each game this player appeared in, check if they're squid
+      // We need all players in that game to determine top RV per gender
+      var gameSquids={};
+      var gameDates=Array.from(new Set(rows.map(function(l){return l.date+'||'+(l.game_num||'');})));
+      gameDates.forEach(function(key){
+        var dp=key.split('||');
+        var gdate=dp[0],gnum=dp[1];
+        // Get all players in this game from DATA.logs
+        var gameRows=DATA.logs.filter(function(l){return l.date===gdate&&String(l.game_num||'')===gnum;});
+        // Check if forfeit (everyone has 0 stats)
+        var totalAB=gameRows.reduce(function(s,l){return s+(l.AB||0);},0);
+        var totalH=gameRows.reduce(function(s,l){return s+(l.H||0);},0);
+        var totalBB=gameRows.reduce(function(s,l){return s+(l.BB||0);},0);
+        if(totalAB===0&&totalH===0&&totalBB===0){gameSquids[key]={};return;} // forfeit
+        var genderTop={M:null,F:null};
+        gameRows.forEach(function(l){
+          var rv=calcRV(l); if(rv===null) return;
+          var p=getPlayer(l.player_id);
+          var g=p?p.gender:null;
+          if(g&&(genderTop[g]===null||rv>genderTop[g]))genderTop[g]=rv;
+        });
+        var squids={};
+        gameRows.forEach(function(l){
+          var rv=calcRV(l); if(rv===null) return;
+          var p=getPlayer(l.player_id);
+          var g=p?p.gender:null;
+          if(g&&genderTop[g]!==null&&Math.abs(rv-genderTop[g])<0.001)squids[l.player_id]=true;
+        });
+        gameSquids[key]=squids;
+      });
+      // Build table with squid column
+      var thead='<thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Opp</th><th style="text-align:left">Pos</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th></tr></thead>';
+      var tbody=rows.map(function(l){
+        var key=l.date+'||'+(l.game_num||'');
+        var isSquid=gameSquids[key]&&gameSquids[key][l.player_id];
+        var posStr=POS_COLS.filter(function(k){return l[k]&&l[k]>0;}).map(function(k){return POS_LABELS[k];}).join('/')||'&mdash;';
+        return '<tr>'+
+          '<td style="text-align:left;white-space:nowrap">'+(isSquid?'&#129425; ':'')+l.date+'</td>'+
+          '<td style="text-align:left">'+(l.opponent||'&mdash;')+'</td>'+
+          '<td style="text-align:left;color:var(--sky-light)">'+posStr+'</td>'+
+          '<td>'+fmtBox(l.AB)+'</td><td>'+fmtBox(l.R)+'</td><td>'+fmtBox(l.H)+'</td>'+
+          '<td>'+fmtBox(l.RBI)+'</td><td>'+fmtBox(l.dbl)+'</td><td>'+fmtBox(l.trp)+'</td>'+
+          '<td>'+fmtBox(l.HR)+'</td><td>'+fmtBox(l.BB)+'</td>'+
+          '<td>'+fmtRV(calcRV(l),2)+'</td></tr>';
+      }).join('');
+      logHTML+='<div class="table-wrap profile-log-table"><table>'+thead+'<tbody>'+tbody+'</tbody></table></div>';
     });
     logHTML+='</div>';
     logsPanel=logHTML;
@@ -839,7 +876,7 @@ function showProfile(id) {
         '<div class="blade-name">'+player.first+' '+player.last+'</div>'+
         (akaStr?'<div class="aka">'+akaStr+'</div>':'')+
         '<div class="profile-meta" style="justify-content:center">'+
-          (isInjured?'<span class="badge" style="background:rgba(220,80,80,0.15);color:#f87171;border:1px solid rgba(220,80,80,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
+          (p.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
           '<span style="color:var(--text-dim);font-size:0.85rem">Bats '+player.bat+' &middot; Throws '+player.throw+'</span>'+
           (posDisplay?'<span style="color:var(--sky);font-family:var(--font-display);font-weight:700;letter-spacing:0.08em">'+posDisplay+'</span>':'')+
           (nS>0?'<span style="color:var(--text-dim);font-size:0.85rem"><strong style="color:var(--text)">'+nS+'</strong> season'+(nS!==1?'s':'')+' &middot; '+rangeStr+'</span>':'')+
