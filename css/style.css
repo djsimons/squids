@@ -588,3 +588,9 @@ table td:first-child { max-width: 160px; }
   max-height: none !important;
   overflow-y: visible !important;
 }
+
+/* Game log expanded box scores: no vertical scroll */
+.game-detail .table-wrap {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
