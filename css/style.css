@@ -101,9 +101,11 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
 
 /* ── HERO ── */
 .hero {
-  background: linear-gradient(135deg, var(--deep-mid) 0%, var(--deep) 100%);
+  background:
+    linear-gradient(to bottom, rgba(8,20,40,0.55) 0%, rgba(8,20,40,0.72) 60%, rgba(8,20,40,0.92) 100%),
+    url('img/team-f25.jpeg') center 30% / cover no-repeat;
   border-bottom: 1px solid var(--border);
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -111,7 +113,26 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
 .hero::before {
   content: '';
   position: absolute; inset: 0;
-  background: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(56,189,248,0.02) 40px, rgba(56,189,248,0.02) 80px);
+  background: transparent;
+}
+/* Championship sash - top right corner */
+.hero::after {
+  content: "Fall '25 Champs";
+  position: absolute;
+  top: 22px;
+  right: -38px;
+  width: 160px;
+  background: linear-gradient(135deg, #b8860b, #ffd700, #b8860b);
+  color: #0c2340;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.35rem 0;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .hero-content { position: relative; }
 .hero h1 {
