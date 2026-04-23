@@ -279,6 +279,15 @@
     "display_name": "Bruce Cozart"
   },
   {
+    "id": "Croneberger",
+    "last": "Croneberger",
+    "first": "Andrew",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Andrew Croneberger"
+  },
+  {
     "id": "Cseh",
     "last": "Cseh",
     "first": "Karen",
@@ -819,6 +828,15 @@
     "display_name": "Stacey Kelly"
   },
   {
+    "id": "Knudson",
+    "last": "Knudson",
+    "first": "Sophie",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Sophie Knudson"
+  },
+  {
     "id": "Kocher",
     "last": "Kocher",
     "first": "Jake",
@@ -898,6 +916,15 @@
     "bat": "L",
     "throw": "R",
     "display_name": "Grant Leonard"
+  },
+  {
+    "id": "LeonardGrac",
+    "last": "Leonard",
+    "first": "Grace",
+    "gender": "F",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Grace Leonard"
   },
   {
     "id": "Leumas",
@@ -1152,6 +1179,15 @@
     "display_name": "Cody Polson"
   },
   {
+    "id": "Poole",
+    "last": "Poole",
+    "first": "Scott",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Scott Poole"
+  },
+  {
     "id": "Quilliams",
     "last": "Quilliams",
     "first": "Bryson",
@@ -1395,6 +1431,15 @@
     "display_name": "Sarah Smith"
   },
   {
+    "id": "Spencer",
+    "last": "Spencer",
+    "first": "Brian",
+    "gender": "M",
+    "bat": "R",
+    "throw": "R",
+    "display_name": "Brian Spencer"
+  },
+  {
     "id": "Standish",
     "last": "Standish",
     "first": "Jen",
@@ -1602,33 +1647,6 @@
     "display_name": "Kandace Watkins"
   },
   {
-    "id": "Wilder",
-    "last": "Wilder",
-    "first": "Avery",
-    "gender": "M",
-    "bat": "L",
-    "throw": "R",
-    "display_name": "Avery Wilder"
-  },
-  {
-    "id": "Wise",
-    "last": "Wise",
-    "first": "April",
-    "gender": "F",
-    "bat": "R",
-    "throw": "R",
-    "display_name": "April Wise"
-  },
-  {
-    "id": "Knudson",
-    "last": "Knudson",
-    "first": "Sophie",
-    "gender": "F",
-    "bat": "R",
-    "throw": "R",
-    "display_name": "Sophie Knudson"
-  },
-  {
     "id": "WatkinsP",
     "last": "Watkins",
     "first": "Princetta",
@@ -1638,39 +1656,30 @@
     "display_name": "Princetta Watkins"
   },
   {
-    "id": "Croneberger",
-    "last": "Croneberger",
-    "first": "Andrew",
+    "id": "Wilder",
+    "last": "Wilder",
+    "first": "Avery",
     "gender": "M",
     "bat": "L",
-    "throw": "L",
-    "display_name": "Andrew Croneberger"
-  },
-  {
-    "id": "Poole",
-    "last": "Poole",
-    "first": "Scott",
-    "gender": "M",
-    "bat": "R",
     "throw": "R",
-    "display_name": "Scott Poole"
+    "display_name": "Avery Wilder"
   },
   {
-    "id": "LeonardGrac",
-    "last": "Leonard",
-    "first": "Grace",
+    "id": "Wiltrout",
+    "last": "Wiltrout",
+    "first": "Madison",
     "gender": "F",
     "bat": "R",
     "throw": "R",
-    "display_name": "Grace Leonard"
+    "display_name": "Madison Wiltrout"
   },
   {
-    "id": "Spencer",
-    "last": "Spencer",
-    "first": "Brian",
-    "gender": "M",
+    "id": "Wise",
+    "last": "Wise",
+    "first": "April",
+    "gender": "F",
     "bat": "R",
     "throw": "R",
-    "display_name": "Brian Spencer"
+    "display_name": "April Wise"
   }
 ]
