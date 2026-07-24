@@ -115,25 +115,7 @@ nav a:hover, nav a.active { color: var(--sky); border-bottom-color: var(--sky); 
   position: absolute; inset: 0;
   background: transparent;
 }
-/* Championship sash - top right corner */
-.hero::after {
-  content: "Fall '25 Champs";
-  position: absolute;
-  top: 22px;
-  right: -38px;
-  width: 160px;
-  background: linear-gradient(135deg, #b8860b, #ffd700, #b8860b);
-  color: #0c2340;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-align: center;
-  padding: 0.35rem 0;
-  transform: rotate(45deg);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
+/* Championship sash removed for Fall 2026 */
 .hero-content { position: relative; }
 .hero h1 {
   font-family: var(--font-blade);
