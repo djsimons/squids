@@ -1044,15 +1044,6 @@
     "display_name": "Whitney Miller"
   },
   {
-    "id": "Minne",
-    "last": "Minne",
-    "first": "Ruari",
-    "gender": "M",
-    "bat": "R",
-    "throw": "R",
-    "display_name": "Ruari Minne"
-  },
-  {
     "id": "Mooney",
     "last": "Mooney",
     "first": "Drew",
@@ -1690,5 +1681,14 @@
     "bat": "R",
     "throw": "R",
     "display_name": "April Wise"
+  },
+  {
+    "id": "Woods",
+    "last": "Woods",
+    "first": "Morgan",
+    "gender": "F",
+    "bat": "R",
+    "throw": "L",
+    "display_name": "Morgan Woods"
   }
 ]
