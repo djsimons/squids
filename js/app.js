@@ -57,7 +57,8 @@ async function loadData() {
 }
 
 function updateDerivedData() {
-  DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort;}));
+  // Always use LIVE_SEASON as max once live data has loaded
+  DATA.maxSeason = Math.max(LIVE_SEASON, Math.max.apply(null, DATA.stats.map(function(r){return r.season_sort||0;})));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
 }
 
