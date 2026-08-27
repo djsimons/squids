@@ -866,7 +866,7 @@ function showProfile(id) {
     logsPanel=logHTML;
   }
   var statsContent=pStats.length===0
-    ?'<div class="empty-state">No official stats yet &mdash; Spring 2026 in progress!</div>'
+    ?'<div class="empty-state">No official stats yet &mdash; '+LIVE_LABEL+' in progress!</div>'
     :'<div class="tabs">'+
         '<button class="tab-btn active" onclick="switchProfileTab(this,\'tab-seasons\')">By Season</button>'+
         logsTab+'</div>'+
