@@ -2,14 +2,14 @@
 var AKA = { 'Gomez': 'AlmonteJ', 'DeBoer': 'SimonsK' };
 var POS_COLS = ['pos_P','pos_C','pos_1B','pos_2B','pos_3B','pos_SS','pos_LF','pos_LC','pos_RC','pos_RF','pos_DH'];
 var POS_LABELS = { pos_P:'P',pos_C:'C',pos_1B:'1B',pos_2B:'2B',pos_3B:'3B',pos_SS:'SS',pos_LF:'LF',pos_LC:'LC',pos_RC:'RC',pos_RF:'RF',pos_DH:'DH' };
-var LIVE_STATS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=633884296&single=true&output=csv';
-var LIVE_BOX_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=2094714956&single=true&output=csv';
-var SCHEDULE_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=0&single=true&output=csv';
-var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1865025073&single=true&output=csv';
-var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1865025073&single=true&output=csv';
-var STANDINGS_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvDmE9OZGe0w29idwwnbmdCfYOCqdRwajBQPrUvJZ-KZ1gahycABbrOzBW9B_S-5-heCWpOCOnXwgv/pub?gid=1569850367&single=true&output=csv';
-var LIVE_SEASON    = 2026.1;
-var LIVE_LABEL     = 'Spring 2026';
+var LIVE_STATS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=633884296&single=true&output=csv';
+var LIVE_BOX_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=2094714956&single=true&output=csv';
+var SCHEDULE_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=0&single=true&output=csv';
+var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=1865025073&single=true&output=csv';
+var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=1865025073&single=true&output=csv';
+var STANDINGS_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=1569850367&single=true&output=csv';
+var LIVE_SEASON    = 2026.2;
+var LIVE_LABEL     = 'Fall 2026';
 var DATA = { players: [], stats: [], logs: [] };
 var SEASON_RECORDS = [];
 function seaCreature(id){
