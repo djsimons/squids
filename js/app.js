@@ -40,10 +40,16 @@ async function loadData() {
     cacheSchedule(live[2]);
     updateDerivedData();
     loadNews();
-    // Re-render home if it's active (schedule/live data now available)
+    // Re-render active page if it depends on live data
     if(document.getElementById('page-home').classList.contains('active')){
       renderSeasonLeaders();
       renderHomeGames();
+    }
+    if(document.getElementById('page-players').classList.contains('active')){
+      renderRoster();
+    }
+    if(document.getElementById('page-seasons').classList.contains('active')){
+      renderStats();
     }
     // Also re-render if home is already showing (handles delayed schedule load)
     setTimeout(function(){
@@ -1638,6 +1644,8 @@ function lbSort(key){
 // ── SCHEDULE ──────────────────────────────────────────────────────────────
 function showSchedule(){
   document.getElementById('page-schedule').classList.add('active');
+  var sl=document.getElementById('schedule-season-label');
+  if(sl) sl.textContent=LIVE_LABEL;
   var tbody=document.getElementById('schedule-tbody');
   tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>';
   fetch(SCHEDULE_URL).then(function(r){return r.text();}).then(function(text){
@@ -1677,6 +1685,8 @@ function showSchedule(){
 // ── STANDINGS ─────────────────────────────────────────────────────────────
 function showStandings(){
   document.getElementById('page-standings').classList.add('active');
+  var sl=document.getElementById('standings-season-label');
+  if(sl) sl.textContent=LIVE_LABEL;
   var tbody=document.getElementById('standings-tbody');
   tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">Loading...</td></tr>';
   fetch(STANDINGS_URL).then(function(r){return r.text();}).then(function(text){
