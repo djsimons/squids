@@ -18,12 +18,28 @@
         onerror="this.outerHTML='<div style=&quot;width:34px;height:34px;border-radius:50%;background:var(--deep-light);border:2px solid var(--sky-dim);display:flex;align-items:center;justify-content:center;font-size:18px&quot;>&#129425;</div>'">
       <span style="font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-display);font-weight:600">Home</span>
     </a>
-    <a data-route="players" onclick="navigate('players')">Players</a>
-    <a data-route="seasons" onclick="navigate('seasons')">Stats</a>
-    <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
-    <a data-route="records" onclick="navigate('records')">Records</a>
-    <a data-route="schedule" onclick="navigate('schedule')">Schedule</a>
-    <a data-route="standings" onclick="navigate('standings')">Standings</a>
+    <!-- Desktop nav links -->
+    <div class="nav-links">
+      <a data-route="players" onclick="navigate('players')">Players</a>
+      <a data-route="seasons" onclick="navigate('seasons')">Stats</a>
+      <a data-route="gamelogs" onclick="navigate('gamelogs')">Game Log</a>
+      <a data-route="records" onclick="navigate('records')">Records</a>
+      <a data-route="schedule" onclick="navigate('schedule')">Schedule</a>
+      <a data-route="standings" onclick="navigate('standings')">Standings</a>
+    </div>
+    <!-- Hamburger button (mobile only) -->
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <!-- Mobile dropdown -->
+  <div class="nav-mobile" id="nav-mobile">
+    <a data-route="players" onclick="navigate('players');closeMobileNav()">Players</a>
+    <a data-route="seasons" onclick="navigate('seasons');closeMobileNav()">Stats</a>
+    <a data-route="gamelogs" onclick="navigate('gamelogs');closeMobileNav()">Game Log</a>
+    <a data-route="records" onclick="navigate('records');closeMobileNav()">Records</a>
+    <a data-route="schedule" onclick="navigate('schedule');closeMobileNav()">Schedule</a>
+    <a data-route="standings" onclick="navigate('standings');closeMobileNav()">Standings</a>
   </div>
 </nav>
 
@@ -215,6 +231,22 @@
 <!-- PROFILE -->
 <div id="page-profile" class="page"></div>
 
+<script>
+function toggleMobileNav() {
+  var m = document.getElementById('nav-mobile');
+  var b = document.querySelector('.nav-hamburger');
+  m.classList.toggle('open');
+  b.classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('nav-mobile').classList.remove('open');
+  document.querySelector('.nav-hamburger').classList.remove('open');
+}
+// Close on outside tap
+document.addEventListener('click', function(e) {
+  if(!e.target.closest('nav')) closeMobileNav();
+});
+</script>
 <script src="js/app.js"></script>
 </body>
 </html>

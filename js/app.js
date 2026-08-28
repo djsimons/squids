@@ -296,6 +296,8 @@ function nameWithFace(id) {
 function navigate(route, param) {
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('nav a[data-route]').forEach(function(a){a.classList.toggle('active',a.dataset.route===route);});
+  // Also update mobile nav active state
+  document.querySelectorAll('.nav-mobile a[data-route]').forEach(function(a){a.classList.toggle('active',a.dataset.route===route);});
   window.scrollTo(0,0);
   // Update URL hash for shareable links
   var hash = '#' + route + (param ? '/' + param : '');
