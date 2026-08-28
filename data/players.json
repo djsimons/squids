@@ -283,8 +283,8 @@
     "last": "Croneberger",
     "first": "Andrew",
     "gender": "M",
-    "bat": "R",
-    "throw": "R",
+    "bat": "L",
+    "throw": "L",
     "display_name": "Andrew Croneberger"
   },
   {
@@ -1046,11 +1046,11 @@
   {
     "id": "Minne",
     "last": "Minne",
-    "first": "Ruari",
+    "first": "Ruairi",
     "gender": "M",
     "bat": "R",
     "throw": "R",
-    "display_name": "Ruari Minne"
+    "display_name": "Ruairi Minne"
   },
   {
     "id": "Mooney",
