@@ -505,12 +505,21 @@ function renderSeasonLeaders() {
     var clickAttr=leaders.length===1?' onclick="navigate(\'profile\',\''+leaders[0].id+'\')" style="cursor:pointer"':'';
     // Photos in 2-wide grid
     var photoGrid='<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin:0.2rem auto;width:100%">';
-    leaders.forEach(function(l){ photoGrid+=makeLeaderPhoto(l.id); });
+    if(leaders.length<=3){
+      leaders.forEach(function(l){ photoGrid+=makeLeaderPhoto(l.id); });
+    } else {
+      photoGrid+='<img src="img/logo.png" style="width:30px;height:30px;object-fit:contain;border-radius:50%;background:white;padding:3px" alt="">';
+    }
     photoGrid+='</div>';
-    // Names stacked
-    var nameLines=leaders.length===1
-      ?displayName(leaders[0].id)
-      :leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
+    // Names: list up to 3, otherwise show count
+    var nameLines;
+    if(leaders.length===1){
+      nameLines=displayName(leaders[0].id);
+    } else if(leaders.length<=3){
+      nameLines=leaders.map(function(l){return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+displayName(l.id)+'</div>';}).join('');
+    } else {
+      nameLines='<div style="font-size:0.75rem;color:var(--text-muted)">'+leaders.length+' tied</div>';
+    }
     return '<div class="card"'+clickAttr+' style="text-align:center;display:flex;flex-direction:column;align-items:center;min-width:0;box-sizing:border-box">'+
       '<div style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted)">'+stat+'</div>'+
       '<div style="font-size:1.2rem;font-weight:700;color:var(--text);line-height:1.2;margin:0.1rem 0">'+fmtFn(top)+'</div>'+
