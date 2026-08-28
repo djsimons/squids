@@ -697,9 +697,6 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
         (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
         (p.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
       '</div>'+
-      (rangeStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+rangeStr+'</div>':'')+
-      (statsStr?'<div style="font-size:0.65rem;color:var(--text-muted)">'+statsStr+'</div>':
-        '<div style="font-size:0.65rem;color:var(--text-muted)">No stats yet</div>')+
     '</div>';
   }).join('')||'<div class="empty-state">No players found</div>';
 }
