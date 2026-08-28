@@ -681,7 +681,15 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
   document.getElementById('roster-grid').innerHTML=players.map(function(p){
     var sm=sums[p.id],isActive=active.has(p.id);
     var pStats4=DATA.stats.filter(function(s){return s.player_id===p.id;});
-    var mainPos=pStats4.length?careerPosDisplay(pStats4):'';
+    // Primary position only for roster card
+    var mainPos='';
+    if(pStats4.length){
+      var totals4={};
+      POS_COLS.forEach(function(k){totals4[k]=0;});
+      pStats4.forEach(function(s){POS_COLS.forEach(function(k){totals4[k]+=(s[k]||0);});});
+      var sorted4=Object.entries(totals4).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+      mainPos=sorted4.length?POS_LABELS[sorted4[0][0]]:'';
+    }
     var rangeStr='',statsStr='';
     if(sm&&sm.seasons.length>0){
       var lo=Math.min.apply(null,sm.seasons),hi=Math.max.apply(null,sm.seasons);
@@ -691,11 +699,13 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
       statsStr='H:'+sm.H+' &middot; HR:'+sm.HR+' &middot; RBI:'+sm.RBI+' &middot; BA:'+ba;
     }
     return '<div class="roster-card" onclick="navigate(\'profile\',\''+p.id+'\')">'+
-      '<div class="roster-avatar">'+makeAvatarImg(p.id)+'</div>'+
-      '<div class="roster-name">'+p.first+' '+p.last+'</div>'+
-      '<div class="roster-sub">'+
-        (mainPos?'<span class="badge" style="background:rgba(56,189,248,0.12);color:var(--sky)">'+mainPos+'</span>':'')+
-        (p.id==='Wise'?'<span class="badge" style="background:rgba(220,60,60,0.15);color:#f87171;border:1px solid rgba(220,60,60,0.3)">Injured</span>':isActive?'<span class="badge badge-current">Active</span>':'')+
+      '<div style="position:relative;display:inline-block">'+
+        '<div class="roster-avatar">'+makeAvatarImg(p.id)+'</div>'+
+        (isActive?'<span style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#22c55e;color:#0c2340;font-size:9px;font-weight:800;font-family:var(--font-display);display:flex;align-items:center;justify-content:center;border:1px solid var(--surface-card)">A</span>':'')+
+      '</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:0.3rem;flex-wrap:nowrap;margin-top:0.2rem">'+
+        '<div class="roster-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.first+' '+p.last+'</div>'+
+        (mainPos?'<span style="font-size:0.6rem;font-family:var(--font-display);font-weight:700;color:var(--sky);flex-shrink:0">'+mainPos+'</span>':'')+
       '</div>'+
     '</div>';
   }).join('')||'<div class="empty-state">No players found</div>';
