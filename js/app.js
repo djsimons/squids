@@ -532,7 +532,7 @@ function renderSeasonLeaders() {
 
   document.getElementById('home-leaders').innerHTML=
     leaderCard('Games',   function(r){return r.G||0;},  function(v){return v;})+
-    leaderCard('Hits',    function(r){return r.H||0;},  function(v){return v;})+
+    leaderCard('Times on Base',function(r){return (r.H||0)+(r.BB||0);},function(v){return v;})+
     leaderCard('Runs',    function(r){return r.R||0;},  function(v){return v;})+
     leaderCard('RBI',     function(r){return r.RBI||0;},function(v){return v;})+
     leaderCard('Home Runs',function(r){return r.HR||0;},function(v){return v;})+
