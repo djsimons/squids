@@ -1571,7 +1571,14 @@ function renderGameList() {
             ' <span class="gl-season-record">' + record + '</span></div>';
 
     rows.forEach(function(r) {
-      var boxKey = r.season_sort + '|' + r.game_num;
+      // Schedule rows don't have season_sort; derive it from the date
+      var rSeasonSort = r.season_sort;
+      if (rSeasonSort == null && r.date) {
+        var dp = r.date.split('-');
+        var yr = parseInt(dp[0],10), mo = parseInt(dp[1],10);
+        rSeasonSort = yr + (mo <= 6 ? 0.1 : 0.2);
+      }
+      var boxKey = rSeasonSort + '|' + r.game_num;
       var boxRows = boxMap[boxKey] || [];
       var hasBox = boxRows.length > 0;
 
