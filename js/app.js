@@ -124,10 +124,23 @@ function mergeLiveStats(text) {
 }
 
 function mergeLiveBox(text) {
-  DATA.logs = DATA.logs.filter(function(l){return !l.live;});
   var lines = text.trim().replace(/\r/g,'').split('\n');
   if (lines.length < 2) return;
   var headers = dedupeHeaders(parseLine(lines[0]));
+  // Collect all dates present in the live feed so we can strip archived duplicates
+  var liveDates = {};
+  lines.slice(1).forEach(function(line){
+    var vals = parseLine(line), obj = {};
+    headers.forEach(function(h,i){obj[h]=vals[i]||'';});
+    var d = fmtLiveDate(obj['Date']||'');
+    if (d) liveDates[d] = true;
+  });
+  // Remove flagged-live rows AND archived rows whose dates appear in the live feed
+  DATA.logs = DATA.logs.filter(function(l){
+    if (l.live) return false;
+    if (l.date && liveDates[l.date]) return false;
+    return true;
+  });
   var order = {};
   lines.slice(1).forEach(function(line) {
     var vals = parseLine(line), obj = {};
