@@ -809,12 +809,29 @@ function showProfile(id) {
       posCells+'<td>&mdash;</td><td>'+fmtRV(career.RV)+'</td>'+pitCells+'</tr>';
   }
 
-  var pitHeaders=isPitcher?'<th>GP</th><th>GS</th><th>IP</th><th>RA</th><th>W</th><th>L</th><th>S</th><th>RIP</th>':'';
+  // Store season rows globally so sortPlayerStats() can re-render them
+  window._playerStatRows = pStats.slice();
+  window._playerStatRowFn = batRow;
+  window._playerCareerRow = careerRow;
+
+  var pitHeaders=isPitcher?'<th onclick="sortPlayerStats(this)" data-col="pit_G">GP</th><th onclick="sortPlayerStats(this)" data-col="pit_GS">GS</th><th onclick="sortPlayerStats(this)" data-col="pit_IP">IP</th><th onclick="sortPlayerStats(this)" data-col="pit_RA">RA</th><th onclick="sortPlayerStats(this)" data-col="pit_W">W</th><th onclick="sortPlayerStats(this)" data-col="pit_L">L</th><th onclick="sortPlayerStats(this)" data-col="pit_S">S</th><th onclick="sortPlayerStats(this)" data-col="pit_RIP">RIP</th>':'';
   var thead='<th style="text-align:left">Season</th><th style="text-align:left">Pos</th>'+
-    '<th>G</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th>'+
-    '<th>BA</th><th>OBP</th><th>SLG</th><th>OPS</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="G">G</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="AB">AB</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="R">R</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="H">H</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="RBI">RBI</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="dbl">2B</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="trp">3B</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="HR">HR</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="BB">BB</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="BA">BA</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="OBP">OBP</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="SLG">SLG</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="OPS">OPS</th>'+
     '<th>P</th><th>C</th><th>1B</th><th>2B</th><th>3B</th><th>SS</th><th>LF</th><th>LC</th><th>RC</th><th>RF</th><th>DH</th>'+
-    '<th>MVP</th><th>RV</th>'+pitHeaders;
+    '<th onclick="sortPlayerStats(this)" data-col="MVP">MVP</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+pitHeaders;
 
   var logsTab=pLogs.length>0?'<button class="tab-btn" onclick="switchProfileTab(this,\'tab-gamelogs\')">Game Log</button>':'';
   // Build game log with season separators, totals, and squids
@@ -910,8 +927,8 @@ function showProfile(id) {
         logsTab+'</div>'+
       '<div id="tab-seasons" class="tab-panel active">'+
         '<div class="table-wrap"><table>'+
-          '<thead><tr>'+thead+'</tr></thead>'+
-          '<tbody>'+careerRow()+pStats.map(batRow).join('')+'</tbody>'+
+          '<thead id="player-stat-thead"><tr>'+thead+'</tr></thead>'+
+          '<tbody id="player-stat-tbody">'+careerRow()+pStats.map(batRow).join('')+'</tbody>'+
         '</table></div></div>'+logsPanel;
 
   page.innerHTML=
@@ -1428,6 +1445,28 @@ function sortStats(th) {
   });
   window._statsRows = rows;
   renderStatsRows();
+}
+
+// Sort the season-by-season table on a player profile page
+function sortPlayerStats(th) {
+  var col = th.dataset.col;
+  var tbody = document.getElementById('player-stat-tbody');
+  if (!tbody) return;
+  var asc = th.classList.contains('sort-asc');
+  document.querySelectorAll('#player-stat-thead th').forEach(function(t){t.classList.remove('sort-asc','sort-desc');});
+  th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+  var rows = (window._playerStatRows || []).slice();
+  rows.sort(function(a,b){
+    var av = a[col], bv = b[col];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return asc ? av - bv : bv - av;
+  });
+  window._playerStatRows = rows;
+  // Career row stays pinned at top; re-render season rows below it
+  var careerHTML = window._playerCareerRow ? window._playerCareerRow() : '';
+  tbody.innerHTML = careerHTML + rows.map(window._playerStatRowFn).join('');
 }
 
 // Stub for old calls
