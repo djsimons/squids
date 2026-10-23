@@ -97,7 +97,10 @@ function dedupeHeaders(headers) {
 }
 
 function mergeLiveStats(text) {
-  DATA.stats = DATA.stats.filter(function(s){return s.season_sort !== LIVE_SEASON;});
+  // Strip only previously-pushed live rows (tagged live_stat:true).
+  // Do NOT strip by season_sort value — that risks removing archived rows
+  // (e.g. Spring 2026 = 2026.1) if floating-point comparison ever misfires.
+  DATA.stats = DATA.stats.filter(function(s){return !s.live_stat;});
   var lines = text.trim().replace(/\r/g,'').split('\n');
   if (lines.length < 3) return;
   var headers = dedupeHeaders(parseLine(lines[1]));
@@ -108,7 +111,7 @@ function mergeLiveStats(text) {
     if (!nm || nm.toLowerCase() === 'total') return;
     var n = function(v){ var x=parseFloat(v); return isNaN(x)?null:x; };
     DATA.stats.push({
-      season_sort:LIVE_SEASON, season_label:LIVE_LABEL, season_year:2026, season_half:'Spring',
+      live_stat:true, season_sort:LIVE_SEASON, season_label:LIVE_LABEL, season_year:2026, season_half:'Fall',
       player_id:nm,
       G:n(obj['G']),AB:n(obj['AB']),R:n(obj['R']),H:n(obj['H']),RBI:n(obj['RBI']),
       dbl:n(obj['2B']),trp:n(obj['3B']),HR:n(obj['HR']),BB:n(obj['BB']),
@@ -1494,10 +1497,12 @@ function renderStatsLeaderboard() { renderStats(); }
 function showGameLogs() {
   document.getElementById('page-gamelogs').classList.add('active');
 
-  // Build a box-score lookup: key = season_sort + '|' + game_num \u2192 sorted rows
+  // Build a box-score lookup: key = date + '|' + game_num
+  // (season_sort is null on archived log rows, so we key on date instead)
   var boxMap = {};
   DATA.logs.forEach(function(l) {
-    var key = (l.season_sort || '') + '|' + (l.game_num || l.game_num === 0 ? l.game_num : '');
+    if (!l.date) return;
+    var key = l.date + '|' + (l.game_num != null ? l.game_num : '');
     if (!boxMap[key]) boxMap[key] = [];
     boxMap[key].push(l);
   });
@@ -1563,7 +1568,7 @@ function renderGameList() {
             ' <span class="gl-season-record">' + record + '</span></div>';
 
     rows.forEach(function(r) {
-      var boxKey = r.season_sort + '|' + r.game_num;
+      var boxKey = r.date + '|' + r.game_num;
       var boxRows = boxMap[boxKey] || [];
       var hasBox = boxRows.length > 0;
 
