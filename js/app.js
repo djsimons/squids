@@ -810,12 +810,14 @@ function showProfile(id) {
   }
 
   // Store season rows globally so sortPlayerStats() can re-render them
+  // pStats is already sorted newest-first (desc by season_sort)
   window._playerStatRows = pStats.slice();
   window._playerStatRowFn = batRow;
   window._playerCareerRow = careerRow;
+  window._playerStatDefaultCol = 'season_sort'; // track so we can mark the header on render
 
   var pitHeaders=isPitcher?'<th onclick="sortPlayerStats(this)" data-col="pit_G">GP</th><th onclick="sortPlayerStats(this)" data-col="pit_GS">GS</th><th onclick="sortPlayerStats(this)" data-col="pit_IP">IP</th><th onclick="sortPlayerStats(this)" data-col="pit_RA">RA</th><th onclick="sortPlayerStats(this)" data-col="pit_W">W</th><th onclick="sortPlayerStats(this)" data-col="pit_L">L</th><th onclick="sortPlayerStats(this)" data-col="pit_S">S</th><th onclick="sortPlayerStats(this)" data-col="pit_RIP">RIP</th>':'';
-  var thead='<th style="text-align:left">Season</th><th style="text-align:left">Pos</th>'+
+  var thead='<th style="text-align:left" onclick="sortPlayerStats(this)" data-col="season_sort">Season</th><th style="text-align:left">Pos</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="G">G</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="AB">AB</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="R">R</th>'+
@@ -829,7 +831,17 @@ function showProfile(id) {
     '<th onclick="sortPlayerStats(this)" data-col="OBP">OBP</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="SLG">SLG</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="OPS">OPS</th>'+
-    '<th>P</th><th>C</th><th>1B</th><th>2B</th><th>3B</th><th>SS</th><th>LF</th><th>LC</th><th>RC</th><th>RF</th><th>DH</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_P">P</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_C">C</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_1B">1B</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_2B">2B</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_3B">3B</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_SS">SS</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_LF">LF</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_LC">LC</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_RC">RC</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_RF">RF</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="pos_DH">DH</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="MVP">MVP</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+pitHeaders;
 
@@ -949,6 +961,9 @@ function showProfile(id) {
       '</div>'+
     '</div>'+
     '<div class="container">'+statsContent+'</div>';
+  // Mark Season column as the active sort (desc = newest first, which is the default)
+  var seasonTh = document.querySelector('#player-stat-thead th[data-col="season_sort"]');
+  if (seasonTh) seasonTh.classList.add('sort-desc');
 }
 
 function switchProfileTab(btn,panelId) {
