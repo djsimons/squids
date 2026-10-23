@@ -1638,20 +1638,21 @@ function glBuildBoxTable(rows) {
   if (fBest && fBest.rv > 0) squids.add(fBest.id);
 
   var html = '<table><thead><tr>'+
-    '<th>Player</th><th style="text-align:left">Pos</th>'+
+    '<th style="text-align:left">Player</th><th style="text-align:left">Pos</th>'+
     '<th>AB</th><th>R</th><th>H</th><th>RBI</th>'+
     '<th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th>'+
     '</tr></thead><tbody>';
 
   rows.forEach(function(r) {
-    var pos = r.position || '';
+    // Derive position from pos_* fields (same as primaryPos helper)
+    var pos = primaryPos(r);
     var rv = (r.RV !== null && r.RV !== undefined && r.RV !== '') ? parseFloat(r.RV) : null;
     var rvStr = rv !== null ? (rv >= 0 ? '+' : '') + rv.toFixed(1) : '';
     var isSquid = squids.has(r.player_id);
     var rvCell = isSquid ? '<td class="gl-squid">'+rvStr+' &#129425;</td>' : '<td>'+rvStr+'</td>';
     html += '<tr>'+
-      '<td>' + displayName(r.player_id) + '</td>'+
-      '<td style="text-align:left;color:var(--sky)">' + pos + '</td>'+
+      '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.player_id+'\')">'+nameWithFace(r.player_id)+'</a></td>'+
+      '<td style="text-align:left;color:var(--sky-light);font-weight:600">' + pos + '</td>'+
       '<td>' + fmtBox(r.AB) + '</td>'+
       '<td>' + fmtBox(r.R) + '</td>'+
       '<td>' + fmtBox(r.H) + '</td>'+
