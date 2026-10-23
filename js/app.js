@@ -100,7 +100,7 @@ function mergeLiveStats(text) {
   // Strip only previously-pushed live rows (tagged live_stat:true).
   // Do NOT strip by season_sort value — that risks removing archived rows
   // (e.g. Spring 2026 = 2026.1) if floating-point comparison ever misfires.
-  DATA.stats = DATA.stats.filter(function(s){return !s.live_stat;});
+  DATA.stats = DATA.stats.filter(function(s){return !s.live_stat && s.season_sort !== LIVE_SEASON;});
   var lines = text.trim().replace(/\r/g,'').split('\n');
   if (lines.length < 3) return;
   var headers = dedupeHeaders(parseLine(lines[1]));
