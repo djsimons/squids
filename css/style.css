@@ -652,3 +652,162 @@ table td:first-child { max-width: 160px; }
   max-height: none !important;
   overflow-y: visible !important;
 }
+
+/* ── GAME LOG (new unified layout) ─────────────────────────────────────── */
+.gl-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.gl-filter-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gl-filter-btn:hover { border-color: var(--border-bright); color: var(--text); }
+.gl-filter-btn.active { background: rgba(56,189,248,0.12); border-color: var(--sky-dim); color: var(--sky); }
+
+.gl-season-block { margin-bottom: 28px; }
+.gl-season-label {
+  font-family: var(--font-blade);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+  color: var(--sky);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gl-season-record {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.gl-game-row {
+  display: grid;
+  grid-template-columns: 28px 90px 28px 1fr 52px 60px 28px;
+  align-items: center;
+  gap: 0 10px;
+  padding: 9px 10px;
+  background: var(--bg-row, var(--card));
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+}
+.gl-game-row:first-child { border-radius: 4px 4px 0 0; }
+.gl-game-row:hover { background: var(--bg-row-hover, rgba(56,189,248,0.06)); }
+.gl-game-row.expanded { background: var(--bg-row-hover, rgba(56,189,248,0.06)); border-bottom-color: transparent; }
+.gl-game-row.no-box { cursor: default; }
+
+.gl-game-num {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.gl-game-date {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gl-ha-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  text-align: center;
+}
+.gl-ha-badge.home { color: var(--sky); border-color: var(--sky-dim); }
+.gl-opponent {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gl-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.gl-wl-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.gl-wl-badge.W { background: rgba(74,222,128,0.12); color: var(--win, #4ade80); }
+.gl-wl-badge.L { background: rgba(248,113,113,0.12); color: var(--loss, #f87171); }
+.gl-expand-arrow {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.gl-game-row.expanded .gl-expand-arrow { transform: rotate(180deg); }
+.gl-game-row.no-box .gl-expand-arrow { opacity: 0.25; }
+
+.gl-box-panel {
+  display: none;
+  background: var(--deep, var(--bg-card));
+  border-bottom: 1px solid var(--border);
+  padding: 10px 10px 14px;
+  overflow-x: auto;
+}
+.gl-box-panel.open { display: block; }
+.gl-box-panel table {
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  min-width: 420px;
+  width: 100%;
+}
+.gl-box-panel th {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: right;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.gl-box-panel th:first-child { text-align: left; }
+.gl-box-panel td {
+  text-align: right;
+  padding: 5px 6px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border);
+}
+.gl-box-panel td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+.gl-box-panel tr:last-child td { border-bottom: none; }
+.gl-box-panel .gl-squid { color: var(--gold, #f0c060); }
+.gl-no-box-msg {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 8px 2px;
+  font-style: italic;
+}

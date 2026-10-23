@@ -10,7 +10,7 @@ var NEWS_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTO
 var STANDINGS_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTImdxXoTOYFuX1X9iFtSpG-BjD85FJXCDPxETuaJWfQlrNR7j0y7XWadoefmuWRRrqt3Lz3nlOYNAi/pub?gid=1569850367&single=true&output=csv';
 var LIVE_SEASON    = 2026.2;
 var LIVE_LABEL     = 'Fall 2026';
-var DATA = { players: [], stats: [], logs: [] };
+var DATA = { players: [], stats: [], logs: [], schedules: [] };
 var SEASON_RECORDS = [];
 function seaCreature(id){
   // Return initials avatar HTML - dark navy bg, sky blue text
@@ -24,8 +24,9 @@ async function loadData() {
     fetch('data/players.json').then(function(r){return r.json();}),
     fetch('data/season_stats.json').then(function(r){return r.json();}),
     fetch('data/game_logs.json').then(function(r){return r.json();}),
+    fetch('data/schedules.json').then(function(r){return r.json();}).catch(function(){return [];}),
   ]);
-  DATA.players = res[0]; DATA.stats = res[1]; DATA.logs = res[2];
+  DATA.players = res[0]; DATA.stats = res[1]; DATA.logs = res[2]; DATA.schedules = res[3];
   // Set maxSeason from static data first so site works even if live fetch fails
   DATA.maxSeason = Math.max.apply(null, DATA.stats.map(function(r){return parseFloat(r.season_sort||r.season||0);}));
   DATA.pitchers = new Set(DATA.stats.filter(function(r){return r.pit_G && r.pit_G > 0;}).map(function(r){return r.player_id;}));
@@ -1492,73 +1493,174 @@ function renderStatsLeaderboard() { renderStats(); }
 // ── GAME LOGS ─────────────────────────────────────────────────────────────
 function showGameLogs() {
   document.getElementById('page-gamelogs').classList.add('active');
-  var games={};
-  DATA.logs.forEach(function(l){
-    var key=l.date+'||'+l.game_num;
-    if(!games[key]) games[key]={date:l.date,game_num:l.game_num,opponent:l.opponent,rows:[]};
-    games[key].rows.push(l);
+
+  // Build a box-score lookup: key = season_sort + '|' + game_num \u2192 sorted rows
+  var boxMap = {};
+  DATA.logs.forEach(function(l) {
+    var key = (l.season_sort || '') + '|' + (l.game_num || l.game_num === 0 ? l.game_num : '');
+    if (!boxMap[key]) boxMap[key] = [];
+    boxMap[key].push(l);
   });
-  var list=Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date)||b.game_num-a.game_num;});
-  var years=Array.from(new Set(list.map(function(g){return g.date.slice(0,4);}))).sort().reverse();
-  document.getElementById('log-year-select').innerHTML=
-    '<option value="all">All Years</option>'+years.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
-  window._gameList=list;
+  window._glBoxMap = boxMap;
+
+  // Collect unique years from schedules for filter buttons
+  var years = Array.from(new Set(DATA.schedules.map(function(r){ return Math.floor(r.season_sort); })))
+    .sort(function(a,b){return b-a;});
+  window._glYearFilter = 'all';
+
+  // Build filter buttons
+  var filterHTML = '<button class="gl-filter-btn active" onclick="glSetYear(\'all\',this)">All</button>';
+  years.forEach(function(y) {
+    filterHTML += '<button class="gl-filter-btn" onclick="glSetYear('+y+',this)">'+y+'</button>';
+  });
+  document.getElementById('gl-filter-row').innerHTML = filterHTML;
+
+  renderGameList();
+}
+
+function glSetYear(yr, btn) {
+  window._glYearFilter = yr;
+  document.querySelectorAll('.gl-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
   renderGameList();
 }
 
 function renderGameList() {
-  var year=document.getElementById('log-year-select').value;
-  var squidLegend='<div style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:0.75rem">&#129425; Squid of the Game (top RV per gender)</div>';
-  var games=window._gameList.filter(function(g){return year==='all'||g.date.startsWith(year);});
-  var schedMap={};
-  if(window._scheduleRows){
-    window._scheduleRows.forEach(function(r){
-      var d=schedDateToISO(r['Date']||'');
-      if(d) schedMap[d]={wl:(r['W/L']||'').trim().toUpperCase(),rs:r['RS']||'',ra:r['RA']||''};
-    });
-  }
-  var html='',lastSeason='';
-  games.forEach(function(g){
-    var yr=g.date.slice(0,4),mo=parseInt(g.date.slice(5,7));
-    var season=yr+(mo<=7?' Spring':' Fall');
-    if(season!==lastSeason){
-      html+='<div style="font-family:var(--font-blade);text-transform:lowercase;color:var(--sky);font-size:0.85rem;'+
-        'letter-spacing:0.08em;padding:0.6rem 0 0.3rem;border-top:1px solid var(--border-bright);'+
-        'margin-top:'+(lastSeason?'1rem':'0')+'">'+season+'</div>';
-      lastSeason=season;
-    }
-    var sched=schedMap[g.date]||{};
-    var wl=sched.wl||'',rs=sched.rs||'',ra=sched.ra||'';
-    var wlColor=wl==='W'?'var(--green)':wl==='L'?'var(--red)':'var(--text-muted)';
-    var scoreStr=(rs&&ra)?rs+'\u2013'+ra:'';
-    var hasBox=g.rows&&g.rows.length>0;
-    html+='<div class="card mb1"'+(hasBox?' style="cursor:pointer" onclick="toggleGameBox(this)"':'')+'>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center">'+
-        '<div style="display:flex;align-items:center;gap:0.75rem">'+
-          (wl?'<span style="font-family:var(--font-blade);font-size:1.1rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</span>':
-              '<span style="color:var(--text-muted);font-size:0.85rem;width:1rem">&mdash;</span>')+
-          '<div>'+
-            '<span style="font-family:var(--font-display);font-weight:700;font-size:0.95rem">'+g.date+'</span>'+
-            '<span style="color:var(--text-muted);margin-left:0.6rem;font-size:0.88rem">vs '+g.opponent+'</span>'+
-          '</div>'+
-        '</div>'+
-        '<div style="display:flex;align-items:center;gap:1rem">'+
-          (scoreStr?'<span style="font-family:var(--font-display);font-weight:700;color:var(--text)">'+scoreStr+'</span>':'')+
-          (hasBox?'<span style="color:var(--text-muted);font-size:0.8rem">box score &#9660;</span>':
-                  '<span style="color:var(--text-muted);font-size:0.75rem;font-style:italic">no box score</span>')+
-        '</div>'+
-      '</div>'+
-      (hasBox?'<div class="game-detail" style="display:none;margin-top:1rem">'+
-        buildBoxTableWithPos(g.rows.slice().sort(function(a,b){return a.batting_order-b.batting_order;}),false)+
-      '</div>':'')+
-    '</div>';
+  var yr = window._glYearFilter || 'all';
+  var boxMap = window._glBoxMap || {};
+
+  // Filter schedules by year
+  var games = DATA.schedules.filter(function(r) {
+    return yr === 'all' || Math.floor(r.season_sort) === parseInt(yr);
   });
-  document.getElementById('game-list').innerHTML=(html?squidLegend+html:'')||'<div class="empty-state">No games found</div>';
+
+  if (!games.length) {
+    document.getElementById('game-list').innerHTML = '<div class="empty-state">No games found</div>';
+    return;
+  }
+
+  // Group by season_sort
+  var seasons = [];
+  var seasonMap = {};
+  games.forEach(function(r) {
+    var k = r.season_sort;
+    if (!seasonMap[k]) { seasonMap[k] = []; seasons.push(k); }
+    seasonMap[k].push(r);
+  });
+  // seasons already sorted newest-first from schedules.json sort order; dedupe
+  seasons = Array.from(new Set(seasons)).sort(function(a,b){return b-a;});
+
+  var html = '';
+  seasons.forEach(function(ss) {
+    var rows = seasonMap[ss].slice().sort(function(a,b){ return (a.game_num||0)-(b.game_num||0); });
+    var label = rows[0].season_label || seasonLabel(ss);
+    var wins = rows.filter(function(r){return r.wl==='W';}).length;
+    var losses = rows.filter(function(r){return r.wl==='L';}).length;
+    var record = wins + '-' + losses;
+
+    html += '<div class="gl-season-block">';
+    html += '<div class="gl-season-label">' + label.toLowerCase() +
+            ' <span class="gl-season-record">' + record + '</span></div>';
+
+    rows.forEach(function(r) {
+      var boxKey = r.season_sort + '|' + r.game_num;
+      var boxRows = boxMap[boxKey] || [];
+      var hasBox = boxRows.length > 0;
+
+      var scoreColor = r.wl === 'W' ? 'var(--win,#4ade80)' :
+                       r.wl === 'L' ? 'var(--loss,#f87171)' : 'var(--text-muted)';
+      var scoreStr = (r.rs !== null && r.ra !== null) ? r.rs + '-' + r.ra :
+                     r.forfeit ? (r.wl === 'W' ? 'FFW' : 'FFL') : '';
+      var haClass = r.home_away === 'H' ? 'gl-ha-badge home' : 'gl-ha-badge';
+
+      html += '<div class="gl-game-row' + (hasBox ? '' : ' no-box') + '"' +
+              (hasBox ? ' onclick="glToggleBox(this)"' : '') + '>'+
+        '<span class="gl-game-num">' + (r.game_num || '') + '</span>'+
+        '<span class="gl-game-date">' + (r.date || '') + '</span>'+
+        '<span class="' + haClass + '">' + (r.home_away || '') + '</span>'+
+        '<span class="gl-opponent">' + (r.opponent || '') + '</span>'+
+        '<span class="gl-score" style="color:' + scoreColor + '">' + scoreStr + '</span>'+
+        (r.wl ? '<span class="gl-wl-badge ' + r.wl + '">' + r.wl + '</span>' : '<span></span>')+
+        '<span class="gl-expand-arrow">&#9660;</span>'+
+      '</div>';
+
+      // Box panel (always emitted; hidden by default)
+      html += '<div class="gl-box-panel">';
+      if (hasBox) {
+        var sorted = boxRows.slice().sort(function(a,b){return (a.batting_order||99)-(b.batting_order||99);});
+        html += glBuildBoxTable(sorted);
+      } else {
+        html += '<div class="gl-no-box-msg">Box score not available for this game.</div>';
+      }
+      html += '</div>';
+    });
+
+    html += '</div>'; // season-block
+  });
+
+  document.getElementById('game-list').innerHTML = html ||
+    '<div class="empty-state">No games found</div>';
 }
 
-function toggleGameBox(el){
-  var d=el.querySelector('.game-detail');
-  if(d) d.style.display=d.style.display==='none'?'block':'none';
+function glToggleBox(rowEl) {
+  // Close any other open row
+  var currentOpen = document.querySelector('.gl-game-row.expanded');
+  if (currentOpen && currentOpen !== rowEl) {
+    currentOpen.classList.remove('expanded');
+    var prev = currentOpen.nextElementSibling;
+    if (prev && prev.classList.contains('gl-box-panel')) prev.classList.remove('open');
+  }
+  // Toggle this row
+  var panel = rowEl.nextElementSibling;
+  var wasOpen = rowEl.classList.contains('expanded');
+  rowEl.classList.toggle('expanded', !wasOpen);
+  if (panel && panel.classList.contains('gl-box-panel')) panel.classList.toggle('open', !wasOpen);
+}
+
+function glBuildBoxTable(rows) {
+  // Determine who the squid(s) are: top RV per gender
+  var mBest = null, fBest = null;
+  rows.forEach(function(r) {
+    var p = getPlayer(r.player_id);
+    var rv = parseFloat(r.RV);
+    if (isNaN(rv)) return;
+    if (!p) return;
+    if (p.gender === 'M' && (mBest === null || rv > mBest.rv)) mBest = {id: r.player_id, rv: rv};
+    if (p.gender === 'F' && (fBest === null || rv > fBest.rv)) fBest = {id: r.player_id, rv: rv};
+  });
+  var squids = new Set();
+  if (mBest && mBest.rv > 0) squids.add(mBest.id);
+  if (fBest && fBest.rv > 0) squids.add(fBest.id);
+
+  var html = '<table><thead><tr>'+
+    '<th>Player</th><th style="text-align:left">Pos</th>'+
+    '<th>AB</th><th>R</th><th>H</th><th>RBI</th>'+
+    '<th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>RV</th>'+
+    '</tr></thead><tbody>';
+
+  rows.forEach(function(r) {
+    var pos = r.position || '';
+    var rv = (r.RV !== null && r.RV !== undefined && r.RV !== '') ? parseFloat(r.RV) : null;
+    var rvStr = rv !== null ? (rv >= 0 ? '+' : '') + rv.toFixed(1) : '';
+    var isSquid = squids.has(r.player_id);
+    var rvCell = isSquid ? '<td class="gl-squid">'+rvStr+' &#129425;</td>' : '<td>'+rvStr+'</td>';
+    html += '<tr>'+
+      '<td>' + displayName(r.player_id) + '</td>'+
+      '<td style="text-align:left;color:var(--sky)">' + pos + '</td>'+
+      '<td>' + fmtBox(r.AB) + '</td>'+
+      '<td>' + fmtBox(r.R) + '</td>'+
+      '<td>' + fmtBox(r.H) + '</td>'+
+      '<td>' + fmtBox(r.RBI) + '</td>'+
+      '<td>' + fmtBox(r.dbl) + '</td>'+
+      '<td>' + fmtBox(r.trp) + '</td>'+
+      '<td>' + fmtBox(r.HR) + '</td>'+
+      '<td>' + fmtBox(r.BB) + '</td>'+
+      rvCell +
+    '</tr>';
+  });
+
+  html += '</tbody></table>';
+  return html;
 }
 
 // ── RECORDS ───────────────────────────────────────────────────────────────

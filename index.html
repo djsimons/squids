@@ -171,12 +171,9 @@
 
 <!-- GAME LOG -->
 <div id="page-gamelogs" class="page">
-  <div class="page-header"><h2>Game Log</h2><p>Box scores · 2014–present · click a game to expand</p></div>
+  <div class="page-header"><h2>Game Log</h2><p>All-time schedule &amp; results · click a game for box score</p></div>
   <div class="container">
-    <div class="filter-bar">
-      <span class="filter-label">Year:</span>
-      <select id="log-year-select" onchange="renderGameList()"></select>
-    </div>
+    <div id="gl-filter-row" class="gl-filter-row"></div>
     <div id="game-list"></div>
   </div>
 </div>
