@@ -131,18 +131,21 @@ function mergeLiveBox(text) {
   var lines = text.trim().replace(/\r/g,'').split('\n');
   if (lines.length < 2) return;
   var headers = dedupeHeaders(parseLine(lines[0]));
-  // Collect all dates present in the live feed so we can strip archived duplicates
-  var liveDates = {};
+  // Collect all season_sort|game_num keys present in the live feed
+  // so we can strip archived duplicates by game identity, not date
+  // (dates can differ between schedule and box score tabs for rescheduled games)
+  var liveKeys = {};
   lines.slice(1).forEach(function(line){
     var vals = parseLine(line), obj = {};
     headers.forEach(function(h,i){obj[h]=vals[i]||'';});
-    var d = fmtLiveDate(obj['Date']||'');
-    if (d) liveDates[d] = true;
+    var gnum = (obj['Game #']||'').trim();
+    if (gnum) liveKeys[LIVE_SEASON + '|' + gnum] = true;
   });
-  // Remove flagged-live rows AND archived rows whose dates appear in the live feed
+  // Remove flagged-live rows AND archived rows for the same season+game
   DATA.logs = DATA.logs.filter(function(l){
     if (l.live) return false;
-    if (l.date && liveDates[l.date]) return false;
+    if (l.season_sort === LIVE_SEASON && l.game_num != null &&
+        liveKeys[LIVE_SEASON + '|' + l.game_num]) return false;
     return true;
   });
   var order = {};
@@ -155,7 +158,7 @@ function mergeLiveBox(text) {
     var key = (obj['Game #']||'')+'||'+(obj['Date']||'');
     order[key] = (order[key]||0)+1;
     DATA.logs.push({
-      live:true, player_id:pid, game_num:n(obj['Game #']),
+      live:true, season_sort:LIVE_SEASON, player_id:pid, game_num:n(obj['Game #']),
       date:fmtLiveDate(obj['Date']||''), opponent:obj['OPP']||'',
       batting_order:order[key],
       AB:n(obj['AB']),R:n(obj['R']),H:n(obj['H']),RBI:n(obj['RBI']),
@@ -1497,12 +1500,12 @@ function renderStatsLeaderboard() { renderStats(); }
 function showGameLogs() {
   document.getElementById('page-gamelogs').classList.add('active');
 
-  // Build a box-score lookup: key = date + '|' + game_num
-  // (season_sort is null on archived log rows, so we key on date instead)
+  // Build a box-score lookup: key = season_sort + '|' + game_num
+  // Using season_sort instead of date handles rescheduled games correctly
   var boxMap = {};
   DATA.logs.forEach(function(l) {
-    if (!l.date) return;
-    var key = l.date + '|' + (l.game_num != null ? l.game_num : '');
+    if (l.season_sort == null || l.game_num == null) return;
+    var key = l.season_sort + '|' + (l.game_num != null ? l.game_num : '');
     if (!boxMap[key]) boxMap[key] = [];
     boxMap[key].push(l);
   });
@@ -1568,7 +1571,7 @@ function renderGameList() {
             ' <span class="gl-season-record">' + record + '</span></div>';
 
     rows.forEach(function(r) {
-      var boxKey = r.date + '|' + r.game_num;
+      var boxKey = r.season_sort + '|' + r.game_num;
       var boxRows = boxMap[boxKey] || [];
       var hasBox = boxRows.length > 0;
 
