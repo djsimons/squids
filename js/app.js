@@ -1516,11 +1516,20 @@ function showGameLogs() {
     .sort(function(a,b){return b-a;});
   window._glYearFilter = 'all';
 
-  // Build filter buttons
-  var filterHTML = '<button class="gl-filter-btn active" onclick="glSetYear(\'all\',this)">All</button>';
-  years.forEach(function(y) {
-    filterHTML += '<button class="gl-filter-btn" onclick="glSetYear('+y+',this)">'+y+'</button>';
-  });
+  // Build filter: dropdown on mobile, buttons on desktop
+  var isMobile = window.innerWidth < 640;
+  var filterHTML;
+  if (isMobile) {
+    filterHTML = '<select class="gl-year-select" onchange="glSetYear(this.value===\'all\'?\'all\':parseInt(this.value),null)">' +
+      '<option value="all">All Years</option>';
+    years.forEach(function(y) { filterHTML += '<option value="'+y+'">'+y+'</option>'; });
+    filterHTML += '</select>';
+  } else {
+    filterHTML = '<button class="gl-filter-btn active" onclick="glSetYear(\'all\',this)">All</button>';
+    years.forEach(function(y) {
+      filterHTML += '<button class="gl-filter-btn" onclick="glSetYear('+y+',this)">'+y+'</button>';
+    });
+  }
   document.getElementById('gl-filter-row').innerHTML = filterHTML;
 
   renderGameList();

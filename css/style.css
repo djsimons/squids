@@ -811,3 +811,28 @@ table td:first-child { max-width: 160px; }
   padding: 8px 2px;
   font-style: italic;
 }
+
+.gl-year-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+@media (max-width: 639px) {
+  .gl-game-row {
+    grid-template-columns: 22px 80px 26px 1fr 44px 50px 22px;
+    gap: 0 6px;
+    padding: 8px 6px;
+    font-size: 0.82rem;
+  }
+  .gl-game-date { font-size: 0.74rem; }
+  .gl-game-score { font-size: 0.82rem; }
+  .gl-wl-badge { width: 20px; height: 20px; font-size: 0.62rem; }
+  .gl-box-panel { font-size: 0.72rem; }
+  .gl-box-panel table { min-width: 480px; }
+}
