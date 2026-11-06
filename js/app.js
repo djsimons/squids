@@ -1384,18 +1384,20 @@ function renderGameTeamRows() {
       OBP:(g.AB+g.BB)>0?(g.H+g.BB)/(g.AB+g.BB):null,
       RV:g.RV};
   });
-  rows.sort(function(a,b){return (b.R||0)-(a.R||0);});
+  rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
   window._statsRows = rows;
   window._statsShowSeason = false;
   window._statsPitching = false;
   window._statsGameMode = 'team';
+  window._statsTeamSortCol = 'RV';
+  window._statsTeamSortAsc = false;
 
   var thead = document.getElementById('season-thead');
   var labelEl = document.getElementById('season-label');
   if(labelEl) labelEl.textContent = 'Team Game Totals';
   thead.innerHTML = '<tr>'+
-    '<th style="text-align:left">Date</th>'+
-    '<th style="text-align:left">Opponent</th>'+
+    '<th style="text-align:left;cursor:pointer" onclick="sortStats(this)" data-col="date">Date &#8597;</th>'+
+    '<th style="text-align:left;cursor:pointer" onclick="sortStats(this)" data-col="opponent">Opponent &#8597;</th>'+
     '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
     '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
     '<th onclick="sortStats(this)" data-col="R">R</th>'+
@@ -1474,7 +1476,7 @@ function renderStatsRows() {
       return '<tr>'+
         '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
         '<td style="text-align:left">'+r.opponent+'</td>'+
-        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
+        '<td>'+fmtStat(r.PA)+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
         '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
         '<td>'+fmtCount(r.HR)+'</td><td>'+fmtCount(r.BB)+'</td>'+
         '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
@@ -1530,6 +1532,7 @@ function sortStats(th) {
     var av=a[col],bv=b[col];
     if(av==null&&bv==null) return 0;
     if(av==null) return 1; if(bv==null) return -1;
+    if(typeof av==='string') return asc ? av.localeCompare(bv) : bv.localeCompare(av);
     return asc ? av-bv : bv-av;
   });
   window._statsRows = rows;
