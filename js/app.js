@@ -1823,8 +1823,8 @@ function sortPlayerStats(th) {
   th.classList.add(asc ? 'sort-desc' : 'sort-asc');
   var rows = (window._playerStatRows || []).slice();
   rows.sort(function(a,b){
-    var av = col==='PA'?(a.AB||0)+(a.BB||0) : a[col];
-    var bv = col==='PA'?(b.AB||0)+(b.BB||0) : b[col];
+    var av = col==='PA'?(a.AB||0)+(a.BB||0) : col==='RV'?calcRV(a) : a[col];
+    var bv = col==='PA'?(b.AB||0)+(b.BB||0) : col==='RV'?calcRV(b) : b[col];
     if (av == null && bv == null) return 0;
     if (av == null) return 1;
     if (bv == null) return -1;
