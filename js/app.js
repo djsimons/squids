@@ -355,11 +355,20 @@ function navigateFromHash() {
 
 window.addEventListener('popstate', navigateFromHash);
 
+function goToSeasonStats(season_sort) {
+  var scopeEl  = document.getElementById('stats-scope');
+  var seasonEl = document.getElementById('stats-season');
+  if (scopeEl)  scopeEl.value  = 'season-player';
+  if (seasonEl) seasonEl.value = Number(season_sort).toFixed(1);
+  navigate('seasons');
+  renderStats();
+}
+
 // ── BOX TABLES ────────────────────────────────────────────────────────────
 function calcRV(l) {
   var ab=l.AB||0, h=l.H||0, d=l.dbl||0, t=l.trp||0, hr=l.HR||0, bb=l.BB||0;
   if(ab===0 && h===0 && bb===0) return null;
-  return Math.round((-0.28*(ab-h) + 0.65*(h-d-t-hr) + 0.96*d + 1.07*t + 1.57*hr + 0.56*bb + 0.02)*100)/100;
+  return Math.round((-0.28*(ab-h) + 0.65*(h-d-t-hr) + 0.96*d + 1.07*t + 1.57*hr + 0.88*bb)*100)/100;
 }
 
 
@@ -1015,7 +1024,7 @@ function calcGameTeamRows() {
   getGameLogs().forEach(function(l){
     var key = l.date + '||' + (l.game_num||'');
     if(!games[key]){
-      games[key] = {date:l.date, game_num:l.game_num, opponent:l.opponent,
+      games[key] = {date:l.date, game_num:l.game_num, season_sort:l.season_sort, opponent:l.opponent,
         AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0,
         pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,pit_G:0};
     }
@@ -1233,7 +1242,7 @@ function renderStats() {
         return true;
       });
       rows = pool.sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);}).map(function(s){
-        return {pid:s.player_id, seasonStr:s.season_label,
+        return {pid:s.player_id, seasonStr:s.season_label, season_sort:s.season_sort,
           G:s.G,PA:(s.AB||0)+(s.BB||0),AB:s.AB,R:s.R,H:s.H,RBI:s.RBI,dbl:s.dbl,trp:s.trp,HR:s.HR,BB:s.BB,
           BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,RV:calcRV(s)};
       });
@@ -1298,7 +1307,7 @@ function renderStats() {
         return true;
       });
       prows = pool2.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);}).map(function(s){
-        return {pid:s.player_id,seasonStr:s.season_label,
+        return {pid:s.player_id,seasonStr:s.season_label,season_sort:s.season_sort,
           pit_G:s.pit_G,pit_GS:s.pit_GS,pit_IP:s.pit_IP,pit_RA:s.pit_RA,
           pit_W:s.pit_W,pit_L:s.pit_L,pit_S:s.pit_S,
           RIP:s.pit_IP>0?s.pit_RA/s.pit_IP:null};
@@ -1358,6 +1367,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view) {
   if (isPit) {
     rows = logs.map(function(l){
       return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
+        season_sort:l.season_sort, game_num:l.game_num,
         pit_G:1, pit_IP:parseFloat(l.IP)||0, pit_RA:l.RA||0,
         pit_W:(l.W&&l.W!=0)?1:0, pit_L:(l.L&&l.L!=0)?1:0, pit_S:(l.S&&l.S!=0)?1:0,
         RIP:parseFloat(l.IP)>0?(l.RA||0)/parseFloat(l.IP):null};
@@ -1366,6 +1376,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view) {
   } else {
     rows = logs.map(function(l){
       return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
+        season_sort:l.season_sort, game_num:l.game_num,
         G:1, PA:(l.AB||0)+(l.BB||0), AB:l.AB||0, R:l.R||0, H:l.H||0, RBI:l.RBI||0,
         dbl:l.dbl||0, trp:l.trp||0, HR:l.HR||0, BB:l.BB||0,
         BA:(l.AB||0)>0?(l.H||0)/(l.AB||0):null,
@@ -1419,6 +1430,7 @@ function renderGameTeamRows(view) {
   var gameData = calcGameTeamRows();
   var rows = gameData.map(function(g){
     return {pid:null, date:g.date, opponent:g.opponent,
+      season_sort:g.season_sort, game_num:g.game_num,
       PA:g.AB+g.BB, AB:g.AB, R:g.R, H:g.H, RBI:g.RBI,
       dbl:g.dbl, trp:g.trp, HR:g.HR, BB:g.BB,
       BA:g.AB>0?g.H/g.AB:null,
@@ -1678,9 +1690,12 @@ function renderStatsRows() {
     var cells = '';
     if (gameMode === 'team') {
       // Team game row: date, opp, then stats (batting or pitching)
+      var dateTd = r.season_sort!=null&&r.game_num!=null
+        ? '<td style="text-align:left;white-space:nowrap"><a style="cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--sky)" onclick="window._glTargetGame={season_sort:'+r.season_sort+',game_num:\''+r.game_num+'\'};navigate(\'gamelogs\')">'+r.date+'</a></td>'
+        : '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>';
       if (isPitching) {
         return '<tr>'+
-          '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+          dateTd+
           '<td style="text-align:left">'+r.opponent+'</td>'+
           '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
           '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
@@ -1688,7 +1703,7 @@ function renderStatsRows() {
         '</tr>';
       }
       return '<tr>'+
-        '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+        dateTd+
         '<td style="text-align:left">'+r.opponent+'</td>'+
         '<td>'+fmtStat(r.PA)+'</td>'+
         '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
@@ -1699,10 +1714,13 @@ function renderStatsRows() {
       '</tr>';
     } else if (gameMode === 'player') {
       // Player game row: player, date, opp, stats (batting or pitching)
+      var pdateTd = r.season_sort!=null&&r.game_num!=null
+        ? '<td style="text-align:left;white-space:nowrap"><a style="cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--sky)" onclick="window._glTargetGame={season_sort:'+r.season_sort+',game_num:\''+r.game_num+'\'};navigate(\'gamelogs\')">'+r.date+'</a></td>'
+        : '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>';
       if (isPitching) {
         return '<tr>'+
           '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
-          '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+          pdateTd+
           '<td style="text-align:left">'+r.opponent+'</td>'+
           '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
           '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
@@ -1711,7 +1729,7 @@ function renderStatsRows() {
       }
       return '<tr>'+
         '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
-        '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+        pdateTd+
         '<td style="text-align:left">'+r.opponent+'</td>'+
         '<td>'+(r.PA!=null?r.PA:'&mdash;')+'</td>'+
         '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
@@ -1723,7 +1741,9 @@ function renderStatsRows() {
     } else if (gameMode === 'season-team' || gameMode === 'career-team') {
       // Team season/career row: first col is always season label
       var label = r.seasonStr || 'All-Time';
-      var labelCell = '<td style="text-align:left">'+label+'</td>';
+      var labelCell = r.season_sort!=null
+        ? '<td style="text-align:left"><a style="cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--sky)" onclick="goToSeasonStats('+r.season_sort+')">'+label+'</a></td>'
+        : '<td style="text-align:left">'+label+'</td>';
       if (isPitching) {
         cells = labelCell+
           '<td>'+fmtStat(r.pit_G)+'</td>'+
@@ -1742,7 +1762,12 @@ function renderStatsRows() {
       }
       return '<tr>'+cells+'</tr>';
     } else if (isPitching) {
-      if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
+      if (showSeasonCol) {
+        var sLink = r.season_sort!=null
+          ? '<a style="cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--sky)" onclick="goToSeasonStats('+r.season_sort+')">'+r.seasonStr+'</a>'
+          : r.seasonStr;
+        cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+sLink+'</td>';
+      }
       cells += '<td>'+fmtStat(r.pit_G)+'</td><td>'+fmtStat(r.pit_GS)+'</td>'+
         '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
         '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
@@ -1751,7 +1776,12 @@ function renderStatsRows() {
         '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
         cells+'</tr>';
     } else {
-      if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
+      if (showSeasonCol) {
+        var sLink = r.season_sort!=null
+          ? '<a style="cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--sky)" onclick="goToSeasonStats('+r.season_sort+')">'+r.seasonStr+'</a>'
+          : r.seasonStr;
+        cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+sLink+'</td>';
+      }
       cells += '<td>'+fmtStat(r.G)+'</td><td>'+(r.PA!=null?r.PA:'&mdash;')+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td>'+
         '<td>'+fmtStat(r.H)+'</td><td>'+fmtStat(r.RBI)+'</td>'+
         '<td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
