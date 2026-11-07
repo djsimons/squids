@@ -641,8 +641,12 @@ function renderHomeGames() {
   var latest=sortedLogs[0];
   var recentHTML='';
   if(latest){
-    var rows=DATA.logs.filter(function(l){return l.season_sort===latest.season_sort&&l.date===latest.date&&l.game_num===latest.game_num;})
-      .sort(function(a,b){return a.batting_order-b.batting_order;});
+    var rows=DATA.logs.filter(function(l){return l.season_sort===latest.season_sort&&l.date===latest.date&&l.game_num===latest.game_num;});
+    rows.sort(function(a,b){
+      var ao = a.batting_order != null ? a.batting_order : 1000 + rows.indexOf(a);
+      var bo = b.batting_order != null ? b.batting_order : 1000 + rows.indexOf(b);
+      return ao - bo;
+    });
     var schedResult=sched.find(function(r){return schedDateToISO(r['Date']||'')===latest.date;});
     var gameLabel='Last Game';
     if(schedResult){
@@ -1384,20 +1388,18 @@ function renderGameTeamRows() {
       OBP:(g.AB+g.BB)>0?(g.H+g.BB)/(g.AB+g.BB):null,
       RV:g.RV};
   });
-  rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
+  rows.sort(function(a,b){return (b.R||0)-(a.R||0);});
   window._statsRows = rows;
   window._statsShowSeason = false;
   window._statsPitching = false;
   window._statsGameMode = 'team';
-  window._statsTeamSortCol = 'RV';
-  window._statsTeamSortAsc = false;
 
   var thead = document.getElementById('season-thead');
   var labelEl = document.getElementById('season-label');
   if(labelEl) labelEl.textContent = 'Team Game Totals';
   thead.innerHTML = '<tr>'+
-    '<th style="text-align:left;cursor:pointer" onclick="sortStats(this)" data-col="date">Date &#8597;</th>'+
-    '<th style="text-align:left;cursor:pointer" onclick="sortStats(this)" data-col="opponent">Opponent &#8597;</th>'+
+    '<th style="text-align:left">Date</th>'+
+    '<th style="text-align:left">Opponent</th>'+
     '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
     '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
     '<th onclick="sortStats(this)" data-col="R">R</th>'+
@@ -1476,7 +1478,7 @@ function renderStatsRows() {
       return '<tr>'+
         '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
         '<td style="text-align:left">'+r.opponent+'</td>'+
-        '<td>'+fmtStat(r.PA)+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
+        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
         '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
         '<td>'+fmtCount(r.HR)+'</td><td>'+fmtCount(r.BB)+'</td>'+
         '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
@@ -1532,7 +1534,6 @@ function sortStats(th) {
     var av=a[col],bv=b[col];
     if(av==null&&bv==null) return 0;
     if(av==null) return 1; if(bv==null) return -1;
-    if(typeof av==='string') return asc ? av.localeCompare(bv) : bv.localeCompare(av);
     return asc ? av-bv : bv-av;
   });
   window._statsRows = rows;
@@ -1713,7 +1714,11 @@ function renderGameList() {
       // Box panel (always emitted; hidden by default)
       html += '<div class="gl-box-panel">';
       if (hasBox) {
-        var sorted = boxRows.slice().sort(function(a,b){return (a.batting_order||99)-(b.batting_order||99);});
+        var sorted = boxRows.slice().sort(function(a,b){
+          var ao = a.batting_order != null ? a.batting_order : 1000 + boxRows.indexOf(a);
+          var bo = b.batting_order != null ? b.batting_order : 1000 + boxRows.indexOf(b);
+          return ao - bo;
+        });
         html += glBuildBoxTable(sorted);
       } else {
         html += '<div class="gl-no-box-msg">Box score not available for this game.</div>';
