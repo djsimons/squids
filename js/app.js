@@ -2060,12 +2060,12 @@ function glToggleBox(rowEl) {
 }
 
 function glBuildBoxTable(rows) {
-  // Determine who the squid(s) are: top RV per gender
+  // Determine who the squid(s) are: top RV per gender (computed from raw stats)
   var mBest = null, fBest = null;
   rows.forEach(function(r) {
     var p = getPlayer(r.player_id);
-    var rv = parseFloat(r.RV);
-    if (isNaN(rv)) return;
+    var rv = calcRV(r);
+    if (rv === null) return;
     if (!p) return;
     if (p.gender === 'M' && (mBest === null || rv > mBest.rv)) mBest = {id: r.player_id, rv: rv};
     if (p.gender === 'F' && (fBest === null || rv > fBest.rv)) fBest = {id: r.player_id, rv: rv};
@@ -2083,12 +2083,13 @@ function glBuildBoxTable(rows) {
   rows.forEach(function(r) {
     // Derive position from pos_* fields (same as primaryPos helper)
     var pos = primaryPos(r);
-    var rv = (r.RV !== null && r.RV !== undefined && r.RV !== '') ? parseFloat(r.RV) : null;
+    var rv = calcRV(r);
     var rvStr = rv !== null ? (rv >= 0 ? '+' : '') + rv.toFixed(1) : '';
     var isSquid = squids.has(r.player_id);
-    var rvCell = isSquid ? '<td class="gl-squid">'+rvStr+' &#129425;</td>' : '<td>'+rvStr+'</td>';
+    var nameCell = '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.player_id+'\')">'+nameWithFace(r.player_id)+'</a>'+(isSquid?' &#129425;':'')+'</td>';
+    var rvCell = isSquid ? '<td class="gl-squid">'+rvStr+'</td>' : '<td>'+rvStr+'</td>';
     html += '<tr>'+
-      '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.player_id+'\')">'+nameWithFace(r.player_id)+'</a></td>'+
+      nameCell+
       '<td style="text-align:left;color:var(--sky-light);font-weight:600">' + pos + '</td>'+
       '<td>' + fmtBox(r.AB) + '</td>'+
       '<td>' + fmtBox(r.R) + '</td>'+
