@@ -1011,18 +1011,22 @@ function getGameLogs() {
 }
 
 function calcGameTeamRows() {
-  // Aggregate all player lines per game into team totals
+  // Aggregate all player lines per game into team totals (batting + pitching)
   var games = {};
   getGameLogs().forEach(function(l){
     var key = l.date + '||' + (l.game_num||'');
     if(!games[key]){
       games[key] = {date:l.date, game_num:l.game_num, opponent:l.opponent,
-        AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0};
+        AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0,
+        pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,pit_G:0};
     }
     var g = games[key];
     g.AB+=l.AB||0; g.R+=l.R||0; g.H+=l.H||0; g.RBI+=l.RBI||0;
     g.dbl+=l.dbl||0; g.trp+=l.trp||0; g.HR+=l.HR||0; g.BB+=l.BB||0;
     g.RV+=calcRV(l)||0;
+    // pitching from game logs uses IP/RA/W/L/S fields
+    if(l.IP){ g.pit_IP+=parseFloat(l.IP)||0; g.pit_RA+=l.RA||0; g.pit_G+=1;
+      if(l.W&&l.W!=0) g.pit_W+=1; if(l.L&&l.L!=0) g.pit_L+=1; if(l.S&&l.S!=0) g.pit_S+=1; }
   });
   return Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date);});
 }
@@ -1142,10 +1146,12 @@ function showSeasons() {
 function onScopeChange() {
   var scope = document.getElementById('stats-scope').value;
   var seasonEl = document.getElementById('stats-season');
+  var isCareer = scope === 'career-player' || scope === 'career-team';
+  var isGame   = scope === 'game-player'   || scope === 'game-team';
   if (seasonEl) {
-    seasonEl.disabled = scope === 'career';
-    seasonEl.style.opacity = scope === 'career' ? '0.4' : '1';
-    if (scope === 'career') seasonEl.value = 'all';
+    seasonEl.disabled = isCareer || isGame;
+    seasonEl.style.opacity = (isCareer || isGame) ? '0.4' : '1';
+    if (isCareer || isGame) seasonEl.value = 'all';
   }
 }
 
@@ -1159,14 +1165,18 @@ function renderStats() {
   if (!scopeEl) return;
 
   var scope    = scopeEl.value;
+  // Normalize legacy scope names
+  if (scope === 'season') scope = 'season-player';
+  if (scope === 'career') scope = 'career-player';
   // Grey out season dropdown in career/game modes
-  var isGameMode = scope === 'game-player' || scope === 'game-team';
+  var isGameMode   = scope === 'game-player'   || scope === 'game-team';
+  var isCareerMode = scope === 'career-player' || scope === 'career-team';
   if(seasonEl){
-    seasonEl.disabled = scope === 'career' || isGameMode;
-    seasonEl.style.opacity = (scope === 'career' || isGameMode) ? '0.4' : '1';
-    if(scope === 'career' || isGameMode) seasonEl.value = 'all';
+    seasonEl.disabled = isCareerMode || isGameMode;
+    seasonEl.style.opacity = (isCareerMode || isGameMode) ? '0.4' : '1';
+    if(isCareerMode || isGameMode) seasonEl.value = 'all';
   }
-  var season   = (scope === 'career' || isGameMode) ? 'all' : (seasonEl ? seasonEl.value : 'all');
+  var season   = (isCareerMode || isGameMode) ? 'all' : (seasonEl ? seasonEl.value : 'all');
   var view     = viewEl ? viewEl.value : 'batting';
   var gender   = genderEl ? genderEl.value : 'all';
   var activeOnly = activeEl ? activeEl.checked : false;
@@ -1181,7 +1191,7 @@ function renderStats() {
   }
 
   // Update recap - always render with appropriate mode
-  if (scope === 'career') {
+  if (isCareerMode) {
     renderSeasonRecap(null, 'career');
   } else if (season === 'all') {
     renderSeasonRecap(null, 'all');
@@ -1192,7 +1202,7 @@ function renderStats() {
   // Update season label
   var labelEl = document.getElementById('season-label');
   if (labelEl) {
-    if (scope === 'career') labelEl.textContent = 'Career';
+    if (isCareerMode) labelEl.textContent = 'Career';
     else if (season === 'all') labelEl.textContent = 'All Seasons — every player-season';
     else labelEl.textContent = seasonLabel(parseFloat(season));
   }
@@ -1205,13 +1215,16 @@ function renderStats() {
   window._statsShowSeason = false;
 
   // ── GAME MODES ──
-  if (scope === 'game-player') { renderGamePlayerRows(gender, activeOnly, activeSet, minAB); return; }
-  if (scope === 'game-team') { renderGameTeamRows(); return; }
+  if (scope === 'game-player') { renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view); return; }
+  if (scope === 'game-team')   { renderGameTeamRows(view); return; }
+  // ── TEAM AGGREGATE MODES ──
+  if (scope === 'season-team') { renderSeasonTeamRows(season, view); return; }
+  if (scope === 'career-team') { renderCareerTeamRow(view); return; }
 
-  // ── BATTING ──
+  // ── BATTING (player scopes) ──
   if (view === 'batting') {
     var rows = [];
-    if (scope === 'season') {
+    if (scope === 'season-player') {
       // Single season or best in any season
       var pool = DATA.stats.filter(function(s){
         if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
@@ -1250,7 +1263,7 @@ function renderStats() {
         .sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);});
     }
 
-    var showSeasonCol = (scope==='season' && season==='all');
+    var showSeasonCol = (scope==='season-player' && season==='all');
     thead.innerHTML = '<tr>'+
       '<th style="text-align:left">Player</th>'+
       (showSeasonCol?'<th style="text-align:left">Season</th>':'')+
@@ -1275,10 +1288,10 @@ function renderStats() {
     window._statsShowSeason = showSeasonCol;
     renderStatsRows();
 
-  // ── PITCHING ──
+  // ── PITCHING (player scopes) ──
   } else {
     var prows = [];
-    if (scope === 'season') {
+    if (scope === 'season-player') {
       var pool2 = DATA.stats.filter(function(s){
         if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
@@ -1312,7 +1325,7 @@ function renderStats() {
         .sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
     }
 
-    var showSeasonCol2 = (scope==='season' && season==='all');
+    var showSeasonCol2 = (scope==='season-player' && season==='all');
     thead.innerHTML = '<tr>'+
       '<th style="text-align:left">Player</th>'+
       (showSeasonCol2?'<th style="text-align:left">Season</th>':'')+
@@ -1335,84 +1348,276 @@ function renderStats() {
   window._statsPitching = false;
 }
 
-function renderGamePlayerRows(gender, activeOnly, activeSet, minAB) {
-  // All individual game log lines
-  var rows = getGameLogs().filter(function(l){
+function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view) {
+  var isPit = view === 'pitching';
+  var logs = getGameLogs().filter(function(l){
     if(gender !== 'all'){ var p=getPlayer(l.player_id); if(!p||p.gender!==gender) return false; }
     if(activeOnly && !activeSet.has(l.player_id)) return false;
+    if(isPit) return !!(l.IP);
     if(minAB > 0 && ((l.AB||0)+(l.BB||0)) < minAB) return false;
     return true;
-  }).map(function(l){
-    return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
-      G:1, PA:(l.AB||0)+(l.BB||0), AB:l.AB||0, R:l.R||0, H:l.H||0, RBI:l.RBI||0,
-      dbl:l.dbl||0, trp:l.trp||0, HR:l.HR||0, BB:l.BB||0,
-      BA:(l.AB||0)>0?(l.H||0)/(l.AB||0):null,
-      OBP:((l.AB||0)+(l.BB||0))>0?((l.H||0)+(l.BB||0))/((l.AB||0)+(l.BB||0)):null,
-      RV:calcRV(l)};
   });
-  rows.sort(function(a,b){return (b.AB||0)-(a.AB||0);});
+  var rows;
+  if (isPit) {
+    rows = logs.map(function(l){
+      return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
+        pit_G:1, pit_IP:parseFloat(l.IP)||0, pit_RA:l.RA||0,
+        pit_W:(l.W&&l.W!=0)?1:0, pit_L:(l.L&&l.L!=0)?1:0, pit_S:(l.S&&l.S!=0)?1:0,
+        RIP:parseFloat(l.IP)>0?(l.RA||0)/parseFloat(l.IP):null};
+    });
+    rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
+  } else {
+    rows = logs.map(function(l){
+      return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
+        G:1, PA:(l.AB||0)+(l.BB||0), AB:l.AB||0, R:l.R||0, H:l.H||0, RBI:l.RBI||0,
+        dbl:l.dbl||0, trp:l.trp||0, HR:l.HR||0, BB:l.BB||0,
+        BA:(l.AB||0)>0?(l.H||0)/(l.AB||0):null,
+        OBP:((l.AB||0)+(l.BB||0))>0?((l.H||0)+(l.BB||0))/((l.AB||0)+(l.BB||0)):null,
+        RV:calcRV(l)};
+    });
+    rows.sort(function(a,b){return (b.AB||0)-(a.AB||0);});
+  }
   window._statsRows = rows;
   window._statsShowSeason = true; // show date+opp columns
-  window._statsPitching = false;
+  window._statsPitching = isPit;
   window._statsGameMode = 'player';
 
   var thead = document.getElementById('season-thead');
   var labelEl = document.getElementById('season-label');
-  if(labelEl) labelEl.textContent = 'Best Individual Game Lines';
-  thead.innerHTML = '<tr>'+
-    '<th style="text-align:left">Player</th>'+
-    '<th style="text-align:left">Date</th>'+
-    '<th style="text-align:left">Opp</th>'+
-    '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
-    '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
-    '<th onclick="sortStats(this)" data-col="R">R</th>'+
-    '<th onclick="sortStats(this)" data-col="H">H</th>'+
-    '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
-    '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
-    '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
-    '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
-    '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
-    '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
-    '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
-    '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
-  '</tr>';
+  if(labelEl) labelEl.textContent = isPit ? 'Individual Pitching — Game Lines' : 'Individual Batting — Game Lines';
+  if (isPit) {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Player</th>'+
+      '<th style="text-align:left">Date</th>'+
+      '<th style="text-align:left">Opp</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
+    '</tr>';
+  } else {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Player</th>'+
+      '<th style="text-align:left">Date</th>'+
+      '<th style="text-align:left">Opp</th>'+
+      '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
+      '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+      '<th onclick="sortStats(this)" data-col="R">R</th>'+
+      '<th onclick="sortStats(this)" data-col="H">H</th>'+
+      '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+      '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+      '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+      '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+      '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+      '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+      '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+      '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+    '</tr>';
+  }
   renderStatsRows();
 }
 
-function renderGameTeamRows() {
-  var rows = calcGameTeamRows().map(function(g){
+function renderGameTeamRows(view) {
+  var isPit = view === 'pitching';
+  var gameData = calcGameTeamRows();
+  var rows = gameData.map(function(g){
     return {pid:null, date:g.date, opponent:g.opponent,
       PA:g.AB+g.BB, AB:g.AB, R:g.R, H:g.H, RBI:g.RBI,
       dbl:g.dbl, trp:g.trp, HR:g.HR, BB:g.BB,
       BA:g.AB>0?g.H/g.AB:null,
       OBP:(g.AB+g.BB)>0?(g.H+g.BB)/(g.AB+g.BB):null,
-      RV:g.RV};
+      RV:g.RV,
+      pit_G:g.pit_G, pit_IP:g.pit_IP, pit_RA:g.pit_RA,
+      pit_W:g.pit_W, pit_L:g.pit_L, pit_S:g.pit_S,
+      RIP:g.pit_IP>0?g.pit_RA/g.pit_IP:null};
   });
-  rows.sort(function(a,b){return (b.R||0)-(a.R||0);});
+  if (isPit) {
+    rows = rows.filter(function(r){return r.pit_IP>0;});
+    rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
+  } else {
+    rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
+  }
   window._statsRows = rows;
   window._statsShowSeason = false;
-  window._statsPitching = false;
+  window._statsPitching = isPit;
   window._statsGameMode = 'team';
 
   var thead = document.getElementById('season-thead');
   var labelEl = document.getElementById('season-label');
-  if(labelEl) labelEl.textContent = 'Team Game Totals';
-  thead.innerHTML = '<tr>'+
-    '<th style="text-align:left">Date</th>'+
-    '<th style="text-align:left">Opponent</th>'+
-    '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
-    '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
-    '<th onclick="sortStats(this)" data-col="R">R</th>'+
-    '<th onclick="sortStats(this)" data-col="H">H</th>'+
-    '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
-    '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
-    '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
-    '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
-    '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
-    '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
-    '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
-    '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
-  '</tr>';
+  if(labelEl) labelEl.textContent = isPit ? 'Team Pitching — Game Totals' : 'Team Batting — Game Totals';
+  if (isPit) {
+    thead.innerHTML = '<tr>'+
+      '<th onclick="sortStats(this)" data-col="date" style="text-align:left">Date</th>'+
+      '<th onclick="sortStats(this)" data-col="opponent" style="text-align:left">Opponent</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
+    '</tr>';
+  } else {
+    thead.innerHTML = '<tr>'+
+      '<th onclick="sortStats(this)" data-col="date" style="text-align:left">Date</th>'+
+      '<th onclick="sortStats(this)" data-col="opponent" style="text-align:left">Opponent</th>'+
+      '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
+      '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+      '<th onclick="sortStats(this)" data-col="R">R</th>'+
+      '<th onclick="sortStats(this)" data-col="H">H</th>'+
+      '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+      '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+      '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+      '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+      '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+      '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+      '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+      '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+    '</tr>';
+  }
+  renderStatsRows();
+}
+
+function renderSeasonTeamRows(season, view) {
+  // One row per season aggregating all player stats for that season
+  var isPit = view === 'pitching';
+  var byseason = {};
+  DATA.stats.forEach(function(s){
+    var key = s.season_sort ? s.season_sort.toFixed(1) : '0';
+    if (season !== 'all' && key !== season) return;
+    if (!byseason[key]) byseason[key] = {
+      season_sort: s.season_sort, season_label: s.season_label||seasonLabel(s.season_sort),
+      G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,
+      pit_G:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0
+    };
+    var t = byseason[key];
+    t.G  = Math.max(t.G, s.G||0); // GP for the team = max player games (not sum)
+    t.AB+=s.AB||0; t.H+=s.H||0; t.HR+=s.HR||0; t.RBI+=s.RBI||0;
+    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0; t.RV+=s.RV||0;
+    t.pit_G+=s.pit_G||0; t.pit_IP+=s.pit_IP||0; t.pit_RA+=s.pit_RA||0;
+    t.pit_W+=s.pit_W||0; t.pit_L+=s.pit_L||0; t.pit_S+=s.pit_S||0;
+  });
+  var rows = Object.values(byseason).sort(function(a,b){return b.season_sort-a.season_sort;}).map(function(t){
+    var sg=t.H-t.dbl-t.trp-t.HR;
+    var ba=t.AB>0?t.H/t.AB:null;
+    var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
+    var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
+    return {pid:null, seasonStr:t.season_label,
+      G:t.G, PA:t.AB+t.BB, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
+      dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
+      BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:t.RV,
+      pit_G:t.pit_G, pit_IP:t.pit_IP, pit_RA:t.pit_RA,
+      pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
+      RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
+  });
+  if (isPit) rows = rows.filter(function(r){return r.pit_IP>0;});
+
+  window._statsRows = rows;
+  window._statsShowSeason = (season === 'all');
+  window._statsPitching = isPit;
+  window._statsGameMode = 'season-team';
+
+  var thead = document.getElementById('season-thead');
+  var labelEl = document.getElementById('season-label');
+  if(labelEl) labelEl.textContent = isPit ? 'Team Pitching by Season' : 'Team Batting by Season';
+  if (isPit) {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Season</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_G">G</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
+    '</tr>';
+  } else {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Season</th>'+
+      '<th onclick="sortStats(this)" data-col="G">G</th>'+
+      '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
+      '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+      '<th onclick="sortStats(this)" data-col="R">R</th>'+
+      '<th onclick="sortStats(this)" data-col="H">H</th>'+
+      '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+      '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+      '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+      '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+      '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+      '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+      '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+      '<th onclick="sortStats(this)" data-col="SLG">SLG</th>'+
+      '<th onclick="sortStats(this)" data-col="OPS">OPS</th>'+
+      '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+    '</tr>';
+  }
+  renderStatsRows();
+}
+
+function renderCareerTeamRow(view) {
+  // Single row: all-time team totals
+  var isPit = view === 'pitching';
+  var t = {G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,
+    pit_G:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,seasons:0};
+  var seenSeasons = {};
+  DATA.stats.forEach(function(s){
+    if (!seenSeasons[s.season_sort]) { seenSeasons[s.season_sort]=1; t.seasons++; }
+    t.AB+=s.AB||0; t.H+=s.H||0; t.HR+=s.HR||0; t.RBI+=s.RBI||0;
+    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0; t.RV+=s.RV||0;
+    t.pit_G+=s.pit_G||0; t.pit_IP+=s.pit_IP||0; t.pit_RA+=s.pit_RA||0;
+    t.pit_W+=s.pit_W||0; t.pit_L+=s.pit_L||0; t.pit_S+=s.pit_S||0;
+  });
+  var sg=t.H-t.dbl-t.trp-t.HR;
+  var ba=t.AB>0?t.H/t.AB:null;
+  var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
+  var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
+  var row = {pid:null, seasonStr:'All-Time',
+    G:t.G, PA:t.AB+t.BB, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
+    dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
+    BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:t.RV,
+    pit_G:t.pit_G, pit_IP:t.pit_IP, pit_RA:t.pit_RA,
+    pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
+    RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
+
+  window._statsRows = [row];
+  window._statsShowSeason = false;
+  window._statsPitching = isPit;
+  window._statsGameMode = 'career-team';
+
+  var thead = document.getElementById('season-thead');
+  var labelEl = document.getElementById('season-label');
+  if(labelEl) labelEl.textContent = isPit ? 'Team Pitching — All-Time' : 'Team Batting — All-Time';
+  if (isPit) {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Period</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_G">G</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
+    '</tr>';
+  } else {
+    thead.innerHTML = '<tr>'+
+      '<th style="text-align:left">Period</th>'+
+      '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
+      '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
+      '<th onclick="sortStats(this)" data-col="R">R</th>'+
+      '<th onclick="sortStats(this)" data-col="H">H</th>'+
+      '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
+      '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
+      '<th onclick="sortStats(this)" data-col="trp">3B</th>'+
+      '<th onclick="sortStats(this)" data-col="HR">HR</th>'+
+      '<th onclick="sortStats(this)" data-col="BB">BB</th>'+
+      '<th onclick="sortStats(this)" data-col="BA">BA</th>'+
+      '<th onclick="sortStats(this)" data-col="OBP">OBP</th>'+
+      '<th onclick="sortStats(this)" data-col="SLG">SLG</th>'+
+      '<th onclick="sortStats(this)" data-col="OPS">OPS</th>'+
+      '<th onclick="sortStats(this)" data-col="RV">RV</th>'+
+    '</tr>';
+  }
   renderStatsRows();
 }
 
@@ -1421,8 +1626,8 @@ function renderStatsTotalsRow(rows) {
   if (!tfoot) return;
   var isPitching = window._statsPitching;
   var gameMode = window._statsGameMode;
-  // Only show for batting/pitching views, not game-mode tables
-  if (gameMode === 'player' || gameMode === 'team') { tfoot.innerHTML = ''; return; }
+  // Skip totals row for game-level tables and single-row career-team
+  if (gameMode === 'player' || gameMode === 'team' || gameMode === 'career-team') { tfoot.innerHTML = ''; return; }
   // Always total over the full row set, not just what's currently sorted/displayed
   rows = window._statsRows || rows;
   if (!rows || rows.length === 0) { tfoot.innerHTML = ''; return; }
@@ -1474,10 +1679,21 @@ function renderStatsRows() {
   tbody.innerHTML = rows.slice(0,200).map(function(r){
     var cells = '';
     if (gameMode === 'team') {
-      // Team game row: date, opp, then stats
+      // Team game row: date, opp, then stats (batting or pitching)
+      if (isPitching) {
+        return '<tr>'+
+          '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+          '<td style="text-align:left">'+r.opponent+'</td>'+
+          '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
+          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>'+
+        '</tr>';
+      }
       return '<tr>'+
         '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
         '<td style="text-align:left">'+r.opponent+'</td>'+
+        '<td>'+fmtStat(r.PA)+'</td>'+
         '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
         '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
         '<td>'+fmtCount(r.HR)+'</td><td>'+fmtCount(r.BB)+'</td>'+
@@ -1485,7 +1701,18 @@ function renderStatsRows() {
         '<td>'+fmtRV(r.RV)+'</td>'+
       '</tr>';
     } else if (gameMode === 'player') {
-      // Player game row: player, date, opp, stats
+      // Player game row: player, date, opp, stats (batting or pitching)
+      if (isPitching) {
+        return '<tr>'+
+          '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
+          '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
+          '<td style="text-align:left">'+r.opponent+'</td>'+
+          '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
+          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>'+
+        '</tr>';
+      }
       return '<tr>'+
         '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
         '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
@@ -1497,6 +1724,28 @@ function renderStatsRows() {
         '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
         '<td>'+fmtRV(r.RV)+'</td>'+
       '</tr>';
+    } else if (gameMode === 'season-team' || gameMode === 'career-team') {
+      // Team season/career row: first col is always season label
+      var label = r.seasonStr || 'All-Time';
+      var labelCell = '<td style="text-align:left">'+label+'</td>';
+      if (isPitching) {
+        cells = labelCell+
+          '<td>'+fmtStat(r.pit_G)+'</td>'+
+          '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
+          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>';
+      } else {
+        cells = labelCell+
+          '<td>'+fmtStat(r.G)+'</td><td>'+(r.PA!=null?r.PA:'&mdash;')+'</td><td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td>'+
+          '<td>'+fmtStat(r.H)+'</td><td>'+fmtStat(r.RBI)+'</td>'+
+          '<td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
+          '<td>'+fmtCount(r.HR)+'</td><td>'+fmtCount(r.BB)+'</td>'+
+          '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+
+          '<td>'+fmtBA(r.SLG)+'</td><td>'+fmtBA(r.OPS)+'</td>'+
+          '<td>'+fmtRV(r.RV)+'</td>';
+      }
+      return '<tr>'+cells+'</tr>';
     } else if (isPitching) {
       if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
       cells += '<td>'+fmtStat(r.pit_G)+'</td><td>'+fmtStat(r.pit_GS)+'</td>'+
