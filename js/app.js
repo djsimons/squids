@@ -296,7 +296,7 @@ function computeCareerTotals(stats) {
   POS_COLS.forEach(function(k){t['p_'+k]=0;});
   stats.forEach(function(s){
     t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
-    t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+    t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;
     t.PA+=(s.AB||0)+(s.BB||0);
     t.pit_W+=s.pit_W||0;t.pit_L+=s.pit_L||0;t.pit_S+=s.pit_S||0;
     t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;t.pit_G+=s.pit_G||0;t.pit_GS+=s.pit_GS||0;
@@ -307,18 +307,21 @@ function computeCareerTotals(stats) {
   var sg=t.H-t.dbl-t.trp-t.HR;
   t.SLG=(t.AB>0)?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
   t.OPS=(t.OBP!=null&&t.SLG!=null)?t.OBP+t.SLG:null;
+  t.RV=calcRV(t);
   return t;
 }
 
 function computeAllCareerTotals() {
   var tots={};
   DATA.stats.forEach(function(s){
-    if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,seasons:0,pit_W:0,pit_IP:0,pit_RA:0,pit_L:0};
+    if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,seasons:0,pit_W:0,pit_IP:0,pit_RA:0,pit_L:0};
     var t=tots[s.player_id];
     t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
-    t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+    t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;
     t.seasons+=1;t.pit_W+=s.pit_W||0;t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;t.pit_L+=s.pit_L||0;
   });
+  // Compute RV from raw totals for each player
+  Object.values(tots).forEach(function(t){ t.RV=calcRV(t)||0; });
   return tots;
 }
 
@@ -354,7 +357,6 @@ window.addEventListener('popstate', navigateFromHash);
 
 // ── BOX TABLES ────────────────────────────────────────────────────────────
 function calcRV(l) {
-  if(l.RV != null) return l.RV;
   var ab=l.AB||0, h=l.H||0, d=l.dbl||0, t=l.trp||0, hr=l.HR||0, bb=l.BB||0;
   if(ab===0 && h===0 && bb===0) return null;
   return Math.round((-0.28*(ab-h) + 0.65*(h-d-t-hr) + 0.96*d + 1.07*t + 1.57*hr + 0.56*bb + 0.02)*100)/100;
@@ -808,7 +810,7 @@ function showProfile(id) {
       '<td>'+fmtBA(s.BA)+'</td><td>'+fmtBA(s.OBP)+'</td>'+
       '<td>'+fmtBA(s.SLG)+'</td><td>'+fmtBA(s.OPS)+'</td>'+
       posCells+
-      '<td>'+fmtRV(s.RV)+'</td>'+pitCells+'</tr>';
+      '<td>'+fmtRV(calcRV(s))+'</td>'+pitCells+'</tr>';
   }
 
   function careerRow() {
@@ -1233,17 +1235,17 @@ function renderStats() {
       rows = pool.sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);}).map(function(s){
         return {pid:s.player_id, seasonStr:s.season_label,
           G:s.G,PA:(s.AB||0)+(s.BB||0),AB:s.AB,R:s.R,H:s.H,RBI:s.RBI,dbl:s.dbl,trp:s.trp,HR:s.HR,BB:s.BB,
-          BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,RV:s.RV};
+          BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,RV:calcRV(s)};
       });
     } else {
       // Career totals
       var tots = {};
       DATA.stats.forEach(function(s){
         if (!gok(s.player_id)) return;
-        if (!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0};
+        if (!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,pit_W:0,pit_IP:0,pit_RA:0};
         var t=tots[s.player_id];
         t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
-        t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+        t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;
       });
       rows = Object.entries(tots)
         .filter(function(e){return e[1].G>0&&(minAB===0||e[1].AB>=minAB);})
@@ -1255,7 +1257,7 @@ function renderStats() {
           var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
           return {pid:id, seasonStr:'Career',
             G:t.G,PA:t.AB+t.BB,AB:t.AB,R:t.R,H:t.H,RBI:t.RBI,dbl:t.dbl,trp:t.trp,HR:t.HR,BB:t.BB,
-            BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,RV:t.RV};
+            BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,RV:calcRV(t)};
         })
         .sort(function(a,b){return (b.G||0)-(a.G||0)||(b.AB||0)-(a.AB||0);});
     }
@@ -1485,7 +1487,7 @@ function renderSeasonTeamRows(season, view) {
     var t = byseason[key];
     t.G  = Math.max(t.G, s.G||0); // GP for the team = max player games (not sum)
     t.AB+=s.AB||0; t.H+=s.H||0; t.HR+=s.HR||0; t.RBI+=s.RBI||0;
-    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0; t.RV+=s.RV||0;
+    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0;
     t.pit_G+=s.pit_G||0; t.pit_IP+=s.pit_IP||0; t.pit_RA+=s.pit_RA||0;
     t.pit_W+=s.pit_W||0; t.pit_L+=s.pit_L||0; t.pit_S+=s.pit_S||0;
   });
@@ -1497,7 +1499,7 @@ function renderSeasonTeamRows(season, view) {
     return {pid:null, seasonStr:t.season_label, season_sort:t.season_sort,
       G:t.G, PA:t.AB+t.BB, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
       dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
-      BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:t.RV,
+      BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:calcRV(t),
       pit_G:t.pit_G, pit_IP:t.pit_IP, pit_RA:t.pit_RA,
       pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
       RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
@@ -1556,7 +1558,7 @@ function renderCareerTeamRow(view) {
     if (!seenSeasons[s.season_sort]) { seenSeasons[s.season_sort]=1; t.seasons++; gBySeasons[s.season_sort]=0; }
     gBySeasons[s.season_sort] = Math.max(gBySeasons[s.season_sort], s.G||0);
     t.AB+=s.AB||0; t.H+=s.H||0; t.HR+=s.HR||0; t.RBI+=s.RBI||0;
-    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0; t.RV+=s.RV||0;
+    t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0;
     t.pit_G+=s.pit_G||0; t.pit_IP+=s.pit_IP||0; t.pit_RA+=s.pit_RA||0;
     t.pit_W+=s.pit_W||0; t.pit_L+=s.pit_L||0; t.pit_S+=s.pit_S||0;
   });
@@ -1569,7 +1571,7 @@ function renderCareerTeamRow(view) {
   var row = {pid:null, seasonStr:'All-Time',
     G:t.G, PA:t.AB+t.BB, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
     dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
-    BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:t.RV,
+    BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:calcRV(t),
     pit_G:t.pit_G, pit_IP:t.pit_IP, pit_RA:t.pit_RA,
     pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
     RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
@@ -1642,7 +1644,7 @@ function renderStatsTotalsRow(rows) {
     var t = {G:0,AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0};
     rows.forEach(function(r){
       t.G+=r.G||0; t.AB+=r.AB||0; t.R+=r.R||0; t.H+=r.H||0; t.RBI+=r.RBI||0;
-      t.dbl+=r.dbl||0; t.trp+=r.trp||0; t.HR+=r.HR||0; t.BB+=r.BB||0; t.RV+=r.RV||0;
+      t.dbl+=r.dbl||0; t.trp+=r.trp||0; t.HR+=r.HR||0; t.BB+=r.BB||0;
     });
     var sg=t.H-t.dbl-t.trp-t.HR;
     var ba=t.AB>0?t.H/t.AB:null;
@@ -1656,7 +1658,7 @@ function renderStatsTotalsRow(rows) {
       '<td>'+t.HR+'</td><td>'+t.BB+'</td>'+
       '<td>'+fmtBA(ba)+'</td><td>'+fmtBA(obp)+'</td>'+
       '<td>'+fmtBA(slg)+'</td><td>'+fmtBA(ops)+'</td>'+
-      '<td>'+fmtRV(t.RV)+'</td>';
+      '<td>'+fmtRV(calcRV(t))+'</td>';
     tfoot.innerHTML = '<tr class="totals-row"><td style="text-align:left">Team total</td>'+cells+'</tr>';
   }
 }
@@ -2146,7 +2148,7 @@ function renderCustomLeaderboard() {
         G:s.G||0,AB:s.AB||0,R:s.R||0,H:s.H||0,RBI:s.RBI||0,
         dbl:s.dbl||0,trp:s.trp||0,HR:s.HR||0,BB:s.BB||0,
         BA:s.BA,OBP:s.OBP,SLG:s.SLG,OPS:s.OPS,
-        RV:s.RV,pit_W:s.pit_W||0,pit_IP:s.pit_IP||0,
+        RV:calcRV(s),pit_W:s.pit_W||0,pit_IP:s.pit_IP||0,
         RIP:s.pit_IP>0?s.pit_RA/s.pit_IP:null};
     });
   } else {
@@ -2154,10 +2156,10 @@ function renderCustomLeaderboard() {
     DATA.stats.forEach(function(s){
       if(!gok(s.player_id)) return;
       if(season!=='all'&&String(s.season_sort)!==season) return;
-      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,pit_W:0,pit_IP:0,pit_RA:0};
+      if(!tots[s.player_id]) tots[s.player_id]={G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,pit_W:0,pit_IP:0,pit_RA:0};
       var t=tots[s.player_id];
       t.G+=s.G||0;t.AB+=s.AB||0;t.H+=s.H||0;t.HR+=s.HR||0;t.RBI+=s.RBI||0;
-      t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;t.RV+=s.RV||0;
+      t.R+=s.R||0;t.dbl+=s.dbl||0;t.trp+=s.trp||0;t.BB+=s.BB||0;
       t.pit_W+=s.pit_W||0;t.pit_IP+=s.pit_IP||0;t.pit_RA+=s.pit_RA||0;
     });
     rows=Object.entries(tots).filter(function(e){return (minAB===0||e[1].AB>=minAB)&&e[1].G>0;})
@@ -2170,7 +2172,7 @@ function renderCustomLeaderboard() {
         return {name:displayName(id),pid:id,season:'Career',
           G:t.G,AB:t.AB,R:t.R,H:t.H,RBI:t.RBI,dbl:t.dbl,trp:t.trp,HR:t.HR,BB:t.BB,
           BA:ba,OBP:obp,SLG:slg,OPS:(obp!=null&&slg!=null)?obp+slg:null,
-          RV:t.RV,pit_W:t.pit_W,pit_IP:t.pit_IP,
+          RV:calcRV(t),pit_W:t.pit_W,pit_IP:t.pit_IP,
           RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
       });
   }
