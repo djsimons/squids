@@ -793,9 +793,7 @@ function showProfile(id) {
         '<td>'+(hasPit?fmtStat(s.pit_GS):'')+'</td>'+
         '<td>'+(hasPit?fmtStat(s.pit_IP,1):'')+'</td>'+
         '<td>'+(hasPit?fmtStat(s.pit_RA):'')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_W):'')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_L):'')+'</td>'+
-        '<td>'+(hasPit?fmtStat(s.pit_S):'')+'</td>'+
+        '<td>'+(hasPit?fmtStat(s.pit_W)+'-'+fmtStat(s.pit_L):'')+'</td>'+
         '<td>'+(hasPit&&s.pit_IP>0?Number(s.pit_RA/s.pit_IP).toFixed(2):'')+'</td>';
     }
     var posCells=POS_COLS.map(function(k){return '<td>'+((s[k]!=null&&s[k]>0)?s[k]:'')+'</td>';}).join('');
@@ -818,8 +816,7 @@ function showProfile(id) {
     if(isPitcher){
       pitCells='<td>'+(career.pit_G||'')+'</td><td>'+(career.pit_GS||'')+'</td>'+
         '<td>'+(career.pit_IP?fmtStat(career.pit_IP,1):'')+'</td><td>'+(career.pit_RA||'')+'</td>'+
-        '<td>'+(career.pit_W||'')+'</td><td>'+(career.pit_L||'')+'</td>'+
-        '<td>'+(career.pit_S||'')+'</td>'+
+        '<td>'+((career.pit_W||0)+'-'+(career.pit_L||0))+'</td>'+
         '<td>'+(career.pit_IP>0?Number(career.pit_RA/career.pit_IP).toFixed(2):'&mdash;')+'</td>';
     }
     var posCells=POS_COLS.map(function(k){return '<td>'+(career['p_'+k]||'')+'</td>';}).join('');
@@ -841,7 +838,7 @@ function showProfile(id) {
   window._playerCareerRow = careerRow;
   window._playerStatDefaultCol = 'season_sort'; // track so we can mark the header on render
 
-  var pitHeaders=isPitcher?'<th onclick="sortPlayerStats(this)" data-col="pit_G">GP</th><th onclick="sortPlayerStats(this)" data-col="pit_GS">GS</th><th onclick="sortPlayerStats(this)" data-col="pit_IP">IP</th><th onclick="sortPlayerStats(this)" data-col="pit_RA">RA</th><th onclick="sortPlayerStats(this)" data-col="pit_W">W</th><th onclick="sortPlayerStats(this)" data-col="pit_L">L</th><th onclick="sortPlayerStats(this)" data-col="pit_S">S</th><th onclick="sortPlayerStats(this)" data-col="pit_RIP">RIP</th>':'';
+  var pitHeaders=isPitcher?'<th onclick="sortPlayerStats(this)" data-col="pit_G">GP</th><th onclick="sortPlayerStats(this)" data-col="pit_GS">GS</th><th onclick="sortPlayerStats(this)" data-col="pit_IP">IP</th><th onclick="sortPlayerStats(this)" data-col="pit_RA">RA</th><th onclick="sortPlayerStats(this)" data-col="pit_W">W-L</th><th onclick="sortPlayerStats(this)" data-col="pit_RIP">RIP</th>':'';
   var thead='<th style="text-align:left" onclick="sortPlayerStats(this)" data-col="season_sort">Season</th><th style="text-align:left">Pos</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="G">G</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="PA">PA</th>'+
@@ -1333,9 +1330,7 @@ function renderStats() {
       '<th onclick="sortStats(this)" data-col="pit_GS">GS</th>'+
       '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
       '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W-L</th>'+
       '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
     '</tr>';
 
@@ -1392,9 +1387,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view) {
       '<th style="text-align:left">Opp</th>'+
       '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
       '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W-L</th>'+
       '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
     '</tr>';
   } else {
@@ -1453,9 +1446,7 @@ function renderGameTeamRows(view) {
       '<th onclick="sortStats(this)" data-col="opponent" style="text-align:left">Opponent</th>'+
       '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
       '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W-L</th>'+
       '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
     '</tr>';
   } else {
@@ -1503,7 +1494,7 @@ function renderSeasonTeamRows(season, view) {
     var ba=t.AB>0?t.H/t.AB:null;
     var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
     var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
-    return {pid:null, seasonStr:t.season_label,
+    return {pid:null, seasonStr:t.season_label, season_sort:t.season_sort,
       G:t.G, PA:t.AB+t.BB, AB:t.AB, R:t.R, H:t.H, RBI:t.RBI,
       dbl:t.dbl, trp:t.trp, HR:t.HR, BB:t.BB,
       BA:ba, OBP:obp, SLG:slg, OPS:(obp&&slg)?obp+slg:null, RV:t.RV,
@@ -1523,18 +1514,16 @@ function renderSeasonTeamRows(season, view) {
   if(labelEl) labelEl.textContent = isPit ? 'Team Pitching by Season' : 'Team Batting by Season';
   if (isPit) {
     thead.innerHTML = '<tr>'+
-      '<th style="text-align:left">Season</th>'+
+      '<th onclick="sortStats(this)" data-col="season_sort" style="text-align:left">Season</th>'+
       '<th onclick="sortStats(this)" data-col="pit_G">G</th>'+
       '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
       '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W-L</th>'+
       '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
     '</tr>';
   } else {
     thead.innerHTML = '<tr>'+
-      '<th style="text-align:left">Season</th>'+
+      '<th onclick="sortStats(this)" data-col="season_sort" style="text-align:left">Season</th>'+
       '<th onclick="sortStats(this)" data-col="G">G</th>'+
       '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
       '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
@@ -1561,13 +1550,18 @@ function renderCareerTeamRow(view) {
   var t = {G:0,AB:0,H:0,HR:0,RBI:0,R:0,dbl:0,trp:0,BB:0,RV:0,
     pit_G:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,seasons:0};
   var seenSeasons = {};
+  // Track max G per season, then sum across seasons for total games played
+  var gBySeasons = {};
   DATA.stats.forEach(function(s){
-    if (!seenSeasons[s.season_sort]) { seenSeasons[s.season_sort]=1; t.seasons++; }
+    if (!seenSeasons[s.season_sort]) { seenSeasons[s.season_sort]=1; t.seasons++; gBySeasons[s.season_sort]=0; }
+    gBySeasons[s.season_sort] = Math.max(gBySeasons[s.season_sort], s.G||0);
     t.AB+=s.AB||0; t.H+=s.H||0; t.HR+=s.HR||0; t.RBI+=s.RBI||0;
     t.R+=s.R||0; t.dbl+=s.dbl||0; t.trp+=s.trp||0; t.BB+=s.BB||0; t.RV+=s.RV||0;
     t.pit_G+=s.pit_G||0; t.pit_IP+=s.pit_IP||0; t.pit_RA+=s.pit_RA||0;
     t.pit_W+=s.pit_W||0; t.pit_L+=s.pit_L||0; t.pit_S+=s.pit_S||0;
   });
+  // Sum max-G per season to get total games played across all seasons
+  Object.values(gBySeasons).forEach(function(g){ t.G+=g; });
   var sg=t.H-t.dbl-t.trp-t.HR;
   var ba=t.AB>0?t.H/t.AB:null;
   var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
@@ -1594,14 +1588,13 @@ function renderCareerTeamRow(view) {
       '<th onclick="sortStats(this)" data-col="pit_G">G</th>'+
       '<th onclick="sortStats(this)" data-col="pit_IP">IP</th>'+
       '<th onclick="sortStats(this)" data-col="pit_RA">RA</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_W">W</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_L">L</th>'+
-      '<th onclick="sortStats(this)" data-col="pit_S">S</th>'+
+      '<th onclick="sortStats(this)" data-col="pit_W">W-L</th>'+
       '<th onclick="sortStats(this)" data-col="RIP">RIP</th>'+
     '</tr>';
   } else {
     thead.innerHTML = '<tr>'+
       '<th style="text-align:left">Period</th>'+
+      '<th onclick="sortStats(this)" data-col="G">G</th>'+
       '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
       '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
       '<th onclick="sortStats(this)" data-col="R">R</th>'+
@@ -1642,7 +1635,7 @@ function renderStatsTotalsRow(rows) {
     var cells = (showSeasonCol?'<td></td>':'')+
       '<td>'+t.pit_G+'</td><td>'+t.pit_GS+'</td>'+
       '<td>'+Number(t.pit_IP).toFixed(1)+'</td><td>'+t.pit_RA+'</td>'+
-      '<td>'+t.pit_W+'</td><td>'+t.pit_L+'</td><td>'+t.pit_S+'</td>'+
+      '<td>'+t.pit_W+'-'+t.pit_L+'</td>'+
       '<td>'+(t.pit_IP>0?Number(t.pit_RA/t.pit_IP).toFixed(2):'&mdash;')+'</td>';
     tfoot.innerHTML = '<tr class="totals-row"><td style="text-align:left">Team total</td>'+cells+'</tr>';
   } else {
@@ -1669,6 +1662,9 @@ function renderStatsTotalsRow(rows) {
 }
 
 function renderStatsRows() {
+  // Reset scroll hint and position on new render
+  var wrap = document.getElementById('stats-table-wrap');
+  if (wrap) { wrap.scrollLeft = 0; wrap.classList.add('scroll-hint'); }
   var rows = window._statsRows || [];
   var showSeasonCol = window._statsShowSeason;
   var isPitching = window._statsPitching;
@@ -1685,8 +1681,7 @@ function renderStatsRows() {
           '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
           '<td style="text-align:left">'+r.opponent+'</td>'+
           '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
-          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
-          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
           '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>'+
         '</tr>';
       }
@@ -1708,8 +1703,7 @@ function renderStatsRows() {
           '<td style="text-align:left;white-space:nowrap">'+r.date+'</td>'+
           '<td style="text-align:left">'+r.opponent+'</td>'+
           '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
-          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
-          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
           '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>'+
         '</tr>';
       }
@@ -1732,8 +1726,7 @@ function renderStatsRows() {
         cells = labelCell+
           '<td>'+fmtStat(r.pit_G)+'</td>'+
           '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
-          '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
-          '<td>'+fmtStat(r.pit_S)+'</td>'+
+          '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
           '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>';
       } else {
         cells = labelCell+
@@ -1750,8 +1743,7 @@ function renderStatsRows() {
       if (showSeasonCol) cells += '<td style="text-align:left;color:var(--text-dim);font-size:0.8rem">'+r.seasonStr+'</td>';
       cells += '<td>'+fmtStat(r.pit_G)+'</td><td>'+fmtStat(r.pit_GS)+'</td>'+
         '<td>'+fmtStat(r.pit_IP,1)+'</td><td>'+fmtStat(r.pit_RA)+'</td>'+
-        '<td>'+fmtStat(r.pit_W)+'</td><td>'+fmtStat(r.pit_L)+'</td>'+
-        '<td>'+fmtStat(r.pit_S)+'</td>'+
+        '<td>'+fmtStat(r.pit_W)+'-'+fmtStat(r.pit_L)+'</td>'+
         '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>';
       return '<tr>'+
         '<td style="text-align:left"><a onclick="navigate(\'profile\',\''+r.pid+'\')">'+nameWithFace(r.pid)+'</a></td>'+
