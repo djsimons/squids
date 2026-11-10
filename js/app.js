@@ -1645,7 +1645,6 @@ function renderCareerTeamRow(view, season) {
 
 function renderStatsTotalsRow(rows) {
   var tfoot = document.getElementById('season-tfoot');
-  var thead = document.getElementById('season-thead');
   if (!tfoot) return;
   var isPitching = window._statsPitching;
   var gameMode = window._statsGameMode;
@@ -1655,8 +1654,7 @@ function renderStatsTotalsRow(rows) {
   rows = window._statsRows || rows;
   // Skip if 0 or 1 row
   if (!rows || rows.length <= 1) {
-    // Remove any existing totals row from thead
-    if (thead) { var old = thead.querySelector('.totals-row'); if (old) old.remove(); }
+    window._statsTotalsHTML = '';
     return;
   }
   var showSeasonCol = window._statsShowSeason;
@@ -1680,7 +1678,7 @@ function renderStatsTotalsRow(rows) {
     // game-player: "Total | (blank Date) | (blank Opp) | ...stats..."
     // game-team:   "Total | (blank Opponent) | ...stats..."
     var prefix = (gameMode === 'player') ? '<td></td><td></td>' : (gameMode === 'team' ? '<td></td>' : '');
-    totalsHTML = '<tr class="totals-row" style="background:var(--deep-light,rgba(0,30,60,0.6));border-top:2px solid var(--sky-dim,#38bdf8);border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
+    totalsHTML = '<tr class="totals-row" style="border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
   } else {
     var t = {G:0,AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0};
     rows.forEach(function(r){
@@ -1716,15 +1714,11 @@ function renderStatsTotalsRow(rows) {
     // game-player: "Total | (blank Date) | (blank Opp) | ...stats..."
     // game-team:   "Total | (blank Opponent) | ...stats..."
     var prefix = (gameMode === 'player') ? '<td></td><td></td>' : (gameMode === 'team' ? '<td></td>' : '');
-    totalsHTML = '<tr class="totals-row" style="background:var(--deep-light,rgba(0,30,60,0.6));border-top:2px solid var(--sky-dim,#38bdf8);border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
+    totalsHTML = '<tr class="totals-row" style="border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
   }
 
-  // Inject as second row of thead (right below column headers)
-  if (thead) {
-    var old = thead.querySelector('.totals-row');
-    if (old) old.remove();
-    thead.insertAdjacentHTML('beforeend', totalsHTML);
-  }
+  // Store for tbody prepend (renderStatsRows will insert after populating tbody)
+  window._statsTotalsHTML = totalsHTML;
 }
 
 function renderStatsRows() {
@@ -1738,6 +1732,7 @@ function renderStatsRows() {
   var tbody = document.getElementById('season-tbody');
 
   renderStatsTotalsRow(rows);
+  var totalsHTML = window._statsTotalsHTML || '';
   tbody.innerHTML = rows.slice(0,200).map(function(r){
     var cells = '';
     if (gameMode === 'team') {
@@ -1847,6 +1842,7 @@ function renderStatsRows() {
         cells+'</tr>';
     }
   }).join('');
+  if (totalsHTML) tbody.insertAdjacentHTML('afterbegin', totalsHTML);
 }
 
 function sortStats(th) {
