@@ -339,8 +339,13 @@ function navigate(route, param) {
   // Update URL hash for shareable links
   var hash = '#' + route + (param ? '/' + param : '');
   if(window.location.hash !== hash) history.pushState(null, '', hash);
-  var h={home:showHome,players:showPlayers,seasons:showSeasons,gamelogs:showGameLogs,records:showRecords,schedule:showSchedule,standings:showStandings};
+  var h={home:showHome,players:showPlayers,gamelogs:showGameLogs,records:showRecords,schedule:showSchedule,standings:showStandings};
   if(route==='profile'&&param) showProfile(param);
+  else if(route==='seasons') {
+    var opts = window._pendingSeasonsOpts || undefined;
+    window._pendingSeasonsOpts = null;
+    showSeasons(opts);
+  }
   else if(h[route]) h[route]();
 }
 
@@ -356,12 +361,9 @@ function navigateFromHash() {
 window.addEventListener('popstate', navigateFromHash);
 
 function goToSeasonStats(season_sort) {
-  var scopeEl  = document.getElementById('stats-scope');
-  var seasonEl = document.getElementById('stats-season');
-  if (scopeEl)  scopeEl.value  = 'season-player';
-  if (seasonEl) seasonEl.value = Number(season_sort).toFixed(1);
+  // Pass season and scope as opts so showSeasons() doesn't overwrite them
+  window._pendingSeasonsOpts = { season_sort: season_sort, scope: 'season-player' };
   navigate('seasons');
-  renderStats();
 }
 
 // ── BOX TABLES ────────────────────────────────────────────────────────────
@@ -1126,7 +1128,9 @@ function renderSeasonRecap(selSeason, mode) {
 }
 
 
-function showSeasons() {
+function showSeasons(opts) {
+  // opts: { season_sort, scope } — if provided, use them instead of defaults
+  opts = opts || {};
   document.getElementById('page-seasons').classList.add('active');
   var seasons = Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
 
@@ -1135,11 +1139,11 @@ function showSeasons() {
   if (sel) {
     sel.innerHTML = '<option value="all">All Seasons</option>' +
       seasons.map(function(s){
-        // Use toFixed(1) to avoid float representation issues like 2013.1000000001
         var v = s.toFixed(1);
         return '<option value="'+v+'">'+seasonLabel(s)+'</option>';
       }).join('');
-    sel.value = seasons[0].toFixed(1);
+    // Use pre-set value if provided, otherwise default to most recent season
+    sel.value = opts.season_sort ? Number(opts.season_sort).toFixed(1) : seasons[0].toFixed(1);
   }
   // Also keep season-select in sync for recap
   var sel2 = document.getElementById('season-select');
@@ -1147,8 +1151,16 @@ function showSeasons() {
     sel2.innerHTML = seasons.map(function(s){return '<option value="'+s+'">'+seasonLabel(s)+'</option>';}).join('');
   }
 
+  // Set scope: use pre-set value if provided, otherwise default to season-player
+  var scopeEl = document.getElementById('stats-scope');
+  if (scopeEl && opts.scope) {
+    scopeEl.value = opts.scope;
+  } else if (scopeEl && !opts.scope) {
+    scopeEl.value = 'season-player';
+  }
+
   renderStats();
-  renderSeasonRecap(seasons[0]);
+  renderSeasonRecap(opts.season_sort ? Number(opts.season_sort) : seasons[0]);
 }
 
 function onScopeChange() {
@@ -1649,7 +1661,8 @@ function renderStatsTotalsRow(rows) {
       t.pit_G+=r.pit_G||0; t.pit_GS+=r.pit_GS||0; t.pit_IP+=r.pit_IP||0;
       t.pit_RA+=r.pit_RA||0; t.pit_W+=r.pit_W||0; t.pit_L+=r.pit_L||0; t.pit_S+=r.pit_S||0;
     });
-    var cells = (showSeasonCol?'<td></td>':'')+
+    var isTeamMode = (gameMode === 'season-team' || gameMode === 'career-team');
+    var cells = (!isTeamMode && showSeasonCol ? '<td></td>' : '')+
       '<td>'+t.pit_G+'</td><td>'+t.pit_GS+'</td>'+
       '<td>'+Number(t.pit_IP).toFixed(1)+'</td><td>'+t.pit_RA+'</td>'+
       '<td>'+t.pit_W+'-'+t.pit_L+'</td>'+
@@ -1666,7 +1679,10 @@ function renderStatsTotalsRow(rows) {
     var obp=(t.AB+t.BB)>0?(t.H+t.BB)/(t.AB+t.BB):null;
     var slg=t.AB>0?(sg+2*t.dbl+3*t.trp+4*t.HR)/t.AB:null;
     var ops=(obp!=null&&slg!=null)?obp+slg:null;
-    var cells = (showSeasonCol?'<td></td>':'')+
+    // season-team and career-team have their own first column in the thead already;
+    // only add the extra blank td for season-player/career-player where showSeasonCol applies
+    var isTeamMode = (gameMode === 'season-team' || gameMode === 'career-team');
+    var cells = (!isTeamMode && showSeasonCol ? '<td></td>' : '')+
       '<td>'+t.G+'</td><td>'+(t.AB+t.BB)+'</td><td>'+t.AB+'</td><td>'+t.R+'</td>'+
       '<td>'+t.H+'</td><td>'+t.RBI+'</td>'+
       '<td>'+t.dbl+'</td><td>'+t.trp+'</td>'+
