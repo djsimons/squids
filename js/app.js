@@ -1042,60 +1042,39 @@ function calcGameTeamRows() {
 }
 
 // ── SEASON RECORDS ────────────────────────────────────────────────────────
+// Returns an inline HTML snippet (W-L + trophy/runner emoji) for use next to the season label.
+// Called from renderStats after the season-label is set.
 function renderSeasonRecap(selSeason, mode) {
-  // mode: 'season', 'career', 'all'
   var el=document.getElementById('season-recap');
-  if(!el||!SEASON_RECORDS.length) return;
+  if(el) el.innerHTML=''; // recap area no longer used for display
 
+  if(!SEASON_RECORDS.length) return;
   var squidsChamps=SEASON_RECORDS.filter(function(s){return s.champ==='Squids';});
   var squidsRunners=SEASON_RECORDS.filter(function(s){return s.runner==='Squids';});
 
-  // Always show pennants
-  var pennants=squidsChamps.map(function(s){
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:0.15rem">'+
-      '<div style="font-size:1.4rem">&#127942;</div>'+
-      '<div style="font-family:var(--font-blade);font-size:0.6rem;text-transform:lowercase;color:var(--gold)">'+seasonLabel(parseFloat('20'+s.s))+'</div>'+
-    '</div>';
-  }).join('')+squidsRunners.map(function(s){
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:0.15rem">'+
-      '<div style="font-size:1.4rem">&#129352;</div>'+
-      '<div style="font-family:var(--font-blade);font-size:0.6rem;text-transform:lowercase;color:var(--sky-light)">'+seasonLabel(parseFloat('20'+s.s))+'</div>'+
-    '</div>';
-  }).join('');
+  var labelEl=document.getElementById('season-label');
+  if(!labelEl) return;
 
-  var recapHTML='';
+  var chips='';
 
   if(mode==='career') {
-    // All-time record
     var totW=0,totL=0;
     SEASON_RECORDS.forEach(function(s){if(s.w!=null)totW+=s.w;if(s.l!=null)totL+=s.l;});
-    recapHTML=
-      '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
-        '<div><div class="filter-label">All-Time Record</div>'+
-          '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:var(--text)">'+totW+'-'+totL+'</div></div>'+
-        '<div><div class="filter-label">Championships</div>'+
-          '<div style="font-size:1.1rem">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</div></div>'+
-        '<div><div class="filter-label">Runner-ups</div>'+
-          '<div style="font-size:1.1rem">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</div></div>'+
-      '</div>';
+    chips=
+      '<span style="font-family:var(--font-blade);font-size:1.1rem;text-transform:lowercase;color:var(--text);margin-left:1rem">'+totW+'-'+totL+'</span>'+
+      (squidsChamps.length?'<span style="margin-left:0.75rem" title="Championships">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</span>':'')+
+      (squidsRunners.length?'<span style="margin-left:0.5rem" title="Runner-ups">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</span>':'');
   } else if(mode==='all') {
-    // All seasons view - just show championships inline
-    recapHTML=
-      '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
-        '<div><div class="filter-label">Championships</div>'+
-          '<div style="font-size:1.1rem">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</div></div>'+
-        '<div><div class="filter-label">Runner-ups</div>'+
-          '<div style="font-size:1.1rem">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</div></div>'+
-      '</div>';
+    chips=
+      (squidsChamps.length?'<span style="margin-left:0.75rem" title="Championships">'+squidsChamps.map(function(){return '&#127942;';}).join('')+'</span>':'')+
+      (squidsRunners.length?'<span style="margin-left:0.5rem" title="Runner-ups">'+squidsRunners.map(function(){return '&#129352;';}).join('')+'</span>':'');
   } else if(selSeason) {
-    // Single season
     var key=seasonSortToKey(selSeason);
     var rec=SEASON_RECORDS.find(function(s){return s.s===key;});
-    var wl='&mdash;', isChamp=false, isRunner=false, champName='', runnerName='';
+    var wl='', isChamp=false, isRunner=false;
     if(rec){
       isChamp=rec.champ==='Squids'; isRunner=rec.runner==='Squids';
-      wl=(rec.w!=null&&rec.l!=null)?rec.w+'-'+rec.l:'&mdash;';
-      champName=rec.champ||''; runnerName=rec.runner||'';
+      if(rec.w!=null&&rec.l!=null) wl=rec.w+'-'+rec.l;
     }
     // For current/live season, pull W-L from schedule
     if(Math.abs(selSeason-LIVE_SEASON)<0.001&&window._scheduleRows&&window._scheduleRows.length){
@@ -1106,24 +1085,51 @@ function renderSeasonRecap(selSeason, mode) {
       });
       if(liveW+liveL>0) wl=liveW+'-'+liveL;
     }
-    var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text)';
-    recapHTML=
-      '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">'+
-        '<div><div class="filter-label">Record</div>'+
-          '<div style="font-family:var(--font-blade);font-size:1.4rem;text-transform:lowercase;color:'+wlColor+'">'+wl+'</div></div>'+
-        (champName&&champName!=='--'?
-          '<div><div class="filter-label">Champion</div>'+
-          '<div style="font-size:0.9rem;color:'+(isChamp?'var(--gold)':'var(--text)')+'">'+champName+(isChamp?' &#127942;':'')+'</div></div>':'')+
-        (runnerName&&runnerName!=='--'?
-          '<div><div class="filter-label">Runner-up</div>'+
-          '<div style="font-size:0.9rem;color:'+(isRunner?'var(--sky)':'var(--text)')+'">'+runnerName+(isRunner?' &#129352;':'')+'</div></div>':'')+
-      '</div>';
+    var wlColor=isChamp?'var(--gold)':isRunner?'var(--sky)':'var(--text-dim)';
+    chips=
+      (wl?'<span style="font-family:var(--font-blade);font-size:1.1rem;text-transform:lowercase;color:'+wlColor+';margin-left:1rem">'+wl+'</span>':'')+
+      (isChamp?' <span title="Champions">&#127942;</span>':'')+
+      (isRunner?' <span title="Runner-up">&#129352;</span>':'');
   }
 
+  // Append chips inline to whatever text is already in season-label
+  if(chips){
+    labelEl.innerHTML=labelEl.textContent+chips;
+  }
+}
+
+// Build the season history block for the Records page
+function renderSeasonHistory() {
+  var el=document.getElementById('records-season-history');
+  if(!el||!SEASON_RECORDS.length) return;
+  var squidsChamps=SEASON_RECORDS.filter(function(s){return s.champ==='Squids';});
+  var squidsRunners=SEASON_RECORDS.filter(function(s){return s.runner==='Squids';});
+  var totW=0,totL=0;
+  SEASON_RECORDS.forEach(function(s){if(s.w!=null)totW+=s.w;if(s.l!=null)totL+=s.l;});
+
+  var pennants=squidsChamps.map(function(s){
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;cursor:pointer" onclick="goToSeasonStats('+parseFloat('20'+s.s)+')">'+
+      '<div style="font-size:1.6rem">&#127942;</div>'+
+      '<div style="font-family:var(--font-blade);font-size:0.65rem;text-transform:lowercase;color:var(--gold)">'+seasonLabel(parseFloat('20'+s.s))+'</div>'+
+    '</div>';
+  }).join('')+squidsRunners.map(function(s){
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;cursor:pointer" onclick="goToSeasonStats('+parseFloat('20'+s.s)+')">'+
+      '<div style="font-size:1.6rem">&#129352;</div>'+
+      '<div style="font-family:var(--font-blade);font-size:0.65rem;text-transform:lowercase;color:var(--sky-light)">'+seasonLabel(parseFloat('20'+s.s))+'</div>'+
+    '</div>';
+  }).join('');
+
   el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem">'+
-      '<div style="display:flex;gap:1rem;align-items:flex-end">'+pennants+'</div>'+
-      recapHTML+
+    '<div class="section-title" style="margin-bottom:0.75rem">Season History</div>'+
+    '<div style="display:flex;align-items:flex-start;gap:2rem;flex-wrap:wrap">'+
+      '<div>'+
+        '<div class="filter-label">All-Time Record</div>'+
+        '<div style="font-family:var(--font-blade);font-size:1.6rem;text-transform:lowercase;color:var(--text)">'+totW+'-'+totL+'</div>'+
+      '</div>'+
+      '<div>'+
+        '<div class="filter-label" style="margin-bottom:0.5rem">Championships &amp; Runner-ups</div>'+
+        '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">'+pennants+'</div>'+
+      '</div>'+
     '</div>';
 }
 
@@ -1198,21 +1204,21 @@ function renderStats() {
 
   var isCareerMode = scope === 'career-player' || scope === 'career-team';
 
-  // Update recap - always render with appropriate mode
+  // Set season label text FIRST, then append recap chips inline
+  var labelEl = document.getElementById('season-label');
+  if (labelEl) {
+    if (isCareerMode && season === 'all') labelEl.textContent = 'Career';
+    else if (season === 'all') labelEl.textContent = 'All Seasons — every player-season';
+    else labelEl.textContent = seasonLabel(parseFloat(season));
+  }
+
+  // Append W-L + trophy chips inline to the label
   if (isCareerMode && season === 'all') {
     renderSeasonRecap(null, 'career');
   } else if (season === 'all') {
     renderSeasonRecap(null, 'all');
   } else {
     renderSeasonRecap(parseFloat(season), 'season');
-  }
-
-  // Update season label
-  var labelEl = document.getElementById('season-label');
-  if (labelEl) {
-    if (isCareerMode && season === 'all') labelEl.textContent = 'Career';
-    else if (season === 'all') labelEl.textContent = 'All Seasons — every player-season';
-    else labelEl.textContent = seasonLabel(parseFloat(season));
   }
 
   var thead = document.getElementById('season-thead');
@@ -2170,6 +2176,7 @@ function glBuildBoxTable(rows) {
 // ── RECORDS ───────────────────────────────────────────────────────────────
 function showRecords() {
   document.getElementById('page-records').classList.add('active');
+  renderSeasonHistory();
   renderCareerLeaderboards();
 }
 
