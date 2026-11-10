@@ -1678,7 +1678,7 @@ function renderStatsTotalsRow(rows) {
     // game-player: "Total | (blank Date) | (blank Opp) | ...stats..."
     // game-team:   "Total | (blank Opponent) | ...stats..."
     var prefix = (gameMode === 'player') ? '<td></td><td></td>' : (gameMode === 'team' ? '<td></td>' : '');
-    totalsHTML = '<tr class="totals-row" style="border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
+    totalsHTML = '<tr class="totals-row career-row"><td style="text-align:left;font-family:var(--font-blade);text-transform:lowercase;letter-spacing:0.06em">total</td>'+prefix+cells+'</tr>';
   } else {
     var t = {G:0,AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0};
     rows.forEach(function(r){
@@ -1714,7 +1714,7 @@ function renderStatsTotalsRow(rows) {
     // game-player: "Total | (blank Date) | (blank Opp) | ...stats..."
     // game-team:   "Total | (blank Opponent) | ...stats..."
     var prefix = (gameMode === 'player') ? '<td></td><td></td>' : (gameMode === 'team' ? '<td></td>' : '');
-    totalsHTML = '<tr class="totals-row" style="border-bottom:2px solid var(--sky-dim,#38bdf8);font-weight:600"><td style="text-align:left;font-weight:700">Total</td>'+prefix+cells+'</tr>';
+    totalsHTML = '<tr class="totals-row career-row"><td style="text-align:left;font-family:var(--font-blade);text-transform:lowercase;letter-spacing:0.06em">total</td>'+prefix+cells+'</tr>';
   }
 
   // Store for tbody prepend (renderStatsRows will insert after populating tbody)
@@ -1842,7 +1842,16 @@ function renderStatsRows() {
         cells+'</tr>';
     }
   }).join('');
-  if (totalsHTML) tbody.insertAdjacentHTML('afterbegin', totalsHTML);
+  if (totalsHTML) {
+    tbody.insertAdjacentHTML('afterbegin', totalsHTML);
+    // Set sticky top offset = thead height so totals row pins just below column headers
+    var thead = document.getElementById('season-thead');
+    var totalsRow = tbody.querySelector('.totals-row');
+    if (thead && totalsRow) {
+      var topPx = thead.offsetHeight + 'px';
+      Array.from(totalsRow.cells).forEach(function(td){ td.style.top = topPx; });
+    }
+  }
 }
 
 function sortStats(th) {

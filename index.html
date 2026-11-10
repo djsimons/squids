@@ -6,6 +6,11 @@
   <title>The Fightin' Squids</title>
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Stats table: freeze header row + totals row while scrolling */
+    #season-thead tr:first-child th { position: sticky; top: 0; z-index: 3; }
+    #season-tbody tr.totals-row td  { position: sticky; z-index: 2; }
+  </style>
 </head>
 <body>
 
