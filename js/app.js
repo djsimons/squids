@@ -2586,13 +2586,20 @@ function renderLineup() {
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
 
-  // Field: W=480, H=460, hx=240, hy=440, D=96
-  // 1B=(336,344), 2B=(240,248), 3B=(144,344)
-  // Foul lines to canvas corners: left→(0,200), right→(480,200)
-  // Left foul eq: y = x+200  Right foul eq: y = -x+680
-  // chip fw=60, half=30 — safe LF/RF x keeps chip edge inside foul line
-  var W=480, H=460, hx=240, hy=440;
-  var fx=336, fy=344, sx=240, sy=248, tx=144, ty=344;
+  // Field geometry — viewBox trimmed to start near the outfield wall
+  // W=480, full field height=440, but viewBox starts at y=50 (cutting dead space)
+  // so viewBox="0 50 480 400" shows rows 50..450 of the 480x460 coordinate space
+  // hx=240, hy=450 (home near bottom), D=96
+  // Foul lines from (240,450) to corners (0,210) and (480,210)
+  // Left foul: y = x+210,  Right foul: y = -x+690
+  // Arc (outfield wall): bezier from (0,210) Q 240,30 (480,210)
+  // With viewBox starting at y=50, the wall at ~y=90 is near the top — close to caption ✓
+
+  var VX=0, VY=50, VW=480, VH=400;  // viewBox
+  var hx=240, hy=450, D=96;
+  var fx=336, fy=354, sx=240, sy=258, tx=144, ty=354;
+  // foul line corners (in full coord space)
+  var flLx=0, flLy=210, flRx=480, flRy=210;
 
   function chip(pos, cx, cy) {
     var pid = starters[pos];
@@ -2623,41 +2630,41 @@ function renderLineup() {
     '</foreignObject>';
   }
 
-  // Position coords
-  // LF/RF moved up to y=210 (from y=240)
-  // At y=210: left foul x=10, LF chip left=118-30=88 >> 10 ✓
-  //           right foul x=470, RF chip right=362+30=392 << 470 ✓
+  // Position coords (in full 480x460 space, viewBox clips top 50px)
+  // LF/RF: pushed out toward foul lines. At y=240: left foul x=30, right foul x=450.
+  //   LF chip left edge = cx-30. Keep cx-30 > 30+8 → cx > 68. Use 100 (was 118).
+  //   RF chip right edge = cx+30. Keep cx+30 < 450-8 → cx < 412. Use 380 (was 362).
+  // LC/RC: pulled down from 148 to 180
+  // P: on mound (fy=354), lower than before — was fy-22=332, now fy-10=344
   var posCoords = {
-    'P':  [hx,     fy-22],
-    'C':  [hx,     hy-18],
-    '1B': [fx,     fy-14],
-    '2B': [hx+48,  sy+26],
-    '3B': [tx,     ty-14],
-    'SS': [hx-48,  sy+26],
-    'LF': [118,    210],
-    'LC': [192,    148],
-    'RC': [288,    148],
-    'RF': [362,    210],
+    'P':  [hx,      fy+2],       // on the mound
+    'C':  [hx,      hy-18],
+    '1B': [fx,      fy-14],
+    '2B': [hx+48,   sy+26],
+    '3B': [tx,      ty-14],
+    'SS': [hx-48,   sy+26],
+    'LF': [100,     228],        // further out toward left foul line
+    'LC': [192,     174],        // pulled down
+    'RC': [288,     174],        // pulled down
+    'RF': [380,     228],        // further out toward right foul line
   };
 
-  // Util positions: left column x=46, right column x=434, stacked from y=300
-  var utilSpacing = 58;
-  var utilStartY  = 308;
-
-  var utilLeft  = bench.filter(function(_,i){ return i%2===0; });
-  var utilRight = bench.filter(function(_,i){ return i%2===1; });
+  var utilSpacing = 60;
+  var utilStartY  = 318;
+  var utilLeft    = bench.filter(function(_,i){ return i%2===0; });
+  var utilRight   = bench.filter(function(_,i){ return i%2===1; });
 
   var fieldSvg =
-    '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto">'+
-    // Green fan
-    '<path d="M '+hx+','+hy+' L 0,200 Q '+hx+',20 '+W+',200 Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
+    '<svg viewBox="'+VX+' '+VY+' '+VW+' '+VH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto">'+
+    // Green fan: home → left foul corner → bezier arc top → right foul corner → home
+    '<path d="M '+hx+','+hy+' L '+flLx+','+flLy+' Q '+hx+',30 '+flRx+','+flRy+' Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
     // Dirt diamond
     '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(150,90,30,0.48)" stroke="rgba(195,135,55,0.4)" stroke-width="1"/>'+
-    // Outfield arc
+    // Outfield/infield arc
     '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
     // Foul lines
-    '<line x1="'+hx+'" y1="'+hy+'" x2="0" y2="200" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
-    '<line x1="'+hx+'" y1="'+hy+'" x2="'+W+'" y2="200" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flLx+'" y2="'+flLy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flRx+'" y2="'+flRy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
     // Basepaths
     '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
     // Pitcher mound
@@ -2672,22 +2679,19 @@ function renderLineup() {
     POSITIONS.map(function(pos){
       var c=posCoords[pos]; return chip(pos,c[0],c[1]);
     }).join('')+
-    // UTIL label
-    (bench.length ? '<text x="'+hx+'" y="'+(utilStartY-18)+'" text-anchor="middle" font-size="9" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui">UTIL</text>' : '')+
-    // Util chips left column
-    utilLeft.map(function(pid,i){
-      return utilChip(pid, 46, utilStartY + i*utilSpacing);
-    }).join('')+
-    // Util chips right column
-    utilRight.map(function(pid,i){
-      return utilChip(pid, 434, utilStartY + i*utilSpacing);
-    }).join('')+
+    // UTIL headers + chips
+    (bench.length
+      ? '<text x="46" y="'+(utilStartY-16)+'" text-anchor="middle" font-size="8" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>'+
+        '<text x="434" y="'+(utilStartY-16)+'" text-anchor="middle" font-size="8" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>'
+      : '')+
+    utilLeft.map(function(pid,i){ return utilChip(pid, 46,  utilStartY + i*utilSpacing); }).join('')+
+    utilRight.map(function(pid,i){ return utilChip(pid, 434, utilStartY + i*utilSpacing); }).join('')+
     '</svg>';
 
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
-    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.4rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.3rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
     fieldSvg;
 }
 
