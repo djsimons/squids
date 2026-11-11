@@ -2577,46 +2577,105 @@ function renderLineup() {
 
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // Build starter cards
-  function starterCard(pos) {
+  // Player chip: photo + name label, absolutely positioned over the diamond
+  // cx/cy are percentages of the field container (0-100)
+  function chip(pos, cx, cy) {
     var pid = starters[pos];
-    var g = pid ? (playerStats[pid].pos[pos]||0) : 0;
-    var name = pid ? playerStats[pid].name : '—';
-    var lo = pid ? pid.toLowerCase() : '';
-    var clickable = !!pid;
-    var photoHtml = pid
-      ? '<img src="img/players/'+lo+'" style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid var(--border-bright);display:block;flex-shrink:0" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'
-      : '<div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--border);background:var(--deep);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.1rem;flex-shrink:0">?</div>';
-    return '<div onclick="'+(clickable?'navigate(\'profile\',\''+pid+'\')':'')+'" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.6rem;border-radius:8px;background:var(--surface-raised);border:1px solid var(--border);'+(clickable?'cursor:pointer':'')+'">'+
-      photoHtml+
-      '<div style="min-width:0">'+
-        '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.1em;color:var(--sky-light);margin-bottom:1px">'+pos+'</div>'+
-        '<div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(name)+'</div>'+
-        (pid ? '<div style="font-size:0.72rem;color:var(--text-dim)">'+g+'g</div>' : '')+
-      '</div>'+
+    var name = pid ? playerStats[pid].name : null;
+    var lo   = pid ? pid.toLowerCase() : '';
+    // Split name: first word vs rest, so it wraps nicely
+    var parts = name ? name.split(' ') : [];
+    var firstName = parts[0]||'';
+    var lastName  = parts.slice(1).join(' ');
+    var photoSz = 44; // px
+    var imgHtml = pid
+      ? '<img src="img/players/'+lo+'" style="width:'+photoSz+'px;height:'+photoSz+'px;object-fit:cover;border-radius:50%;border:2px solid var(--sky-dim);display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'
+      : '<div style="width:'+photoSz+'px;height:'+photoSz+'px;border-radius:50%;border:2px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>';
+    var nameHtml = name
+      ? '<div style="font-size:9px;font-weight:700;color:var(--text);line-height:1.15;text-align:center;text-shadow:0 1px 3px #000a">'+
+          esc(firstName)+(lastName?'<br>'+esc(lastName):'')+
+        '</div>'
+      : '';
+    var posBadge = '<div style="font-family:var(--font-display);font-size:8px;letter-spacing:0.08em;color:var(--sky-light);text-align:center;line-height:1;margin-bottom:2px">'+pos+'</div>';
+    var click = pid ? 'onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
+    return '<div '+click+' style="position:absolute;left:'+cx+'%;top:'+cy+'%;transform:translate(-50%,-50%);width:52px;text-align:center">'+
+      posBadge+imgHtml+nameHtml+
     '</div>';
   }
 
-  // 10 starters in a responsive grid: 5 cols ≥540px, 2 cols below
-  var cardsHtml = '<div id="lineup-starters-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;margin-bottom:1rem">'+
-    POSITIONS.map(starterCard).join('')+
-  '</div>';
+  // Field SVG — just the diamond lines, no text. ViewBox 0 0 400 360.
+  // We'll lay this inside a position:relative container at paddingBottom trick.
+  // Coordinate system: home plate at (200, 330), bases 110px apart.
+  var D = 110; // base distance in SVG units
+  var hx=200, hy=330; // home
+  var firstX=hx+D, firstY=hy-D;
+  var secX=hx,     secY=hy-D*2;
+  var thirdX=hx-D, thirdY=hy-D;
+  var arcR = D*3.1;
+  // outfield fence arc: from ~left of LF to ~right of RF, centered on home
+  var arcLx=hx-D*2.1, arcLy=hy-D*1.5;
+  var arcRx=hx+D*2.1, arcRy=arcLy;
+
+  var fieldSvg = '<svg viewBox="0 0 400 360" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">'+
+    // Outfield grass wedge
+    '<path d="M'+hx+','+hy+' L'+arcLx+','+arcLy+' A'+arcR+','+arcR+' 0 0,1 '+arcRx+','+arcRy+' Z" fill="rgba(0,110,35,0.22)" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
+    // Infield dirt diamond
+    '<polygon points="'+hx+','+hy+' '+firstX+','+firstY+' '+secX+','+secY+' '+thirdX+','+thirdY+'" fill="rgba(0,70,20,0.28)" stroke="rgba(56,189,248,0.3)" stroke-width="1"/>'+
+    // Base paths
+    '<polyline points="'+firstX+','+firstY+' '+secX+','+secY+' '+thirdX+','+thirdY+' '+hx+','+hy+' '+firstX+','+firstY+'" fill="none" stroke="rgba(240,192,96,0.45)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
+    // Pitcher mound
+    '<circle cx="'+hx+'" cy="'+(hy-D*1.0)+'" r="8" fill="rgba(240,192,96,0.12)" stroke="rgba(240,192,96,0.35)" stroke-width="1"/>'+
+    // Home plate
+    '<circle cx="'+hx+'" cy="'+hy+'" r="6" fill="rgba(240,192,96,0.18)" stroke="rgba(240,192,96,0.45)" stroke-width="1.2"/>'+
+    // Base diamonds
+    [firstX+','+firstY, secX+','+secY, thirdX+','+thirdY].map(function(pt){
+      var x=pt.split(',')[0],y=pt.split(',')[1];
+      return '<rect x="'+(x-5)+'" y="'+(y-5)+'" width="10" height="10" fill="rgba(240,192,96,0.18)" stroke="rgba(240,192,96,0.45)" stroke-width="1" transform="rotate(45,'+x+','+y+')"/>';
+    }).join('')+
+  '</svg>';
+
+  // Position percentages (cx, cy) relative to 400×360 viewBox
+  // cx = x/400*100, cy = y/360*100
+  function pct(x,y){ return [x/400*100, y/360*100]; }
+  var fieldH = 360, fieldW = 400;
+  var posCoords = {
+    'P':  pct(hx,       hy-D*1.0),
+    'C':  pct(hx,       hy+28),
+    '1B': pct(hx+D,     hy-D),
+    '2B': pct(hx+D*0.5, hy-D*2.05),
+    '3B': pct(hx-D,     hy-D),
+    'SS': pct(hx-D*0.5, hy-D*2.05),
+    'LF': pct(hx-D*1.75,hy-D*2.3),
+    'LC': pct(hx-D*0.65,hy-D*2.95),
+    'RC': pct(hx+D*0.65,hy-D*2.95),
+    'RF': pct(hx+D*1.75,hy-D*2.3),
+  };
+
+  // Field container: 400:360 aspect ratio, max 480px wide
+  var fieldHtml =
+    '<div style="position:relative;width:100%;max-width:480px;margin:0 auto;padding-bottom:'+(360/400*100)+'%">'+
+      fieldSvg+
+      POSITIONS.map(function(pos){
+        var c = posCoords[pos];
+        return chip(pos, c[0], c[1]);
+      }).join('')+
+    '</div>';
 
   // Bench row
   var benchHtml = '';
   if (bench.length) {
-    benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.75rem">'+
-      '<div style="font-family:var(--font-display);font-size:0.72rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.5rem">ALSO PLAYED ≥'+BENCH_MIN+' GAMES</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:0.35rem">'+
+    benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.6rem;margin-top:0.5rem">'+
+      '<div style="font-family:var(--font-display);font-size:0.72rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.4rem">ALSO PLAYED ≥'+BENCH_MIN+' GAMES</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:0.3rem">'+
       bench.map(function(pid) {
         var ps = playerStats[pid];
         var lo = pid.toLowerCase();
         var posStr = POSITIONS.filter(function(p){return (ps.pos[p]||0)>0;}).map(function(p){return p;}).join('/');
-        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;border-radius:6px;background:var(--surface);border:1px solid var(--border);cursor:pointer">'+
-          '<img src="img/players/'+lo+'" style="width:28px;height:28px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'+
+        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;align-items:center;gap:0.35rem;padding:0.25rem 0.45rem;border-radius:6px;background:var(--surface);border:1px solid var(--border);cursor:pointer">'+
+          '<img src="img/players/'+lo+'" style="width:26px;height:26px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'+
           '<div>'+
-            '<div style="font-size:0.8rem;font-weight:600;color:var(--text)">'+esc(ps.name)+'</div>'+
-            '<div style="font-size:0.68rem;color:var(--text-dim)">'+ps.totalG+'g'+(posStr?' · '+posStr:'')+' </div>'+
+            '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">'+esc(ps.name)+'</div>'+
+            (posStr?'<div style="font-size:0.65rem;color:var(--text-dim)">'+posStr+'</div>':'')+
           '</div>'+
         '</div>';
       }).join('')+
@@ -2626,9 +2685,8 @@ function renderLineup() {
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
-    '<div style="font-family:var(--font-display);font-size:0.95rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.75rem">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
-    '<style>#lineup-starters-grid{grid-template-columns:repeat(5,1fr)}@media(max-width:540px){#lineup-starters-grid{grid-template-columns:repeat(2,1fr)}}</style>'+
-    cardsHtml+
+    '<div style="font-family:var(--font-display);font-size:0.95rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.6rem">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    fieldHtml+
     benchHtml;
 }
 
