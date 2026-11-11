@@ -843,8 +843,8 @@ function showProfile(id) {
       '<td>'+fmtCount(s.HR)+'</td><td>'+fmtCount(s.BB)+'</td>'+
       '<td>'+fmtBA(s.BA)+'</td><td>'+fmtBA(s.OBP)+'</td>'+
       '<td>'+fmtBA(s.SLG)+'</td><td>'+fmtBA(s.OPS)+'</td>'+
-      posCells+
-      '<td>'+fmtRV(calcRV(s))+'</td>'+pitCells+'</tr>';
+      '<td>'+fmtRV(calcRV(s))+'</td>'+
+      posCells+pitCells+'</tr>';
   }
 
   function careerRow() {
@@ -864,7 +864,7 @@ function showProfile(id) {
       '<td>'+career.HR+'</td><td>'+career.BB+'</td>'+
       '<td>'+fmtBA(career.BA)+'</td><td>'+fmtBA(career.OBP)+'</td>'+
       '<td>'+fmtBA(career.SLG)+'</td><td>'+fmtBA(career.OPS)+'</td>'+
-      posCells+'<td>'+fmtRV(career.RV)+'</td>'+pitCells+'</tr>';
+      '<td>'+fmtRV(career.RV)+'</td>'+posCells+pitCells+'</tr>';
   }
 
   // Store season rows globally so sortPlayerStats() can re-render them
@@ -890,6 +890,7 @@ function showProfile(id) {
     '<th onclick="sortPlayerStats(this)" data-col="OBP">OBP</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="SLG">SLG</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="OPS">OPS</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_P">P</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_C">C</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_1B">1B</th>'+
@@ -901,7 +902,7 @@ function showProfile(id) {
     '<th onclick="sortPlayerStats(this)" data-col="pos_RC">RC</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_RF">RF</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_DH">DH</th>'+
-    '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+pitHeaders;
+    pitHeaders;
 
   var logsTab=pLogs.length>0?'<button class="tab-btn" onclick="switchProfileTab(this,\'tab-gamelogs\')">Game Log</button>':'';
   // Build game log with season separators, totals, and squids
@@ -1057,9 +1058,9 @@ function calcGameTeamRows() {
     g.AB+=l.AB||0; g.R+=l.R||0; g.H+=l.H||0; g.RBI+=l.RBI||0;
     g.dbl+=l.dbl||0; g.trp+=l.trp||0; g.HR+=l.HR||0; g.BB+=l.BB||0;
     g.RV+=calcRV(l)||0;
-    // pitching from game logs uses IP/RA/W/L/S fields
-    if(l.IP){ g.pit_IP+=parseFloat(l.IP)||0; g.pit_RA+=l.RA||0; g.pit_G+=1;
-      if(l.W&&l.W!=0) g.pit_W+=1; if(l.L&&l.L!=0) g.pit_L+=1; if(l.S&&l.S!=0) g.pit_S+=1; }
+    // pitching from game logs uses pit_IP/pit_RA/pit_W/pit_L/pit_S fields
+    if(l.pit_IP){ g.pit_IP+=parseFloat(l.pit_IP)||0; g.pit_RA+=l.pit_RA||0; g.pit_G+=1;
+      if(l.pit_W&&l.pit_W!=0) g.pit_W+=1; if(l.pit_L&&l.pit_L!=0) g.pit_L+=1; if(l.pit_S&&l.pit_S!=0) g.pit_S+=1; }
   });
   return Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date);});
 }
@@ -1210,9 +1211,12 @@ function onScopeChange() {
     seasonEl.style.opacity = '';
     seasonEl.style.cursor = '';
   }
+  renderStats();
 }
 
 function renderStats() {
+  // If lineup view is active, re-render it instead of stats table
+  if (_lineupActive) { renderLineup(); return; }
   var scopeEl   = document.getElementById('stats-scope');
   var seasonEl  = document.getElementById('stats-season');
   var viewEl    = document.getElementById('stats-view');
@@ -1355,7 +1359,7 @@ function renderStats() {
       var pool2 = DATA.stats.filter(function(s){
         if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
-        if (!s.pit_IP || s.pit_IP <= 0) return false;
+        if (!s.pit_G || s.pit_G <= 0) return false;
         return true;
       });
       prows = pool2.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);}).map(function(s){
@@ -1368,13 +1372,13 @@ function renderStats() {
       var ptots = {};
       DATA.stats.forEach(function(s){
         if (!gok(s.player_id)) return;
-        if (!s.pit_IP||s.pit_IP<=0) return;
+        if (!s.pit_G||s.pit_G<=0) return;
         if (!ptots[s.player_id]) ptots[s.player_id]={pit_G:0,pit_GS:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0};
         var t=ptots[s.player_id];
         t.pit_G+=s.pit_G||0;t.pit_GS+=s.pit_GS||0;t.pit_IP+=s.pit_IP||0;
         t.pit_RA+=s.pit_RA||0;t.pit_W+=s.pit_W||0;t.pit_L+=s.pit_L||0;t.pit_S+=s.pit_S||0;
       });
-      prows = Object.values(ptots).filter(function(t){return t.pit_IP>0;})
+      prows = Object.values(ptots).filter(function(t){return t.pit_G>0;})
         .map(function(t,i){
           var id=Object.keys(ptots)[i];
           return {pid:id,seasonStr:'Career',
@@ -1412,7 +1416,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view, season
     if(season && season !== 'all' && (l.season_sort==null || l.season_sort.toFixed(1) !== season)) return false;
     if(gender !== 'all'){ var p=getPlayer(l.player_id); if(!p||p.gender!==gender) return false; }
     if(activeOnly && !activeSet.has(l.player_id)) return false;
-    if(isPit) return !!(l.IP);
+    if(isPit) return !!(l.pit_G);
     if(minAB > 0 && ((l.AB||0)+(l.BB||0)) < minAB) return false;
     return true;
   });
@@ -1421,9 +1425,9 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view, season
     rows = logs.map(function(l){
       return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
         season_sort:l.season_sort, game_num:l.game_num,
-        pit_G:1, pit_IP:parseFloat(l.IP)||0, pit_RA:l.RA||0,
-        pit_W:(l.W&&l.W!=0)?1:0, pit_L:(l.L&&l.L!=0)?1:0, pit_S:(l.S&&l.S!=0)?1:0,
-        RIP:parseFloat(l.IP)>0?(l.RA||0)/parseFloat(l.IP):null};
+        pit_G:1, pit_IP:parseFloat(l.pit_IP)||0, pit_RA:l.pit_RA||0,
+        pit_W:(l.pit_W&&l.pit_W!=0)?1:0, pit_L:(l.pit_L&&l.pit_L!=0)?1:0, pit_S:(l.pit_S&&l.pit_S!=0)?1:0,
+        RIP:parseFloat(l.pit_IP)>0?(l.pit_RA||0)/parseFloat(l.pit_IP):null};
     });
     rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
   } else {
@@ -1498,7 +1502,7 @@ function renderGameTeamRows(view, season) {
       RIP:g.pit_IP>0?g.pit_RA/g.pit_IP:null};
   });
   if (isPit) {
-    rows = rows.filter(function(r){return r.pit_IP>0;});
+    rows = rows.filter(function(r){return r.pit_G>0;});
     rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
   } else {
     rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
@@ -1574,7 +1578,7 @@ function renderSeasonTeamRows(season, view) {
       pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
       RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
   });
-  if (isPit) rows = rows.filter(function(r){return r.pit_IP>0;});
+  if (isPit) rows = rows.filter(function(r){return r.pit_G>0;});
 
   window._statsRows = rows;
   window._statsShowSeason = (season === 'all');
@@ -2483,6 +2487,214 @@ document.addEventListener('scroll', function(e) {
 }, true);
 
 // Schedule hint updated inside showSchedule directly
+
+// ── LINEUP VIEW ───────────────────────────────────────────────────────────
+var _lineupActive = false;
+
+function toggleLineup() {
+  _lineupActive = !_lineupActive;
+  var btn = document.getElementById('lineup-toggle-btn');
+  var view = document.getElementById('lineup-view');
+  var wrap = document.getElementById('stats-table-wrap');
+  var lbl  = document.getElementById('season-label');
+  if (_lineupActive) {
+    if (btn) { btn.textContent = '✕ Lineup'; btn.style.background = 'var(--deep-mid)'; }
+    if (wrap) wrap.style.display = 'none';
+    if (lbl)  lbl.style.display  = 'none';
+    renderLineup();
+  } else {
+    if (btn) { btn.textContent = '⚾ Lineup'; btn.style.background = 'var(--sky-dim)'; }
+    if (view) view.style.display = 'none';
+    if (wrap) wrap.style.display = '';
+    if (lbl)  lbl.style.display  = '';
+  }
+}
+
+function renderLineup() {
+  var seasonVal = document.getElementById('stats-season').value;
+  var logs = DATA.logs || [];
+  var seasonNum = seasonVal === 'all' ? null : parseFloat(seasonVal);
+  var seasonLogs = seasonNum == null ? logs : logs.filter(function(l){ return l.season_sort === seasonNum; });
+  var lineupSeasonLabel = seasonNum == null ? 'All Seasons' : seasonLabel(seasonNum);
+
+  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF'];
+  var posKeys = {P:'pos_P',C:'pos_C','1B':'pos_1B','2B':'pos_2B','3B':'pos_3B',SS:'pos_SS',LF:'pos_LF',LC:'pos_LC',RC:'pos_RC',RF:'pos_RF'};
+
+  var playerStats = {};
+  seasonLogs.forEach(function(l) {
+    var pid = l.player_id;
+    if (!pid) return;
+    if (!playerStats[pid]) {
+      var pl = getPlayer(pid);
+      playerStats[pid] = {pos:{}, totalG:0, totalPA:0, name: (pl && pl.display_name) || pid};
+    }
+    var ps = playerStats[pid];
+    POSITIONS.forEach(function(pos) {
+      var v = Number(l[posKeys[pos]])||0;
+      if (v > 0) ps.pos[pos] = (ps.pos[pos]||0) + v;
+    });
+    ps.totalG++;
+    ps.totalPA += (Number(l.AB||0) + Number(l.BB||0));
+  });
+
+  var assigned = new Set(), starters = {};
+  var allCandidates = [];
+  POSITIONS.forEach(function(pos) {
+    Object.keys(playerStats).forEach(function(pid) {
+      var g = playerStats[pid].pos[pos]||0;
+      if (g > 0) allCandidates.push({pos:pos, pid:pid, gAtPos:g});
+    });
+  });
+  allCandidates.sort(function(a,b) {
+    if (b.gAtPos !== a.gAtPos) return b.gAtPos - a.gAtPos;
+    var pa=playerStats[a.pid], pb=playerStats[b.pid];
+    if (pb.totalG !== pa.totalG) return pb.totalG - pa.totalG;
+    if (pb.totalPA !== pa.totalPA) return pb.totalPA - pa.totalPA;
+    return pa.name.localeCompare(pb.name);
+  });
+  allCandidates.forEach(function(c) {
+    if (!starters[c.pos] && !assigned.has(c.pid)) {
+      starters[c.pos] = c.pid; assigned.add(c.pid);
+    }
+  });
+  POSITIONS.forEach(function(pos) {
+    if (starters[pos]) return;
+    var cands = Object.keys(playerStats).filter(function(pid){
+      return !assigned.has(pid) && (playerStats[pid].pos[pos]||0) > 0;
+    });
+    if (!cands.length) return;
+    cands.sort(function(a,b) {
+      var ga=playerStats[a].pos[pos]||0, gb=playerStats[b].pos[pos]||0;
+      if (gb !== ga) return gb - ga;
+      if (playerStats[b].totalG !== playerStats[a].totalG) return playerStats[b].totalG - playerStats[a].totalG;
+      return playerStats[a].name.localeCompare(playerStats[b].name);
+    });
+    starters[pos] = cands[0]; assigned.add(cands[0]);
+  });
+
+  var starterSet = new Set(Object.values(starters));
+  var BENCH_MIN = 6;
+  var bench = Object.keys(playerStats).filter(function(pid) {
+    return !starterSet.has(pid) && playerStats[pid].totalG >= BENCH_MIN;
+  }).sort(function(a,b){
+    var pa=playerStats[a],pb=playerStats[b];
+    if(pb.totalG!==pa.totalG) return pb.totalG-pa.totalG;
+    if(pb.totalPA!==pa.totalPA) return pb.totalPA-pa.totalPA;
+    return pa.name.localeCompare(pb.name);
+  });
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
+
+  // Field geometry — viewBox trimmed to start near the outfield wall
+  // W=480, full field height=440, but viewBox starts at y=50 (cutting dead space)
+  // so viewBox="0 50 480 400" shows rows 50..450 of the 480x460 coordinate space
+  // hx=240, hy=450 (home near bottom), D=96
+  // Foul lines from (240,450) to corners (0,210) and (480,210)
+  // Left foul: y = x+210,  Right foul: y = -x+690
+  // Arc (outfield wall): bezier from (0,210) Q 240,30 (480,210)
+  // With viewBox starting at y=50, the wall at ~y=90 is near the top — close to caption ✓
+
+  var VX=0, VY=50, VW=480, VH=400;  // viewBox
+  var hx=240, hy=450, D=96;
+  var fx=336, fy=354, sx=240, sy=258, tx=144, ty=354;
+  // foul line corners (in full coord space)
+  var flLx=0, flLy=210, flRx=480, flRy=210;
+
+  function chip(pos, cx, cy) {
+    var pid = starters[pos];
+    var name = pid ? playerStats[pid].name : null;
+    var lo   = pid ? pid.toLowerCase() : '';
+    var lname = name ? lastName(name) : '';
+    var click = pid ? ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
+    var fw=60, fh=68;
+    return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-fh/2)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
+        (pid
+          ? '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
+          : '<div style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
+        '<div style="font-size:9px;font-weight:700;color:#e2f0ff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;line-height:1.2">'+esc(lname)+'</div>'+
+      '</div>'+
+    '</foreignObject>';
+  }
+
+  function utilChip(pid, cx, cy) {
+    var ps = playerStats[pid];
+    var lo = pid.toLowerCase();
+    var lname = lastName(ps.name);
+    return '<foreignObject x="'+(cx-28)+'" y="'+(cy-26)+'" width="56" height="52" overflow="visible">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml" onclick="navigate(\'profile\',\''+pid+'\')" style="width:56px;text-align:center;cursor:pointer">'+
+        '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.8" onerror="imgError(this,\''+pid+'\',\'leader\')">'+
+        '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:56px">'+esc(lname)+'</div>'+
+      '</div>'+
+    '</foreignObject>';
+  }
+
+  // Position coords (in full 480x460 space, viewBox clips top 50px)
+  // LF/RF: pushed out toward foul lines. At y=240: left foul x=30, right foul x=450.
+  //   LF chip left edge = cx-30. Keep cx-30 > 30+8 → cx > 68. Use 100 (was 118).
+  //   RF chip right edge = cx+30. Keep cx+30 < 450-8 → cx < 412. Use 380 (was 362).
+  // LC/RC: pulled down from 148 to 180
+  // P: on mound (fy=354), lower than before — was fy-22=332, now fy-10=344
+  var posCoords = {
+    'P':  [hx,      fy+2],       // on the mound
+    'C':  [hx,      hy-18],
+    '1B': [fx,      fy-14],
+    '2B': [hx+48,   sy+26],
+    '3B': [tx,      ty-14],
+    'SS': [hx-48,   sy+26],
+    'LF': [100,     228],        // further out toward left foul line
+    'LC': [192,     174],        // pulled down
+    'RC': [288,     174],        // pulled down
+    'RF': [380,     228],        // further out toward right foul line
+  };
+
+  var utilSpacing = 60;
+  var utilStartY  = 318;
+  var utilLeft    = bench.filter(function(_,i){ return i%2===0; });
+  var utilRight   = bench.filter(function(_,i){ return i%2===1; });
+
+  var fieldSvg =
+    '<svg viewBox="'+VX+' '+VY+' '+VW+' '+VH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto">'+
+    // Green fan: home → left foul corner → bezier arc top → right foul corner → home
+    '<path d="M '+hx+','+hy+' L '+flLx+','+flLy+' Q '+hx+',30 '+flRx+','+flRy+' Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
+    // Dirt diamond
+    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(150,90,30,0.48)" stroke="rgba(195,135,55,0.4)" stroke-width="1"/>'+
+    // Outfield/infield arc
+    '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
+    // Foul lines
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flLx+'" y2="'+flLy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flRx+'" y2="'+flRy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    // Basepaths
+    '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
+    // Pitcher mound
+    '<circle cx="'+hx+'" cy="'+fy+'" r="9" fill="rgba(150,90,30,0.65)" stroke="rgba(195,135,55,0.45)" stroke-width="1"/>'+
+    // Home
+    '<circle cx="'+hx+'" cy="'+hy+'" r="6" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
+    // Bases
+    [[fx,fy],[sx,sy],[tx,ty]].map(function(b){
+      return '<rect x="'+(b[0]-6)+'" y="'+(b[1]-6)+'" width="12" height="12" fill="rgba(240,220,180,0.5)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+    }).join('')+
+    // Starters
+    POSITIONS.map(function(pos){
+      var c=posCoords[pos]; return chip(pos,c[0],c[1]);
+    }).join('')+
+    // UTIL headers + chips
+    (bench.length
+      ? '<text x="46" y="'+(utilStartY-16)+'" text-anchor="middle" font-size="8" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>'+
+        '<text x="434" y="'+(utilStartY-16)+'" text-anchor="middle" font-size="8" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>'
+      : '')+
+    utilLeft.map(function(pid,i){ return utilChip(pid, 46,  utilStartY + i*utilSpacing); }).join('')+
+    utilRight.map(function(pid,i){ return utilChip(pid, 434, utilStartY + i*utilSpacing); }).join('')+
+    '</svg>';
+
+  var view = document.getElementById('lineup-view');
+  view.style.display = 'block';
+  view.innerHTML =
+    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.3rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    fieldSvg;
+}
+
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function(){

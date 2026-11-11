@@ -129,38 +129,41 @@
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Season</span>
-          <select id="stats-season"></select>
+          <select id="stats-season" onchange="renderStats()"></select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">View</span>
-          <select id="stats-view">
+          <select id="stats-view" onchange="renderStats()">
             <option value="batting">Batting</option>
             <option value="pitching">Pitching</option>
           </select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Gender</span>
-          <select id="stats-gender">
+          <select id="stats-gender" onchange="renderStats()">
             <option value="all">All</option>
             <option value="M">M</option>
             <option value="F">F</option>
           </select>
         </div>
         <label style="display:flex;flex-direction:row;align-items:center;gap:0.4rem;cursor:pointer;padding-bottom:2px">
-          <input type="checkbox" id="stats-active"
+          <input type="checkbox" id="stats-active" onchange="renderStats()"
             style="accent-color:var(--sky);width:14px;height:14px;flex-shrink:0">
           <span class="filter-label" style="margin:0">Active</span>
         </label>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Min PA</span>
-          <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px">
+          <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px" oninput="renderStats()">
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">&nbsp;</span>
-          <button class="submit-btn" onclick="renderStats()">Submit</button>
+          <button id="lineup-toggle-btn" onclick="toggleLineup()" style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.8rem;cursor:pointer;font-size:0.85rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap">⚾ Lineup</button>
         </div>
       </div>
     </div>
+
+    <!-- Lineup inline view (replaces stats table) -->
+    <div id="lineup-view" style="display:none"></div>
 
     <div class="section-title" id="season-label"></div>
     <div class="table-wrap scroll-hint" id="stats-table-wrap" onscroll="if(this.scrollLeft>20)this.classList.remove('scroll-hint');else this.classList.add('scroll-hint')">
