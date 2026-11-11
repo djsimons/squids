@@ -1357,7 +1357,7 @@ function renderStats() {
       var pool2 = DATA.stats.filter(function(s){
         if (season !== 'all' && s.season_sort.toFixed(1) !== season) return false;
         if (!gok(s.player_id)) return false;
-        if (!s.pit_IP || s.pit_IP <= 0) return false;
+        if (!s.pit_G || s.pit_G <= 0) return false;
         return true;
       });
       prows = pool2.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);}).map(function(s){
@@ -1370,13 +1370,13 @@ function renderStats() {
       var ptots = {};
       DATA.stats.forEach(function(s){
         if (!gok(s.player_id)) return;
-        if (!s.pit_IP||s.pit_IP<=0) return;
+        if (!s.pit_G||s.pit_G<=0) return;
         if (!ptots[s.player_id]) ptots[s.player_id]={pit_G:0,pit_GS:0,pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0};
         var t=ptots[s.player_id];
         t.pit_G+=s.pit_G||0;t.pit_GS+=s.pit_GS||0;t.pit_IP+=s.pit_IP||0;
         t.pit_RA+=s.pit_RA||0;t.pit_W+=s.pit_W||0;t.pit_L+=s.pit_L||0;t.pit_S+=s.pit_S||0;
       });
-      prows = Object.values(ptots).filter(function(t){return t.pit_IP>0;})
+      prows = Object.values(ptots).filter(function(t){return t.pit_G>0;})
         .map(function(t,i){
           var id=Object.keys(ptots)[i];
           return {pid:id,seasonStr:'Career',
@@ -1414,7 +1414,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view, season
     if(season && season !== 'all' && (l.season_sort==null || l.season_sort.toFixed(1) !== season)) return false;
     if(gender !== 'all'){ var p=getPlayer(l.player_id); if(!p||p.gender!==gender) return false; }
     if(activeOnly && !activeSet.has(l.player_id)) return false;
-    if(isPit) return !!(l.pit_IP);
+    if(isPit) return !!(l.pit_G);
     if(minAB > 0 && ((l.AB||0)+(l.BB||0)) < minAB) return false;
     return true;
   });
@@ -1500,7 +1500,7 @@ function renderGameTeamRows(view, season) {
       RIP:g.pit_IP>0?g.pit_RA/g.pit_IP:null};
   });
   if (isPit) {
-    rows = rows.filter(function(r){return r.pit_IP>0;});
+    rows = rows.filter(function(r){return r.pit_G>0;});
     rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
   } else {
     rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
@@ -1576,7 +1576,7 @@ function renderSeasonTeamRows(season, view) {
       pit_W:t.pit_W, pit_L:t.pit_L, pit_S:t.pit_S,
       RIP:t.pit_IP>0?t.pit_RA/t.pit_IP:null};
   });
-  if (isPit) rows = rows.filter(function(r){return r.pit_IP>0;});
+  if (isPit) rows = rows.filter(function(r){return r.pit_G>0;});
 
   window._statsRows = rows;
   window._statsShowSeason = (season === 'all');
