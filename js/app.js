@@ -2537,20 +2537,53 @@ function renderLineup() {
     ps.totalPA += (Number(l.AB||0) + Number(l.BB||0));
   });
 
-  var starters = {}, starterSet = new Set();
+  // Assign starters greedily: each player can only occupy ONE position.
+  // Sort positions by most-games-played-at-that-position descending so the
+  // "strongest" assignments happen first.
+  var assigned = new Set();
+  var starters = {};
+
+  // Build a flat list of [pos, pid, gamesAtPos] for every (pos, player) pair
+  var allCandidates = [];
   POSITIONS.forEach(function(pos) {
-    var cands = Object.keys(playerStats).filter(function(pid){ return (playerStats[pid].pos[pos]||0) > 0; });
+    Object.keys(playerStats).forEach(function(pid) {
+      var g = playerStats[pid].pos[pos]||0;
+      if (g > 0) allCandidates.push({pos:pos, pid:pid, gAtPos:g});
+    });
+  });
+  // Sort by gAtPos desc, then totalG desc, then totalPA desc, then alpha
+  allCandidates.sort(function(a,b) {
+    if (b.gAtPos !== a.gAtPos) return b.gAtPos - a.gAtPos;
+    var pa=playerStats[a.pid], pb=playerStats[b.pid];
+    if (pb.totalG !== pa.totalG) return pb.totalG - pa.totalG;
+    if (pb.totalPA !== pa.totalPA) return pb.totalPA - pa.totalPA;
+    return pa.name.localeCompare(pb.name);
+  });
+  // Greedily assign: first valid (pos not filled, player not assigned) wins
+  allCandidates.forEach(function(c) {
+    if (!starters[c.pos] && !assigned.has(c.pid)) {
+      starters[c.pos] = c.pid;
+      assigned.add(c.pid);
+    }
+  });
+  // For any position still unfilled, pick best unassigned player by gAtPos
+  POSITIONS.forEach(function(pos) {
+    if (starters[pos]) return;
+    var cands = Object.keys(playerStats).filter(function(pid){
+      return !assigned.has(pid) && (playerStats[pid].pos[pos]||0) > 0;
+    });
     if (!cands.length) return;
     cands.sort(function(a,b) {
-      var pa=playerStats[a], pb=playerStats[b];
-      if ((pb.pos[pos]||0) !== (pa.pos[pos]||0)) return (pb.pos[pos]||0)-(pa.pos[pos]||0);
-      if (pb.totalG !== pa.totalG) return pb.totalG-pa.totalG;
-      if (pb.totalPA !== pa.totalPA) return pb.totalPA-pa.totalPA;
-      return pa.name.localeCompare(pb.name);
+      var ga=playerStats[a].pos[pos]||0, gb=playerStats[b].pos[pos]||0;
+      if (gb !== ga) return gb - ga;
+      if (playerStats[b].totalG !== playerStats[a].totalG) return playerStats[b].totalG - playerStats[a].totalG;
+      return playerStats[a].name.localeCompare(playerStats[b].name);
     });
     starters[pos] = cands[0];
-    starterSet.add(cands[0]);
+    assigned.add(cands[0]);
   });
+
+  var starterSet = new Set(Object.values(starters));
 
   var BENCH_MIN = 6;
   var bench = Object.keys(playerStats).filter(function(pid) {
@@ -2563,75 +2596,85 @@ function renderLineup() {
   });
 
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
 
-  // SVG field — home plate at bottom-center, bases 80px apart
-  // Canvas 360x390. LF at hx-80*1.5=180-120=60, RF at 180+120=300.
-  // With chip fw=52, chips centered: LF left edge=60-26=34, RF right edge=300+26=326. Fine.
-  var W=360, H=390, hx=180, hy=360, D=80;
+  // SVG dimensions. D=80 keeps everything in a 360-wide canvas.
+  // Home plate at bottom-center. Arc connects flush with infield corners.
+  var W=360, H=400, hx=180, hy=368, D=80;
   var fx=hx+D, fy=hy-D;   // 1B
-  var sx=hx,   sy=hy-D*2; // 2B
+  var sx=hx,   sy=hy-D*2; // 2B  
   var tx=hx-D, ty=hy-D;   // 3B
-  var arcR=D*3.0, arcLx=hx-D*1.6, arcLy=hy-D*1.3, arcRx=hx+D*1.6, arcRy=arcLy;
+  // Arc starts at 3B and ends at 1B so outfield grass meets infield exactly
+  var arcR = D*2.9;
 
+  // chip: foreignObject with photo (36px) + centered name below
+  // fw=56 gives enough room; text-align:center on the outer div
   function chip(pos, cx, cy) {
     var pid = starters[pos];
     var name = pid ? playerStats[pid].name : null;
     var lo   = pid ? pid.toLowerCase() : '';
-    var lastName = name ? (name.split(' ').slice(1).join(' ') || name) : '';
+    var lname = name ? lastName(name) : '';
     var click = pid ? ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
-    var fw=52, fh=62;
+    var fw=56, fh=64;
     return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-fh/2)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
-      '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="text-align:center;width:'+fw+'px">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
         (pid
           ? '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
           : '<div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
-        '<div style="font-size:8.5px;font-weight:700;color:#e2f0ff;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,0.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px">'+esc(lastName)+'</div>'+
+        '<div style="font-size:9px;font-weight:700;color:#e2f0ff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;line-height:1.2">'+esc(lname)+'</div>'+
       '</div>'+
     '</foreignObject>';
   }
 
-  // cx/cy = center of each chip in SVG units
+  // Position coords
   var posCoords = {
     'P':  [hx,          hy-D*1.0],
-    'C':  [hx,          hy+22],
+    'C':  [hx,          hy+24],
     '1B': [hx+D,        hy-D],
     '2B': [hx+D*0.52,   hy-D*2.05],
     '3B': [hx-D,        hy-D],
     'SS': [hx-D*0.52,   hy-D*2.05],
-    'LF': [hx-D*1.5,    hy-D*2.15],
-    'LC': [hx-D*0.55,   hy-D*2.85],
-    'RC': [hx+D*0.55,   hy-D*2.85],
-    'RF': [hx+D*1.5,    hy-D*2.15],
+    'LF': [hx-D*1.5,    hy-D*2.18],
+    'LC': [hx-D*0.56,   hy-D*2.88],
+    'RC': [hx+D*0.56,   hy-D*2.88],
+    'RF': [hx+D*1.5,    hy-D*2.18],
   };
 
   var fieldSvg =
     '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto">'+
-    '<path d="M'+hx+','+hy+' L'+arcLx+','+arcLy+' A'+arcR+','+arcR+' 0 0,1 '+arcRx+','+arcRy+' Z" fill="rgba(0,110,35,0.22)" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
-    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(0,70,20,0.28)" stroke="rgba(56,189,248,0.28)" stroke-width="1"/>'+
-    '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.4)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
-    '<circle cx="'+hx+'" cy="'+(hy-D)+'" r="6" fill="rgba(240,192,96,0.1)" stroke="rgba(240,192,96,0.3)" stroke-width="1"/>'+
-    '<circle cx="'+hx+'" cy="'+hy+'" r="5" fill="rgba(240,192,96,0.15)" stroke="rgba(240,192,96,0.4)" stroke-width="1.2"/>'+
+    // Outfield grass: arc from 3B to 1B going through deep center
+    '<path d="M'+tx+','+ty+' A'+arcR+','+arcR+' 0 0,1 '+fx+','+fy+' L'+hx+','+hy+' Z" fill="rgba(34,120,40,0.35)" stroke="rgba(56,189,248,0.22)" stroke-width="1.2"/>'+
+    // Infield dirt: diamond
+    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(160,100,40,0.35)" stroke="rgba(200,140,60,0.4)" stroke-width="1"/>'+
+    // Basepaths
+    '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
+    // Pitcher mound
+    '<circle cx="'+hx+'" cy="'+(hy-D)+'" r="8" fill="rgba(160,100,40,0.5)" stroke="rgba(200,140,60,0.4)" stroke-width="1"/>'+
+    // Home plate
+    '<circle cx="'+hx+'" cy="'+hy+'" r="5" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
+    // Bases
     [[fx,fy],[sx,sy],[tx,ty]].map(function(b){
-      return '<rect x="'+(b[0]-5)+'" y="'+(b[1]-5)+'" width="10" height="10" fill="rgba(240,192,96,0.15)" stroke="rgba(240,192,96,0.4)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+      return '<rect x="'+(b[0]-5)+'" y="'+(b[1]-5)+'" width="10" height="10" fill="rgba(240,220,180,0.4)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
     }).join('')+
+    // Player chips
     POSITIONS.map(function(pos){
       var c=posCoords[pos]; return chip(pos,c[0],c[1]);
     }).join('')+
     '</svg>';
 
-  // Bench — same-size chips, centered row
+  // Bench chips — centered row, same style
   var benchHtml = '';
   if (bench.length) {
     benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.6rem;margin-top:0.25rem;text-align:center">'+
       '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.45rem">ALSO PLAYED &ge;'+BENCH_MIN+' GAMES</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center">'+
+      '<div style="display:flex;flex-wrap:wrap;gap:0.4rem 0.5rem;justify-content:center">'+
       bench.map(function(pid) {
         var ps = playerStats[pid];
         var lo = pid.toLowerCase();
-        var lastName = ps.name.split(' ').slice(1).join(' ') || ps.name;
-        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;flex-direction:column;align-items:center;width:52px;cursor:pointer">'+
+        var lname = lastName(ps.name);
+        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;flex-direction:column;align-items:center;width:56px;cursor:pointer">'+
           '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:2px solid var(--border-bright);object-fit:cover;display:block;margin-bottom:2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'+
-          '<div style="font-size:8.5px;font-weight:700;color:var(--text-dim);line-height:1.1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px">'+esc(lastName)+'</div>'+
+          '<div style="font-size:9px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:56px">'+esc(lname)+'</div>'+
         '</div>';
       }).join('')+
       '</div></div>';
