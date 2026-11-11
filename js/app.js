@@ -843,8 +843,8 @@ function showProfile(id) {
       '<td>'+fmtCount(s.HR)+'</td><td>'+fmtCount(s.BB)+'</td>'+
       '<td>'+fmtBA(s.BA)+'</td><td>'+fmtBA(s.OBP)+'</td>'+
       '<td>'+fmtBA(s.SLG)+'</td><td>'+fmtBA(s.OPS)+'</td>'+
-      posCells+
-      '<td>'+fmtRV(calcRV(s))+'</td>'+pitCells+'</tr>';
+      '<td>'+fmtRV(calcRV(s))+'</td>'+
+      posCells+pitCells+'</tr>';
   }
 
   function careerRow() {
@@ -864,7 +864,7 @@ function showProfile(id) {
       '<td>'+career.HR+'</td><td>'+career.BB+'</td>'+
       '<td>'+fmtBA(career.BA)+'</td><td>'+fmtBA(career.OBP)+'</td>'+
       '<td>'+fmtBA(career.SLG)+'</td><td>'+fmtBA(career.OPS)+'</td>'+
-      posCells+'<td>'+fmtRV(career.RV)+'</td>'+pitCells+'</tr>';
+      '<td>'+fmtRV(career.RV)+'</td>'+posCells+pitCells+'</tr>';
   }
 
   // Store season rows globally so sortPlayerStats() can re-render them
@@ -890,6 +890,7 @@ function showProfile(id) {
     '<th onclick="sortPlayerStats(this)" data-col="OBP">OBP</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="SLG">SLG</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="OPS">OPS</th>'+
+    '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_P">P</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_C">C</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_1B">1B</th>'+
@@ -901,7 +902,7 @@ function showProfile(id) {
     '<th onclick="sortPlayerStats(this)" data-col="pos_RC">RC</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_RF">RF</th>'+
     '<th onclick="sortPlayerStats(this)" data-col="pos_DH">DH</th>'+
-    '<th onclick="sortPlayerStats(this)" data-col="RV">RV</th>'+pitHeaders;
+    pitHeaders;
 
   var logsTab=pLogs.length>0?'<button class="tab-btn" onclick="switchProfileTab(this,\'tab-gamelogs\')">Game Log</button>':'';
   // Build game log with season separators, totals, and squids
