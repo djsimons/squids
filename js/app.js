@@ -1058,9 +1058,9 @@ function calcGameTeamRows() {
     g.AB+=l.AB||0; g.R+=l.R||0; g.H+=l.H||0; g.RBI+=l.RBI||0;
     g.dbl+=l.dbl||0; g.trp+=l.trp||0; g.HR+=l.HR||0; g.BB+=l.BB||0;
     g.RV+=calcRV(l)||0;
-    // pitching from game logs uses IP/RA/W/L/S fields
-    if(l.IP){ g.pit_IP+=parseFloat(l.IP)||0; g.pit_RA+=l.RA||0; g.pit_G+=1;
-      if(l.W&&l.W!=0) g.pit_W+=1; if(l.L&&l.L!=0) g.pit_L+=1; if(l.S&&l.S!=0) g.pit_S+=1; }
+    // pitching from game logs uses pit_IP/pit_RA/pit_W/pit_L/pit_S fields
+    if(l.pit_IP){ g.pit_IP+=parseFloat(l.pit_IP)||0; g.pit_RA+=l.pit_RA||0; g.pit_G+=1;
+      if(l.pit_W&&l.pit_W!=0) g.pit_W+=1; if(l.pit_L&&l.pit_L!=0) g.pit_L+=1; if(l.pit_S&&l.pit_S!=0) g.pit_S+=1; }
   });
   return Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date);});
 }
@@ -1414,7 +1414,7 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view, season
     if(season && season !== 'all' && (l.season_sort==null || l.season_sort.toFixed(1) !== season)) return false;
     if(gender !== 'all'){ var p=getPlayer(l.player_id); if(!p||p.gender!==gender) return false; }
     if(activeOnly && !activeSet.has(l.player_id)) return false;
-    if(isPit) return !!(l.IP);
+    if(isPit) return !!(l.pit_IP);
     if(minAB > 0 && ((l.AB||0)+(l.BB||0)) < minAB) return false;
     return true;
   });
@@ -1423,9 +1423,9 @@ function renderGamePlayerRows(gender, activeOnly, activeSet, minAB, view, season
     rows = logs.map(function(l){
       return {pid:l.player_id, date:l.date, opponent:l.opponent||'',
         season_sort:l.season_sort, game_num:l.game_num,
-        pit_G:1, pit_IP:parseFloat(l.IP)||0, pit_RA:l.RA||0,
-        pit_W:(l.W&&l.W!=0)?1:0, pit_L:(l.L&&l.L!=0)?1:0, pit_S:(l.S&&l.S!=0)?1:0,
-        RIP:parseFloat(l.IP)>0?(l.RA||0)/parseFloat(l.IP):null};
+        pit_G:1, pit_IP:parseFloat(l.pit_IP)||0, pit_RA:l.pit_RA||0,
+        pit_W:(l.pit_W&&l.pit_W!=0)?1:0, pit_L:(l.pit_L&&l.pit_L!=0)?1:0, pit_S:(l.pit_S&&l.pit_S!=0)?1:0,
+        RIP:parseFloat(l.pit_IP)>0?(l.pit_RA||0)/parseFloat(l.pit_IP):null};
     });
     rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
   } else {
