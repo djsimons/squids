@@ -2586,16 +2586,13 @@ function renderLineup() {
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
 
-  // Field geometry
-  // D=72, hx=180, hy=345
-  // 1B=(252,273), 2B=(180,201), 3B=(108,273)
-  // Foul lines to canvas corners: left→(0,165), right→(360,165)
-  // Left foul line eq: y = x + 165  (inside = x > y-165)
-  // Right foul line eq: y = -x + 525 (inside = x < 525-y)
-  // chip half-width ~28px, so safe LF x >= (cy-165)+28, RF x <= (525-cy)-28
-
-  var W=360, H=390, hx=180, hy=345, D=72;
-  var fx=252, fy=273, sx=180, sy=201, tx=108, ty=273;
+  // Field: W=480, H=460, hx=240, hy=440, D=96
+  // 1B=(336,344), 2B=(240,248), 3B=(144,344)
+  // Foul lines to canvas corners: left→(0,200), right→(480,200)
+  // Left foul eq: y = x+200  Right foul eq: y = -x+680
+  // chip fw=60, half=30 — safe LF/RF x keeps chip edge inside foul line
+  var W=480, H=460, hx=240, hy=440;
+  var fx=336, fy=344, sx=240, sy=248, tx=144, ty=344;
 
   function chip(pos, cx, cy) {
     var pid = starters[pos];
@@ -2603,84 +2600,95 @@ function renderLineup() {
     var lo   = pid ? pid.toLowerCase() : '';
     var lname = name ? lastName(name) : '';
     var click = pid ? ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
-    var fw=56, fh=64;
+    var fw=60, fh=68;
     return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-fh/2)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
       '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
         (pid
-          ? '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
-          : '<div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
+          ? '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
+          : '<div style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
         '<div style="font-size:9px;font-weight:700;color:#e2f0ff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;line-height:1.2">'+esc(lname)+'</div>'+
       '</div>'+
     '</foreignObject>';
   }
 
+  function utilChip(pid, cx, cy) {
+    var ps = playerStats[pid];
+    var lo = pid.toLowerCase();
+    var lname = lastName(ps.name);
+    return '<foreignObject x="'+(cx-28)+'" y="'+(cy-26)+'" width="56" height="52" overflow="visible">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml" onclick="navigate(\'profile\',\''+pid+'\')" style="width:56px;text-align:center;cursor:pointer">'+
+        '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.8" onerror="imgError(this,\''+pid+'\',\'leader\')">'+
+        '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:56px">'+esc(lname)+'</div>'+
+      '</div>'+
+    '</foreignObject>';
+  }
+
   // Position coords
-  // LF/RF: pulled up to y=190 and inward enough that full chip (fw=56, half=28) is inside foul lines
-  //   Left foul at y=190: x=190-165=25. LF x >= 25+28=53 → use 90 for comfort
-  //   Right foul at y=190: x=525-190=335. RF x <= 335-28=307 → use 270 for comfort
+  // LF/RF moved up to y=210 (from y=240)
+  // At y=210: left foul x=10, LF chip left=118-30=88 >> 10 ✓
+  //           right foul x=470, RF chip right=362+30=392 << 470 ✓
   var posCoords = {
-    'P':  [hx,     hy-D*1.0],   // pitcher
-    'C':  [hx,     hy+13],      // catcher — bump up slightly for name room
-    '1B': [fx,     fy-12],
-    '2B': [hx+D*0.47, sy-15],
-    '3B': [tx,     ty-12],
-    'SS': [hx-D*0.47, sy-15],
-    'LF': [90,     190],        // safely inside left foul line
-    'LC': [138,    118],
-    'RC': [222,    118],
-    'RF': [270,    190],        // safely inside right foul line
+    'P':  [hx,     fy-22],
+    'C':  [hx,     hy-18],
+    '1B': [fx,     fy-14],
+    '2B': [hx+48,  sy+26],
+    '3B': [tx,     ty-14],
+    'SS': [hx-48,  sy+26],
+    'LF': [118,    210],
+    'LC': [192,    148],
+    'RC': [288,    148],
+    'RF': [362,    210],
   };
 
+  // Util positions: left column x=46, right column x=434, stacked from y=300
+  var utilSpacing = 58;
+  var utilStartY  = 308;
+
+  var utilLeft  = bench.filter(function(_,i){ return i%2===0; });
+  var utilRight = bench.filter(function(_,i){ return i%2===1; });
+
   var fieldSvg =
-    '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto">'+
-    // Outfield green fan: home → left foul corner → bezier arc → right foul corner → home
-    '<path d="M '+hx+','+hy+' L 0,165 Q '+hx+',5 360,165 Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
-    // Infield dirt: full diamond
+    '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto">'+
+    // Green fan
+    '<path d="M '+hx+','+hy+' L 0,200 Q '+hx+',20 '+W+',200 Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
+    // Dirt diamond
     '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(150,90,30,0.48)" stroke="rgba(195,135,55,0.4)" stroke-width="1"/>'+
-    // Outfield/infield boundary arc
-    '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.2"/>'+
+    // Outfield arc
+    '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
     // Foul lines
-    '<line x1="'+hx+'" y1="'+hy+'" x2="0"   y2="165" stroke="rgba(240,192,96,0.28)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
-    '<line x1="'+hx+'" y1="'+hy+'" x2="360" y2="165" stroke="rgba(240,192,96,0.28)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="0" y2="200" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+W+'" y2="200" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
     // Basepaths
     '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
     // Pitcher mound
-    '<circle cx="'+hx+'" cy="'+fy+'" r="7" fill="rgba(150,90,30,0.65)" stroke="rgba(195,135,55,0.45)" stroke-width="1"/>'+
-    // Home plate
-    '<circle cx="'+hx+'" cy="'+hy+'" r="5" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
+    '<circle cx="'+hx+'" cy="'+fy+'" r="9" fill="rgba(150,90,30,0.65)" stroke="rgba(195,135,55,0.45)" stroke-width="1"/>'+
+    // Home
+    '<circle cx="'+hx+'" cy="'+hy+'" r="6" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
     // Bases
     [[fx,fy],[sx,sy],[tx,ty]].map(function(b){
-      return '<rect x="'+(b[0]-5)+'" y="'+(b[1]-5)+'" width="10" height="10" fill="rgba(240,220,180,0.5)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+      return '<rect x="'+(b[0]-6)+'" y="'+(b[1]-6)+'" width="12" height="12" fill="rgba(240,220,180,0.5)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
     }).join('')+
-    // Player chips
+    // Starters
     POSITIONS.map(function(pos){
       var c=posCoords[pos]; return chip(pos,c[0],c[1]);
     }).join('')+
+    // UTIL label
+    (bench.length ? '<text x="'+hx+'" y="'+(utilStartY-18)+'" text-anchor="middle" font-size="9" fill="#475569" font-weight="700" letter-spacing="0.1em" font-family="system-ui">UTIL</text>' : '')+
+    // Util chips left column
+    utilLeft.map(function(pid,i){
+      return utilChip(pid, 46, utilStartY + i*utilSpacing);
+    }).join('')+
+    // Util chips right column
+    utilRight.map(function(pid,i){
+      return utilChip(pid, 434, utilStartY + i*utilSpacing);
+    }).join('')+
     '</svg>';
-
-  var benchHtml = '';
-  if (bench.length) {
-    benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.6rem;margin-top:0.25rem;text-align:center">'+
-      '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.45rem">UTIL</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:0.4rem 0.5rem;justify-content:center">'+
-      bench.map(function(pid) {
-        var ps = playerStats[pid];
-        var lo = pid.toLowerCase();
-        var lname = lastName(ps.name);
-        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;flex-direction:column;align-items:center;width:56px;cursor:pointer">'+
-          '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:2px solid var(--border-bright);object-fit:cover;display:block;margin-bottom:2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'+
-          '<div style="font-size:9px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:56px">'+esc(lname)+'</div>'+
-        '</div>';
-      }).join('')+
-      '</div></div>';
-  }
 
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
-    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.5rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
-    fieldSvg+
-    benchHtml;
+    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.4rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    fieldSvg;
 }
 
 
