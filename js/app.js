@@ -2537,13 +2537,7 @@ function renderLineup() {
     ps.totalPA += (Number(l.AB||0) + Number(l.BB||0));
   });
 
-  // Assign starters greedily: each player can only occupy ONE position.
-  // Sort positions by most-games-played-at-that-position descending so the
-  // "strongest" assignments happen first.
-  var assigned = new Set();
-  var starters = {};
-
-  // Build a flat list of [pos, pid, gamesAtPos] for every (pos, player) pair
+  var assigned = new Set(), starters = {};
   var allCandidates = [];
   POSITIONS.forEach(function(pos) {
     Object.keys(playerStats).forEach(function(pid) {
@@ -2551,7 +2545,6 @@ function renderLineup() {
       if (g > 0) allCandidates.push({pos:pos, pid:pid, gAtPos:g});
     });
   });
-  // Sort by gAtPos desc, then totalG desc, then totalPA desc, then alpha
   allCandidates.sort(function(a,b) {
     if (b.gAtPos !== a.gAtPos) return b.gAtPos - a.gAtPos;
     var pa=playerStats[a.pid], pb=playerStats[b.pid];
@@ -2559,14 +2552,11 @@ function renderLineup() {
     if (pb.totalPA !== pa.totalPA) return pb.totalPA - pa.totalPA;
     return pa.name.localeCompare(pb.name);
   });
-  // Greedily assign: first valid (pos not filled, player not assigned) wins
   allCandidates.forEach(function(c) {
     if (!starters[c.pos] && !assigned.has(c.pid)) {
-      starters[c.pos] = c.pid;
-      assigned.add(c.pid);
+      starters[c.pos] = c.pid; assigned.add(c.pid);
     }
   });
-  // For any position still unfilled, pick best unassigned player by gAtPos
   POSITIONS.forEach(function(pos) {
     if (starters[pos]) return;
     var cands = Object.keys(playerStats).filter(function(pid){
@@ -2579,12 +2569,10 @@ function renderLineup() {
       if (playerStats[b].totalG !== playerStats[a].totalG) return playerStats[b].totalG - playerStats[a].totalG;
       return playerStats[a].name.localeCompare(playerStats[b].name);
     });
-    starters[pos] = cands[0];
-    assigned.add(cands[0]);
+    starters[pos] = cands[0]; assigned.add(cands[0]);
   });
 
   var starterSet = new Set(Object.values(starters));
-
   var BENCH_MIN = 6;
   var bench = Object.keys(playerStats).filter(function(pid) {
     return !starterSet.has(pid) && playerStats[pid].totalG >= BENCH_MIN;
@@ -2598,17 +2586,17 @@ function renderLineup() {
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
 
-  // SVG dimensions. D=80 keeps everything in a 360-wide canvas.
-  // Home plate at bottom-center. Arc connects flush with infield corners.
-  var W=360, H=400, hx=180, hy=368, D=80;
-  var fx=hx+D, fy=hy-D;   // 1B
-  var sx=hx,   sy=hy-D*2; // 2B  
-  var tx=hx-D, ty=hy-D;   // 3B
-  // Arc starts at 3B and ends at 1B so outfield grass meets infield exactly
-  var arcR = D*2.9;
+  // Field geometry
+  // D=72, hx=180, hy=345
+  // 1B=(252,273), 2B=(180,201), 3B=(108,273)
+  // Foul lines to canvas corners: left→(0,165), right→(360,165)
+  // Left foul line eq: y = x + 165  (inside = x > y-165)
+  // Right foul line eq: y = -x + 525 (inside = x < 525-y)
+  // chip half-width ~28px, so safe LF x >= (cy-165)+28, RF x <= (525-cy)-28
 
-  // chip: foreignObject with photo (36px) + centered name below
-  // fw=56 gives enough room; text-align:center on the outer div
+  var W=360, H=390, hx=180, hy=345, D=72;
+  var fx=252, fy=273, sx=180, sy=201, tx=108, ty=273;
+
   function chip(pos, cx, cy) {
     var pid = starters[pos];
     var name = pid ? playerStats[pid].name : null;
@@ -2627,34 +2615,42 @@ function renderLineup() {
   }
 
   // Position coords
+  // LF/RF: pulled up to y=190 and inward enough that full chip (fw=56, half=28) is inside foul lines
+  //   Left foul at y=190: x=190-165=25. LF x >= 25+28=53 → use 90 for comfort
+  //   Right foul at y=190: x=525-190=335. RF x <= 335-28=307 → use 270 for comfort
   var posCoords = {
-    'P':  [hx,          hy-D*1.0],
-    'C':  [hx,          hy+24],
-    '1B': [hx+D,        hy-D],
-    '2B': [hx+D*0.52,   hy-D*2.05],
-    '3B': [hx-D,        hy-D],
-    'SS': [hx-D*0.52,   hy-D*2.05],
-    'LF': [hx-D*1.5,    hy-D*2.18],
-    'LC': [hx-D*0.56,   hy-D*2.88],
-    'RC': [hx+D*0.56,   hy-D*2.88],
-    'RF': [hx+D*1.5,    hy-D*2.18],
+    'P':  [hx,     hy-D*1.0],   // pitcher
+    'C':  [hx,     hy+13],      // catcher — bump up slightly for name room
+    '1B': [fx,     fy-12],
+    '2B': [hx+D*0.47, sy-15],
+    '3B': [tx,     ty-12],
+    'SS': [hx-D*0.47, sy-15],
+    'LF': [90,     190],        // safely inside left foul line
+    'LC': [138,    118],
+    'RC': [222,    118],
+    'RF': [270,    190],        // safely inside right foul line
   };
 
   var fieldSvg =
     '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto">'+
-    // Outfield grass: arc from 3B to 1B going through deep center
-    '<path d="M'+tx+','+ty+' A'+arcR+','+arcR+' 0 0,1 '+fx+','+fy+' L'+hx+','+hy+' Z" fill="rgba(34,120,40,0.35)" stroke="rgba(56,189,248,0.22)" stroke-width="1.2"/>'+
-    // Infield dirt: diamond
-    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(160,100,40,0.35)" stroke="rgba(200,140,60,0.4)" stroke-width="1"/>'+
+    // Outfield green fan: home → left foul corner → bezier arc → right foul corner → home
+    '<path d="M '+hx+','+hy+' L 0,165 Q '+hx+',5 360,165 Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
+    // Infield dirt: full diamond
+    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(150,90,30,0.48)" stroke="rgba(195,135,55,0.4)" stroke-width="1"/>'+
+    // Outfield/infield boundary arc
+    '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.2"/>'+
+    // Foul lines
+    '<line x1="'+hx+'" y1="'+hy+'" x2="0"   y2="165" stroke="rgba(240,192,96,0.28)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="360" y2="165" stroke="rgba(240,192,96,0.28)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
     // Basepaths
     '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
     // Pitcher mound
-    '<circle cx="'+hx+'" cy="'+(hy-D)+'" r="8" fill="rgba(160,100,40,0.5)" stroke="rgba(200,140,60,0.4)" stroke-width="1"/>'+
+    '<circle cx="'+hx+'" cy="'+fy+'" r="7" fill="rgba(150,90,30,0.65)" stroke="rgba(195,135,55,0.45)" stroke-width="1"/>'+
     // Home plate
     '<circle cx="'+hx+'" cy="'+hy+'" r="5" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
     // Bases
     [[fx,fy],[sx,sy],[tx,ty]].map(function(b){
-      return '<rect x="'+(b[0]-5)+'" y="'+(b[1]-5)+'" width="10" height="10" fill="rgba(240,220,180,0.4)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+      return '<rect x="'+(b[0]-5)+'" y="'+(b[1]-5)+'" width="10" height="10" fill="rgba(240,220,180,0.5)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
     }).join('')+
     // Player chips
     POSITIONS.map(function(pos){
@@ -2662,11 +2658,10 @@ function renderLineup() {
     }).join('')+
     '</svg>';
 
-  // Bench chips — centered row, same style
   var benchHtml = '';
   if (bench.length) {
     benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.6rem;margin-top:0.25rem;text-align:center">'+
-      '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.45rem">ALSO PLAYED &ge;'+BENCH_MIN+' GAMES</div>'+
+      '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.45rem">UTIL</div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:0.4rem 0.5rem;justify-content:center">'+
       bench.map(function(pid) {
         var ps = playerStats[pid];
