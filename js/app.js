@@ -1215,6 +1215,8 @@ function onScopeChange() {
 }
 
 function renderStats() {
+  // If lineup view is active, re-render it instead of stats table
+  if (_lineupActive) { renderLineup(); return; }
   var scopeEl   = document.getElementById('stats-scope');
   var seasonEl  = document.getElementById('stats-season');
   var viewEl    = document.getElementById('stats-view');
@@ -2486,8 +2488,29 @@ document.addEventListener('scroll', function(e) {
 
 // Schedule hint updated inside showSchedule directly
 
-// ── LINEUP MODAL ──────────────────────────────────────────────────────────
-function showLineup() {
+// ── LINEUP VIEW ───────────────────────────────────────────────────────────
+var _lineupActive = false;
+
+function toggleLineup() {
+  _lineupActive = !_lineupActive;
+  var btn = document.getElementById('lineup-toggle-btn');
+  var view = document.getElementById('lineup-view');
+  var wrap = document.getElementById('stats-table-wrap');
+  var lbl  = document.getElementById('season-label');
+  if (_lineupActive) {
+    if (btn) { btn.textContent = '✕ Lineup'; btn.style.background = 'var(--deep-mid)'; }
+    if (wrap) wrap.style.display = 'none';
+    if (lbl)  lbl.style.display  = 'none';
+    renderLineup();
+  } else {
+    if (btn) { btn.textContent = '⚾ Lineup'; btn.style.background = 'var(--sky-dim)'; }
+    if (view) view.style.display = 'none';
+    if (wrap) wrap.style.display = '';
+    if (lbl)  lbl.style.display  = '';
+  }
+}
+
+function renderLineup() {
   var seasonVal = document.getElementById('stats-season').value;
   var logs = DATA.logs || [];
   // Filter to selected season (or all if 'all')
@@ -2495,9 +2518,9 @@ function showLineup() {
   var seasonLogs = seasonNum == null ? logs : logs.filter(function(l){ return l.season_sort === seasonNum; });
   var lineupSeasonLabel = seasonNum == null ? 'All Seasons' : seasonLabel(seasonNum);
 
-  // Positions on the field
-  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF','DH'];
-  var posKeys = {P:'pos_P',C:'pos_C','1B':'pos_1B','2B':'pos_2B','3B':'pos_3B',SS:'pos_SS',LF:'pos_LF',LC:'pos_LC',RC:'pos_RC',RF:'pos_RF',DH:'pos_DH'};
+  // Positions (no DH)
+  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF'];
+  var posKeys = {P:'pos_P',C:'pos_C','1B':'pos_1B','2B':'pos_2B','3B':'pos_3B',SS:'pos_SS',LF:'pos_LF',LC:'pos_LC',RC:'pos_RC',RF:'pos_RF'};
 
   // Aggregate: for each player, games at each position + total G + total PA
   var playerStats = {}; // { player_id: { pos: {P:n, C:n,...}, totalG: n, totalPA: n, name: '' } }
@@ -2552,115 +2575,61 @@ function showLineup() {
     return pa.name.localeCompare(pb.name);
   });
 
-  // Helper: display name + games at pos
-  function starterLabel(pos) {
-    var pid = starters[pos];
-    if (!pid) return '<tspan style="fill:var(--text-dim);font-size:10px">—</tspan>';
-    var ps = playerStats[pid];
-    var g = ps.pos[pos]||0;
-    return '<tspan style="fill:var(--sky);font-weight:600">' + esc(ps.name) + '</tspan>' +
-           '<tspan style="fill:var(--text-dim);font-size:10px"> (' + g + 'g)</tspan>';
-  }
-
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // Build SVG diamond (600 × 420 viewBox)
-  // Layout: diamond with P on mound, C behind plate, infield corners, outfield
-  // Positions in (cx, cy) on 600×440 canvas
-  var fieldH = 400;
-  var fieldW = 580;
-  // Plate at bottom-center
-  var origin = {x: fieldW/2, y: fieldH - 30}; // home plate
-  var diamond = 110; // half-side of infield square
-  var pos_coords = {
-    'P':  {x: fieldW/2,       y: fieldH - 30 - diamond*1.1},  // pitcher's mound
-    'C':  {x: fieldW/2,       y: fieldH - 10},                 // behind plate
-    '1B': {x: fieldW/2 + diamond, y: fieldH - 30 - diamond},   // first base
-    '2B': {x: fieldW/2 + diamond*0.5, y: fieldH - 30 - diamond*2.1}, // second base
-    '3B': {x: fieldW/2 - diamond, y: fieldH - 30 - diamond},   // third base
-    'SS': {x: fieldW/2 - diamond*0.5, y: fieldH - 30 - diamond*2.1}, // shortstop
-    'LF': {x: fieldW/2 - diamond*1.7, y: fieldH - 30 - diamond*2.5}, // left field
-    'LC': {x: fieldW/2 - diamond*0.6, y: fieldH - 30 - diamond*3.1}, // left-center
-    'RC': {x: fieldW/2 + diamond*0.6, y: fieldH - 30 - diamond*3.1}, // right-center
-    'RF': {x: fieldW/2 + diamond*1.7, y: fieldH - 30 - diamond*2.5}, // right field
-    'DH': {x: 44,  y: 50},  // DH in top-left corner (not on field)
-  };
+  // Build starter cards
+  function starterCard(pos) {
+    var pid = starters[pos];
+    var g = pid ? (playerStats[pid].pos[pos]||0) : 0;
+    var name = pid ? playerStats[pid].name : '—';
+    var lo = pid ? pid.toLowerCase() : '';
+    var clickable = !!pid;
+    var photoHtml = pid
+      ? '<img src="img/players/'+lo+'" style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid var(--border-bright);display:block;flex-shrink:0" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'
+      : '<div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--border);background:var(--deep);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.1rem;flex-shrink:0">?</div>';
+    return '<div onclick="'+(clickable?'navigate(\'profile\',\''+pid+'\')':'')+'" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.6rem;border-radius:8px;background:var(--surface-raised);border:1px solid var(--border);'+(clickable?'cursor:pointer':'')+'">'+
+      photoHtml+
+      '<div style="min-width:0">'+
+        '<div style="font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.1em;color:var(--sky-light);margin-bottom:1px">'+pos+'</div>'+
+        '<div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(name)+'</div>'+
+        (pid ? '<div style="font-size:0.72rem;color:var(--text-dim)">'+g+'g</div>' : '')+
+      '</div>'+
+    '</div>';
+  }
 
-  // Draw basepaths
-  var bp = [
-    pos_coords['1B'],
-    pos_coords['2B'],
-    pos_coords['3B'],
-    origin
-  ];
-  var bpPath = 'M'+bp[0].x+','+bp[0].y+' L'+bp[1].x+','+bp[1].y+' L'+bp[2].x+','+bp[2].y+' L'+bp[3].x+','+bp[3].y+' Z';
+  // 10 starters in a responsive grid: 5 cols ≥540px, 2 cols below
+  var cardsHtml = '<div id="lineup-starters-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;margin-bottom:1rem">'+
+    POSITIONS.map(starterCard).join('')+
+  '</div>';
 
-  // Outfield arc
-  var arcR = diamond * 3.4;
-  var arcCx = fieldW/2, arcCy = fieldH - 30;
-  var arcStartX = fieldW/2 - diamond*2, arcStartY = fieldH - 30 - diamond*1.4;
-  var arcEndX   = fieldW/2 + diamond*2, arcEndY   = arcStartY;
-
-  var svg = '<svg viewBox="0 0 '+fieldW+' '+fieldH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:400px;display:block">' +
-    // Outfield grass
-    '<path d="M'+(fieldW/2)+','+(fieldH-30)+' L'+arcStartX+','+arcStartY+' A'+arcR+','+arcR+' 0 0,1 '+arcEndX+','+arcEndY+' Z" fill="rgba(0,120,40,0.18)" stroke="rgba(56,189,248,0.25)" stroke-width="1.5"/>' +
-    // Infield
-    '<polygon points="'+(fieldW/2)+','+(fieldH-30)+' '+(fieldW/2+diamond)+','+(fieldH-30-diamond)+' '+(fieldW/2)+','+(fieldH-30-diamond*2)+' '+(fieldW/2-diamond)+','+(fieldH-30-diamond)+'" fill="rgba(0,80,20,0.22)" stroke="rgba(56,189,248,0.3)" stroke-width="1"/>' +
-    // Basepaths
-    '<path d="'+bpPath+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="2" stroke-dasharray="4,3"/>' +
-    // Pitcher mound circle
-    '<circle cx="'+(fieldW/2)+'" cy="'+(fieldH-30-diamond*1.1)+'" r="10" fill="rgba(240,192,96,0.15)" stroke="rgba(240,192,96,0.4)" stroke-width="1"/>' +
-    // Home plate
-    '<circle cx="'+(fieldW/2)+'" cy="'+(fieldH-30)+'" r="8" fill="rgba(240,192,96,0.2)" stroke="rgba(240,192,96,0.5)" stroke-width="1.5"/>' +
-    // Base squares
-    ['1B','2B','3B'].map(function(pos){
-      var c=pos_coords[pos];
-      return '<rect x="'+(c.x-5)+'" y="'+(c.y-5)+'" width="10" height="10" fill="rgba(240,192,96,0.2)" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" transform="rotate(45,'+c.x+','+c.y+')"/>';
-    }).join('') +
-    // Position labels + player names
-    POSITIONS.map(function(pos) {
-      var c = pos_coords[pos];
-      var pid = starters[pos];
-      var gamesAtPos = pid ? (playerStats[pid].pos[pos]||0) : 0;
-      var pName = pid ? playerStats[pid].name : '—';
-      // Position tag
-      var posTag = '<text x="'+c.x+'" y="'+(c.y-18)+'" text-anchor="middle" font-family="var(--font-display)" font-size="10" fill="var(--sky-light)" letter-spacing="0.08em">'+pos+'</text>';
-      // Player name
-      var nameTag = '<text x="'+c.x+'" y="'+(c.y-5)+'" text-anchor="middle" font-family="var(--font-body,sans-serif)" font-size="11" font-weight="600" fill="'+(pid?'var(--text)':'var(--text-dim)')+'">'+esc(pName)+'</text>';
-      // Games
-      var gTag = pid ? '<text x="'+c.x+'" y="'+(c.y+8)+'" text-anchor="middle" font-family="var(--font-body,sans-serif)" font-size="9.5" fill="var(--text-dim)">'+gamesAtPos+'g</text>' : '';
-      return posTag + nameTag + gTag;
-    }).join('') +
-    // DH label (corner)
-    '<text x="44" y="22" text-anchor="middle" font-family="var(--font-display)" font-size="9.5" fill="var(--text-dim)" letter-spacing="0.07em">DH</text>' +
-  '</svg>';
-
-  document.getElementById('lineup-title').textContent = lineupSeasonLabel + ' Starting Lineup';
-  document.getElementById('lineup-field').innerHTML = svg;
-
-  // Bench section
+  // Bench row
   var benchHtml = '';
   if (bench.length) {
-    benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.75rem">' +
-      '<div style="font-family:var(--font-display);font-size:0.78rem;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:0.5rem">ALSO PLAYED ≥' + BENCH_MIN + ' GAMES</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:0.4rem 0.75rem">' +
+    benchHtml = '<div style="border-top:1px solid var(--border);padding-top:0.75rem">'+
+      '<div style="font-family:var(--font-display);font-size:0.72rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:0.5rem">ALSO PLAYED ≥'+BENCH_MIN+' GAMES</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:0.35rem">'+
       bench.map(function(pid) {
         var ps = playerStats[pid];
-        var posPlayed = POSITIONS.filter(function(p){return (ps.pos[p]||0)>0;}).map(function(p){return p+'×'+(ps.pos[p]);}).join(', ');
-        return '<span style="font-size:0.82rem;color:var(--text)">' + esc(ps.name) +
-          ' <span style="color:var(--text-dim);font-size:0.76rem">(' + ps.totalG + 'g' + (posPlayed?' — '+posPlayed:'') + ')</span></span>';
-      }).join('') +
+        var lo = pid.toLowerCase();
+        var posStr = POSITIONS.filter(function(p){return (ps.pos[p]||0)>0;}).map(function(p){return p;}).join('/');
+        return '<div onclick="navigate(\'profile\',\''+pid+'\')" style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;border-radius:6px;background:var(--surface);border:1px solid var(--border);cursor:pointer">'+
+          '<img src="img/players/'+lo+'" style="width:28px;height:28px;object-fit:cover;border-radius:50%;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+pid+'\',\'leader\')" alt="">'+
+          '<div>'+
+            '<div style="font-size:0.8rem;font-weight:600;color:var(--text)">'+esc(ps.name)+'</div>'+
+            '<div style="font-size:0.68rem;color:var(--text-dim)">'+ps.totalG+'g'+(posStr?' · '+posStr:'')+' </div>'+
+          '</div>'+
+        '</div>';
+      }).join('')+
       '</div></div>';
   }
-  document.getElementById('lineup-bench').innerHTML = benchHtml;
 
-  document.getElementById('lineup-modal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLineup() {
-  document.getElementById('lineup-modal').style.display = 'none';
-  document.body.style.overflow = '';
+  var view = document.getElementById('lineup-view');
+  view.style.display = 'block';
+  view.innerHTML =
+    '<div style="font-family:var(--font-display);font-size:0.95rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.75rem">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    '<style>#lineup-starters-grid{grid-template-columns:repeat(5,1fr)}@media(max-width:540px){#lineup-starters-grid{grid-template-columns:repeat(2,1fr)}}</style>'+
+    cardsHtml+
+    benchHtml;
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
