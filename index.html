@@ -129,18 +129,18 @@
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Season</span>
-          <select id="stats-season"></select>
+          <select id="stats-season" onchange="renderStats()"></select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">View</span>
-          <select id="stats-view">
+          <select id="stats-view" onchange="renderStats()">
             <option value="batting">Batting</option>
             <option value="pitching">Pitching</option>
           </select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Gender</span>
-          <select id="stats-gender">
+          <select id="stats-gender" onchange="renderStats()">
             <option value="all">All</option>
             <option value="M">M</option>
             <option value="F">F</option>

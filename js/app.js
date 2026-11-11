@@ -1210,6 +1210,7 @@ function onScopeChange() {
     seasonEl.style.opacity = '';
     seasonEl.style.cursor = '';
   }
+  renderStats();
 }
 
 function renderStats() {
