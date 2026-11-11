@@ -690,39 +690,60 @@ function showPlayers() {
   document.getElementById('player-search').value='';
   document.getElementById('gender-filter').value='all';
   document.getElementById('pos-filter').value='all';
-  document.getElementById('active-only').checked=true;
+  // Populate season dropdown
+
+  var rsel=document.getElementById('roster-season');
+  if(rsel&&rsel.options.length<=1){
+    var seasons=Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
+    seasons.forEach(function(s){
+      var o=document.createElement('option');
+      o.value=s.toFixed(1); o.textContent=seasonLabel(s);
+      rsel.appendChild(o);
+    });
+  }
+  // Default to most recent season
+  if(rsel) rsel.value=DATA.maxSeason.toFixed(1);
   renderRoster();
 }
 
 function applyRosterFilters() {
+  var seasonVal=(document.getElementById('roster-season')||{}).value||'all';
   renderRoster(
     document.getElementById('player-search').value,
     document.getElementById('gender-filter').value,
     document.getElementById('pos-filter').value,
-    document.getElementById('active-only').checked
+    seasonVal
   );
 }
 
-function renderRoster(filter,gender,posFilter,activeOnly) {
+function renderRoster(filter,gender,posFilter,rosterSeason) {
   filter=filter||'';gender=gender||'all';posFilter=posFilter||'all';
-  // Default to checkbox state if not explicitly passed
-  if(activeOnly===undefined){
-    var cb=document.getElementById('active-only');
-    activeOnly=cb?cb.checked:true;
-  } else {
-    activeOnly=!!activeOnly;
-  }
+  rosterSeason=rosterSeason||DATA.maxSeason.toFixed(1);
   var players=DATA.players.slice();
   if(filter){var q=filter.toLowerCase();players=players.filter(function(p){return (p.first+' '+p.last+p.id).toLowerCase().includes(q);});}
   if(gender!=='all') players=players.filter(function(p){return p.gender===gender;});
-  var active=new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
-  if(activeOnly) players=players.filter(function(p){return active.has(p.id);});
+  // Season filter
+  var seasonNum = rosterSeason!=='all' ? parseFloat(rosterSeason) : null;
+  var seasonSet=new Set(DATA.stats.filter(function(s){
+    return s.season_sort===(seasonNum!=null ? seasonNum : DATA.maxSeason);
+  }).map(function(s){return s.player_id;}));
+  if(seasonNum!=null){
+    players=players.filter(function(p){return seasonSet.has(p.id);});
+  }
   if(posFilter!=='all'){
     var posKey='pos_'+posFilter;
-    var posPlayers=new Set(DATA.stats.filter(function(s){return (s[posKey]||0)>0;}).map(function(s){return s.player_id;}));
+    var posStats=seasonNum!=null ? DATA.stats.filter(function(s){return s.season_sort===seasonNum;}) : DATA.stats;
+    var posPlayers=new Set(posStats.filter(function(s){return (s[posKey]||0)>0;}).map(function(s){return s.player_id;}));
     players=players.filter(function(p){return posPlayers.has(p.id);});
   }
   players.sort(function(a,b){return a.last.localeCompare(b.last);});
+
+  // Update page subtitle
+  var ph=document.querySelector('#page-players .page-header p');
+  if(ph){
+    if(seasonNum!=null) ph.textContent=players.length+' players · '+seasonLabel(seasonNum);
+    else ph.textContent=players.length+' players · all seasons';
+  }
 
   var sums={};
   DATA.stats.forEach(function(s){
@@ -731,8 +752,10 @@ function renderRoster(filter,gender,posFilter,activeOnly) {
     sm.AB+=s.AB||0;sm.H+=s.H||0;sm.HR+=s.HR||0;sm.RBI+=s.RBI||0;sm.seasons.push(s.season_sort);
   });
 
+  // "Active" means played in the most recent season specifically
+  var trueActive=new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
   document.getElementById('roster-grid').innerHTML=players.map(function(p){
-    var sm=sums[p.id],isActive=active.has(p.id);
+    var sm=sums[p.id],isActive=trueActive.has(p.id);
     var pStats4=DATA.stats.filter(function(s){return s.player_id===p.id;});
     // Primary position only for roster card
     var mainPos='';

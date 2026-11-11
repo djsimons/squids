@@ -79,6 +79,12 @@
         <input type="text" id="player-search" placeholder="Name..." oninput="applyRosterFilters()" style="width:160px">
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+        <span class="filter-label">Season</span>
+        <select id="roster-season" onchange="applyRosterFilters()">
+          <option value="all">All Time</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
         <span class="filter-label">Gender</span>
         <select id="gender-filter" onchange="applyRosterFilters()">
           <option value="all">All</option><option value="M">M</option><option value="F">F</option>
@@ -96,11 +102,6 @@
           <option value="DH">DH</option>
         </select>
       </div>
-      <label style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;cursor:pointer">
-        <span class="filter-label">Active Only</span>
-        <input type="checkbox" id="active-only" onchange="applyRosterFilters()"
-          style="accent-color:var(--sky);width:14px;height:14px;margin-top:0.35rem">
-      </label>
     </div>
     <div id="roster-grid" class="roster-grid"></div>
   </div>
