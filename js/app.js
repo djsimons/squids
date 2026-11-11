@@ -690,8 +690,8 @@ function showPlayers() {
   document.getElementById('player-search').value='';
   document.getElementById('gender-filter').value='all';
   document.getElementById('pos-filter').value='all';
-  document.getElementById('active-only').checked=false;
   // Populate season dropdown
+
   var rsel=document.getElementById('roster-season');
   if(rsel&&rsel.options.length<=1){
     var seasons=Array.from(new Set(DATA.stats.map(function(s){return s.season_sort;}))).sort(function(a,b){return b-a;});
@@ -701,7 +701,8 @@ function showPlayers() {
       rsel.appendChild(o);
     });
   }
-  if(rsel) rsel.value='all';
+  // Default to most recent season
+  if(rsel) rsel.value=DATA.maxSeason.toFixed(1);
   renderRoster();
 }
 
@@ -711,34 +712,23 @@ function applyRosterFilters() {
     document.getElementById('player-search').value,
     document.getElementById('gender-filter').value,
     document.getElementById('pos-filter').value,
-    document.getElementById('active-only').checked,
     seasonVal
   );
 }
 
-function renderRoster(filter,gender,posFilter,activeOnly,rosterSeason) {
+function renderRoster(filter,gender,posFilter,rosterSeason) {
   filter=filter||'';gender=gender||'all';posFilter=posFilter||'all';
-  rosterSeason=rosterSeason||'all';
-  // Default to checkbox state if not explicitly passed
-  if(activeOnly===undefined){
-    var cb=document.getElementById('active-only');
-    activeOnly=cb?cb.checked:false;
-  } else {
-    activeOnly=!!activeOnly;
-  }
+  rosterSeason=rosterSeason||DATA.maxSeason.toFixed(1);
   var players=DATA.players.slice();
   if(filter){var q=filter.toLowerCase();players=players.filter(function(p){return (p.first+' '+p.last+p.id).toLowerCase().includes(q);});}
   if(gender!=='all') players=players.filter(function(p){return p.gender===gender;});
-  // Season filter: restrict to players who appeared in the selected season
+  // Season filter
   var seasonNum = rosterSeason!=='all' ? parseFloat(rosterSeason) : null;
-  var active=new Set(DATA.stats.filter(function(s){
+  var seasonSet=new Set(DATA.stats.filter(function(s){
     return s.season_sort===(seasonNum!=null ? seasonNum : DATA.maxSeason);
   }).map(function(s){return s.player_id;}));
   if(seasonNum!=null){
-    // When a specific season is selected, show only those players
-    players=players.filter(function(p){return active.has(p.id);});
-  } else if(activeOnly) {
-    players=players.filter(function(p){return active.has(p.id);});
+    players=players.filter(function(p){return seasonSet.has(p.id);});
   }
   if(posFilter!=='all'){
     var posKey='pos_'+posFilter;
@@ -748,14 +738,12 @@ function renderRoster(filter,gender,posFilter,activeOnly,rosterSeason) {
   }
   players.sort(function(a,b){return a.last.localeCompare(b.last);});
 
-  // Update page subtitle + toggle Active Only visibility
+  // Update page subtitle
   var ph=document.querySelector('#page-players .page-header p');
   if(ph){
     if(seasonNum!=null) ph.textContent=players.length+' players · '+seasonLabel(seasonNum);
     else ph.textContent=players.length+' players · all seasons';
   }
-  var activeLabel=document.querySelector('#page-players label');
-  if(activeLabel) activeLabel.style.display=seasonNum!=null?'none':'';
 
   var sums={};
   DATA.stats.forEach(function(s){
@@ -764,8 +752,10 @@ function renderRoster(filter,gender,posFilter,activeOnly,rosterSeason) {
     sm.AB+=s.AB||0;sm.H+=s.H||0;sm.HR+=s.HR||0;sm.RBI+=s.RBI||0;sm.seasons.push(s.season_sort);
   });
 
+  // "Active" means played in the most recent season specifically
+  var trueActive=new Set(DATA.stats.filter(function(s){return s.season_sort===DATA.maxSeason;}).map(function(s){return s.player_id;}));
   document.getElementById('roster-grid').innerHTML=players.map(function(p){
-    var sm=sums[p.id],isActive=active.has(p.id);
+    var sm=sums[p.id],isActive=trueActive.has(p.id);
     var pStats4=DATA.stats.filter(function(s){return s.player_id===p.id;});
     // Primary position only for roster card
     var mainPos='';
