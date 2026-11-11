@@ -218,15 +218,15 @@
   },
   {
     "s": "26.1",
-    "champ": null,
-    "runner": null,
+    "champ": "Speakeasy",
+    "runner": "Cheetahs",
     "w": 5,
     "l": 7
   },
   {
     "s": "26.2",
-    "champ": null,
-    "runner": null,
+    "champ": "Cheetahs",
+    "runner": "Speakeasy",
     "w": 6,
     "l": 6
   }

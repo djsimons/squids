@@ -1165,12 +1165,28 @@ function showSeasons(opts) {
     scopeEl.value = 'season-player';
   }
 
+  // Sync season field enabled/disabled state to current scope
+  onScopeChange();
+
   renderStats();
   renderSeasonRecap(opts.season_sort ? Number(opts.season_sort) : seasons[0]);
 }
 
 function onScopeChange() {
-  // Season filter is now available in all scopes
+  var scope = (document.getElementById('stats-scope')||{}).value || '';
+  var seasonEl = document.getElementById('stats-season');
+  if (!seasonEl) return;
+  var isCareer = scope === 'career-player' || scope === 'career-team';
+  if (isCareer) {
+    seasonEl.value = 'all';
+    seasonEl.disabled = true;
+    seasonEl.style.opacity = '0.4';
+    seasonEl.style.cursor = 'not-allowed';
+  } else {
+    seasonEl.disabled = false;
+    seasonEl.style.opacity = '';
+    seasonEl.style.cursor = '';
+  }
 }
 
 function renderStats() {
