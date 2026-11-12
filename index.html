@@ -146,11 +146,11 @@
             <option value="F">F</option>
           </select>
         </div>
-        <label style="display:flex;flex-direction:row;align-items:center;gap:0.4rem;cursor:pointer;padding-bottom:2px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Active</span>
           <input type="checkbox" id="stats-active" onchange="renderStats()"
-            style="accent-color:var(--sky);width:14px;height:14px;flex-shrink:0">
-          <span class="filter-label" style="margin:0">Active</span>
-        </label>
+            style="accent-color:var(--sky);width:14px;height:14px;margin-top:2px;cursor:pointer">
+        </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Min PA</span>
           <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px" oninput="renderStats()">
