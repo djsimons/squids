@@ -2595,7 +2595,7 @@ function renderLineup() {
   // Arc (outfield wall): bezier from (0,210) Q 240,30 (480,210)
   // With viewBox starting at y=50, the wall at ~y=90 is near the top — close to caption ✓
 
-  var VX=0, VY=80, VW=480, VH=370;  // viewBox
+  var VX=0, VY=105, VW=480, VH=345;  // viewBox
   var hx=240, hy=450, D=96;
   var fx=336, fy=354, sx=240, sy=258, tx=144, ty=354;
   // foul line corners (in full coord space)
@@ -2684,7 +2684,7 @@ function renderLineup() {
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
-    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.1rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.05rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
     fieldSvg;
 }
 
