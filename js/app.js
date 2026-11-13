@@ -2650,42 +2650,55 @@ function renderLineup() {
     }).join('')+
     '</svg>';
 
-  // UTIL strip — plain HTML below the SVG, same max-width
-  var utilHtml = '';
+  // UTIL chips in left foul territory (and right for overflow)
+  // Col slots (cx, cy) — safely outside foul line (left foul: y = x+210)
+  // x=26: foul y=236, top slot y=272. x=76: foul y=286, top slot y=332. x=126: foul y=336, slot y=392.
+  var utilSlots = [
+    [26,272],[26,332],[26,392],
+    [76,332],[76,392],
+    [126,392],
+    [454,272],[454,332],[454,392],
+    [404,332],[404,392],
+    [354,392]
+  ];
   if (bench.length) {
-    var utilChips = bench.map(function(pid) {
-      var ps = playerStats[pid];
+    var utilLabel = '<text x="26" y="260" text-anchor="middle" font-size="7" fill="#334155" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>';
+    var utilFOs = bench.slice(0, utilSlots.length).map(function(pid, i) {
+      var slot = utilSlots[i];
+      var cx = slot[0], cy = slot[1];
       var lo = pid.toLowerCase();
-      var lname = lastName(ps.name);
-      var d = document.createElement('div');
-      d.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:52px;cursor:pointer';
-      d.onclick = (function(p){ return function(){ navigate('profile', p); }; })(pid);
+      var lname = lastName(playerStats[pid].name);
+      var fw = 52, fh = 60;
+      var fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+      fo.setAttribute('x', cx - fw/2);
+      fo.setAttribute('y', cy - 20);
+      fo.setAttribute('width', fw);
+      fo.setAttribute('height', fh);
+      fo.setAttribute('overflow', 'visible');
+      var inner = document.createElement('div');
+      inner.style.cssText = 'width:52px;text-align:center;cursor:pointer';
+      inner.onclick = (function(p){ return function(){ navigate('profile', p); }; })(pid);
       var img = document.createElement('img');
       img.src = 'img/players/' + lo;
-      img.width = 36; img.height = 36;
-      img.style.cssText = 'border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin-bottom:2px;opacity:0.85';
+      img.width = 40; img.height = 40;
+      img.style.cssText = 'border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85';
       img.onerror = (function(p){ return function(){ imgError(this, p, 'leader'); }; })(pid);
       var nm = document.createElement('div');
-      nm.style.cssText = 'font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px';
+      nm.style.cssText = 'font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px;text-shadow:0 1px 3px rgba(0,0,0,0.9)';
       nm.textContent = lname;
-      d.appendChild(img); d.appendChild(nm);
-      return d.outerHTML;
+      inner.appendChild(img);
+      inner.appendChild(nm);
+      fo.appendChild(inner);
+      return fo.outerHTML;
     }).join('');
-    utilHtml =
-      '<div style="border-top:1px solid rgba(56,189,248,0.12);margin-top:0.3rem;padding-top:0.5rem;max-width:520px;margin-left:auto;margin-right:auto">' +
-        '<div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--text-dim);text-align:center;margin-bottom:0.4rem;font-weight:700;font-family:var(--font-display)">UTIL</div>' +
-        '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">' +
-        utilChips +
-        '</div>' +
-      '</div>';
+    fieldSvg = fieldSvg.replace('</svg>', utilLabel + utilFOs + '</svg>');
   }
 
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
     '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.3rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
-    fieldSvg +
-    utilHtml;
+    fieldSvg;
 }
 
 
