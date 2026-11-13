@@ -1125,7 +1125,7 @@ function renderSeasonRecap(selSeason, mode) {
 
   // Append chips inline to whatever text is already in season-label
   var baseText = labelEl.dataset.baseText || labelEl.textContent;
-  labelEl.innerHTML = esc(baseText) + chips;
+  labelEl.innerHTML = baseText + chips;
 }
 
 // Build the season history block for the Records page
