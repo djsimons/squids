@@ -2653,20 +2653,30 @@ function renderLineup() {
   // UTIL strip — plain HTML below the SVG, same max-width
   var utilHtml = '';
   if (bench.length) {
+    var utilChips = bench.map(function(pid) {
+      var ps = playerStats[pid];
+      var lo = pid.toLowerCase();
+      var lname = lastName(ps.name);
+      var d = document.createElement('div');
+      d.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:52px;cursor:pointer';
+      d.onclick = (function(p){ return function(){ navigate('profile', p); }; })(pid);
+      var img = document.createElement('img');
+      img.src = 'img/players/' + lo;
+      img.width = 36; img.height = 36;
+      img.style.cssText = 'border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin-bottom:2px;opacity:0.85';
+      img.onerror = (function(p){ return function(){ imgError(this, p, 'leader'); }; })(pid);
+      var nm = document.createElement('div');
+      nm.style.cssText = 'font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px';
+      nm.textContent = lname;
+      d.appendChild(img); d.appendChild(nm);
+      return d.outerHTML;
+    }).join('');
     utilHtml =
-      '<div style="border-top:1px solid rgba(56,189,248,0.12);margin-top:0.3rem;padding-top:0.5rem;max-width:520px;margin-left:auto;margin-right:auto">'+
-        '<div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--text-dim);text-align:center;margin-bottom:0.4rem;font-weight:700;font-family:var(--font-display)">UTIL</div>'+
-        '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">'+
-        bench.map(function(pid) {
-          var ps = playerStats[pid];
-          var lo = pid.toLowerCase();
-          var lname = lastName(ps.name);
-          return '<div onclick="navigate('profile',''+pid+'')" style="display:flex;flex-direction:column;align-items:center;width:52px;cursor:pointer">'+
-            '<img src="img/players/'+lo+'" width="36" height="36" style="border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin-bottom:2px;opacity:0.85" onerror="imgError(this,''+pid+'','leader')">'+
-            '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px">'+esc(lname)+'</div>'+
-          '</div>';
-        }).join('')+
-        '</div>'+
+      '<div style="border-top:1px solid rgba(56,189,248,0.12);margin-top:0.3rem;padding-top:0.5rem;max-width:520px;margin-left:auto;margin-right:auto">' +
+        '<div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--text-dim);text-align:center;margin-bottom:0.4rem;font-weight:700;font-family:var(--font-display)">UTIL</div>' +
+        '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">' +
+        utilChips +
+        '</div>' +
       '</div>';
   }
 
