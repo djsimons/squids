@@ -1116,10 +1116,15 @@ function renderSeasonRecap(selSeason, mode) {
       (isRunner?' <span title="Runner-up">&#129352;</span>':'');
   }
 
+  // Always append lineup toggle button
+  var btnState = _lineupActive
+    ? 'background:var(--deep-mid);color:#fff'
+    : 'background:var(--sky-dim);color:#fff';
+  var btnLabel = _lineupActive ? '📊 Stats' : '⚾ Lineup';
+  chips += '<button id="season-lineup-btn" onclick="toggleLineup()" style="'+btnState+';border:none;border-radius:6px;padding:0.2rem 0.65rem;cursor:pointer;font-size:0.8rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap;margin-left:1rem;vertical-align:middle">'+btnLabel+'</button>';
+
   // Append chips inline to whatever text is already in season-label
-  if(chips){
-    labelEl.innerHTML=labelEl.textContent+chips;
-  }
+  labelEl.innerHTML=labelEl.textContent+chips;
 }
 
 // Build the season history block for the Records page
@@ -2493,12 +2498,12 @@ var _lineupActive = false;
 
 function toggleLineup() {
   _lineupActive = !_lineupActive;
-  var btn = document.getElementById('lineup-toggle-btn');
+  var btn  = document.getElementById('season-lineup-btn');
   var view = document.getElementById('lineup-view');
   var wrap = document.getElementById('stats-table-wrap');
   var lbl  = document.getElementById('season-label');
   if (_lineupActive) {
-    if (btn) { btn.textContent = '✕ Lineup'; btn.style.background = 'var(--deep-mid)'; }
+    if (btn) { btn.textContent = '📊 Stats'; btn.style.background = 'var(--deep-mid)'; }
     if (wrap) wrap.style.display = 'none';
     if (lbl)  lbl.style.display  = 'none';
     renderLineup();
