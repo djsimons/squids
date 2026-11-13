@@ -2595,7 +2595,7 @@ function renderLineup() {
   // Arc (outfield wall): bezier from (0,210) Q 240,30 (480,210)
   // With viewBox starting at y=50, the wall at ~y=90 is near the top — close to caption ✓
 
-  var VX=0, VY=50, VW=480, VH=400;  // viewBox
+  var VX=0, VY=80, VW=480, VH=370;  // viewBox
   var hx=240, hy=450, D=96;
   var fx=336, fy=354, sx=240, sy=258, tx=144, ty=354;
   // foul line corners (in full coord space)
@@ -2669,27 +2669,12 @@ function renderLineup() {
       var lo = pid.toLowerCase();
       var lname = lastName(playerStats[pid].name);
       var fw = 52, fh = 60;
-      var fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-      fo.setAttribute('x', cx - fw/2);
-      fo.setAttribute('y', cy - 20);
-      fo.setAttribute('width', fw);
-      fo.setAttribute('height', fh);
-      fo.setAttribute('overflow', 'visible');
-      var inner = document.createElement('div');
-      inner.style.cssText = 'width:52px;text-align:center;cursor:pointer';
-      inner.onclick = (function(p){ return function(){ navigate('profile', p); }; })(pid);
-      var img = document.createElement('img');
-      img.src = 'img/players/' + lo;
-      img.width = 40; img.height = 40;
-      img.style.cssText = 'border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85';
-      img.onerror = (function(p){ return function(){ imgError(this, p, 'leader'); }; })(pid);
-      var nm = document.createElement('div');
-      nm.style.cssText = 'font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px;text-shadow:0 1px 3px rgba(0,0,0,0.9)';
-      nm.textContent = lname;
-      inner.appendChild(img);
-      inner.appendChild(nm);
-      fo.appendChild(inner);
-      return fo.outerHTML;
+      return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-20)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
+        '<div xmlns="http://www.w3.org/1999/xhtml" onclick="navigate('+JSON.stringify('profile')+','+JSON.stringify(pid)+')" style="width:'+fw+'px;text-align:center;cursor:pointer">'+
+          '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85" onerror="imgError(this,'+JSON.stringify(pid)+','+JSON.stringify('leader')+')">'+
+          '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px;text-shadow:0 1px 3px rgba(0,0,0,0.9)">'+esc(lname)+'</div>'+
+        '</div>'+
+      '</foreignObject>';
     }).join('');
     fieldSvg = fieldSvg.replace('</svg>', utilLabel + utilFOs + '</svg>');
   }
@@ -2697,7 +2682,7 @@ function renderLineup() {
   var view = document.getElementById('lineup-view');
   view.style.display = 'block';
   view.innerHTML =
-    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.3rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
+    '<div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:0.06em;color:var(--sky);margin-bottom:0.1rem;text-align:center">'+esc(lineupSeasonLabel)+' Starting Lineup</div>'+
     fieldSvg;
 }
 
