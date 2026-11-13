@@ -1124,7 +1124,8 @@ function renderSeasonRecap(selSeason, mode) {
   chips += '<button id="season-lineup-btn" onclick="toggleLineup()" style="'+btnState+';border:none;border-radius:6px;padding:0.2rem 0.65rem;cursor:pointer;font-size:0.8rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap;margin-left:1rem;vertical-align:middle">'+btnLabel+'</button>';
 
   // Append chips inline to whatever text is already in season-label
-  labelEl.innerHTML=labelEl.textContent+chips;
+  var baseText = labelEl.dataset.baseText || labelEl.textContent;
+  labelEl.innerHTML = esc(baseText) + chips;
 }
 
 // Build the season history block for the Records page
@@ -1254,10 +1255,13 @@ function renderStats() {
 
   // Set season label text FIRST, then append recap chips inline
   var labelEl = document.getElementById('season-label');
+  var labelText = '';
   if (labelEl) {
-    if (isCareerMode && season === 'all') labelEl.textContent = 'Career';
-    else if (season === 'all') labelEl.textContent = 'All Seasons — every player-season';
-    else labelEl.textContent = seasonLabel(parseFloat(season));
+    if (isCareerMode && season === 'all') labelText = 'Career';
+    else if (season === 'all') labelText = 'All Seasons — every player-season';
+    else labelText = seasonLabel(parseFloat(season));
+    labelEl.dataset.baseText = labelText;
+    labelEl.textContent = labelText;
   }
 
   // Append W-L + trophy chips inline to the label
