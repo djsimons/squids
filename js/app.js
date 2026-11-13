@@ -2669,9 +2669,11 @@ function renderLineup() {
       var lo = pid.toLowerCase();
       var lname = lastName(playerStats[pid].name);
       var fw = 52, fh = 60;
+      var click = ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"';
+      var errH = ' onerror="imgError(this,\''+pid+'\',\'leader\')"';
       return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-20)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
-        '<div xmlns="http://www.w3.org/1999/xhtml" onclick="navigate('+JSON.stringify('profile')+','+JSON.stringify(pid)+')" style="width:'+fw+'px;text-align:center;cursor:pointer">'+
-          '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85" onerror="imgError(this,'+JSON.stringify(pid)+','+JSON.stringify('leader')+')">'+
+        '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
+          '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85"'+errH+'>'+
           '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px;text-shadow:0 1px 3px rgba(0,0,0,0.9)">'+esc(lname)+'</div>'+
         '</div>'+
       '</foreignObject>';
