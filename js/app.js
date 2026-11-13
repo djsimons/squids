@@ -2505,13 +2505,11 @@ function toggleLineup() {
   if (_lineupActive) {
     if (btn) { btn.textContent = '📊 Stats'; btn.style.background = 'var(--deep-mid)'; }
     if (wrap) wrap.style.display = 'none';
-    if (lbl)  lbl.style.display  = 'none';
     renderLineup();
   } else {
     if (btn) { btn.textContent = '⚾ Lineup'; btn.style.background = 'var(--sky-dim)'; }
     if (view) view.style.display = 'none';
     if (wrap) wrap.style.display = '';
-    if (lbl)  lbl.style.display  = '';
   }
 }
 
