@@ -116,7 +116,7 @@
     <div class="card" style="margin-bottom:0.75rem">
       <div class="filter-bar" style="flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">Scope</span>
+          <span class="filter-label">View</span>
           <select id="stats-scope" onchange="onScopeChange()">
             <option value="game-player">Game &ndash; Player</option>
             <option value="game-team">Game &ndash; Team</option>
@@ -131,7 +131,7 @@
           <select id="stats-season" onchange="renderStats()"></select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">View</span>
+          <span class="filter-label">Bat/Pitch</span>
           <select id="stats-view" onchange="renderStats()">
             <option value="batting">Batting</option>
             <option value="pitching">Pitching</option>
@@ -146,13 +146,13 @@
           </select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+          <span class="filter-label">Min PA</span>
+          <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px" oninput="renderStats()">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Active</span>
           <input type="checkbox" id="stats-active" onchange="renderStats()"
             style="accent-color:var(--sky);width:14px;height:14px;margin-top:2px;cursor:pointer">
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">Min PA</span>
-          <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px" oninput="renderStats()">
         </div>
       </div>
     </div>
