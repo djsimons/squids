@@ -327,7 +327,7 @@ function computeAllCareerTotals() {
 
 function nameWithFace(id) {
   var lo=id.toLowerCase();
-  return '<span style="display:inline-flex;align-items:center;max-width:148px;overflow:hidden">'+
+  return '<span style="display:inline-flex;align-items:center;min-width:0;overflow:hidden">'+
     '<img src="img/players/'+lo+'" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+id+'\',\'inline\')" alt="">'+
     '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+displayName(id)+'</span>'+
   '</span>';
@@ -2270,22 +2270,23 @@ function glBuildLineupSVG(rows) {
     var pl = getPlayer(pid);
     playerInfo[pid] = {
       name: (pl && pl.display_name) || pid,
+      pa: (Number(r.AB)||0) + (Number(r.BB)||0),
       posPlayed: POS_PRIO.filter(function(pos){ return !!r['pos_'+pos]; })
     };
   });
 
-  // Greedy one-per-position assignment (same algorithm as renderLineup)
-  // Sort candidates: prefer players with fewer alternatives (more specialised)
+  // Greedy one-per-position assignment — prefer higher PA players for field spots
   var allCandidates = [];
   POS_PRIO.forEach(function(pos) {
     Object.keys(playerInfo).forEach(function(pid) {
       if (playerInfo[pid].posPlayed.indexOf(pos) !== -1) {
-        allCandidates.push({pos:pos, pid:pid});
+        allCandidates.push({pos:pos, pid:pid, pa: playerInfo[pid].pa});
       }
     });
   });
-  // Sort by priority position index (earlier = higher priority pos)
+  // Higher PA first; break ties by position priority
   allCandidates.sort(function(a,b){
+    if (b.pa !== a.pa) return b.pa - a.pa;
     return POS_PRIO.indexOf(a.pos) - POS_PRIO.indexOf(b.pos);
   });
 
