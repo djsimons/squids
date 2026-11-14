@@ -2255,98 +2255,146 @@ function glToggleLineup(panelId) {
 }
 
 function glBuildLineupSVG(rows) {
-  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF','DH'];
-  // Priority order for assigning a player's "primary" position (DH last)
-  var POS_PRIO = ['P','C','SS','2B','3B','1B','LF','LC','RC','RF','DH'];
+  // ── same geometry as renderLineup ──────────────────────────────────────────
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function lastName(name) { var p=name.split(' '); return p.length>1 ? p.slice(1).join(' ') : p[0]; }
 
-  // Assign each player to exactly one primary position
-  // posMap[pos] = [pid, pid, ...] — only players whose primary pos is here
-  var posMap = {};
-  POSITIONS.forEach(function(p){ posMap[p] = []; });
+  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF'];
+  var POS_PRIO  = ['P','C','SS','2B','3B','1B','LF','LC','RC','RF'];
 
+  // Build playerInfo from rows
+  var playerInfo = {};
   rows.forEach(function(r) {
-    var played = POS_PRIO.filter(function(pos){ return !!r['pos_'+pos]; });
-    if (!played.length) return;
-    var primary = played[0]; // first by priority
-    posMap[primary].push(r.player_id);
+    var pid = r.player_id;
+    if (!pid) return;
+    var pl = getPlayer(pid);
+    playerInfo[pid] = {
+      name: (pl && pl.display_name) || pid,
+      posPlayed: POS_PRIO.filter(function(pos){ return !!r['pos_'+pos]; })
+    };
   });
 
-  // Field coords: [cx, cy] — cy is center of the chip
-  var posCoords = {
-    'P':  [240, 310], 'C':  [240, 395],
-    '1B': [325, 340], '2B': [295, 265],
-    '3B': [155, 340], 'SS': [185, 265],
-    'LF': [108, 185], 'LC': [200, 155],
-    'RC': [280, 155], 'RF': [372, 185],
-    'DH': [60,  390]
-  };
-
-  var VX=0, VY=105, VW=480, VH=355;
-
-  // ── field background (matches renderLineup) ──────────────────────────────
-  var svg = '<svg viewBox="'+VX+' '+VY+' '+VW+' '+VH+'" '+
-    'style="width:100%;max-width:480px;display:block;margin:0 auto" '+
-    'xmlns="http://www.w3.org/2000/svg">';
-
-  // Outfield
-  svg += '<path d="M 60,450 Q 240,90 420,450 Z" fill="#2d5a1b" stroke="#4a7a2a" stroke-width="2"/>';
-  // Infield dirt
-  svg += '<path d="M 155,390 Q 240,295 325,390 L 240,450 Z" fill="#8B6914" stroke="#a0802a" stroke-width="1"/>';
-  // Foul lines
-  svg += '<line x1="60" y1="450" x2="240" y2="130" stroke="#4a7a2a" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>';
-  svg += '<line x1="420" y1="450" x2="240" y2="130" stroke="#4a7a2a" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>';
-  // Bases
-  [[240,390,true],[322,337,false],[240,283,false],[158,337,false]].forEach(function(b){
-    if(b[2]) svg += '<polygon points="'+b[0]+','+(b[1]-7)+' '+(b[0]+7)+','+b[1]+' '+b[0]+','+(b[1]+7)+' '+(b[0]-7)+','+b[1]+'" fill="#f0d080" stroke="#c8a830" stroke-width="1.5"/>';
-    else svg += '<rect x="'+(b[0]-6)+'" y="'+(b[1]-6)+'" width="12" height="12" fill="white" stroke="#aaa" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
-  });
-  // Mound
-  svg += '<circle cx="240" cy="337" r="10" fill="#9B7424" stroke="#b08030" stroke-width="1.5"/>';
-  svg += '<rect x="237" y="334" width="6" height="5" fill="white" stroke="#999" stroke-width="0.5"/>';
-
-  // ── DH label ─────────────────────────────────────────────────────────────
-  if (posMap['DH'].length) {
-    svg += '<text x="60" y="375" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.5)" font-family="system-ui,sans-serif" font-weight="700">DH</text>';
-  }
-
-  // ── chips ─────────────────────────────────────────────────────────────────
-  POSITIONS.forEach(function(pos) {
-    var pids = posMap[pos];
-    if (!pids.length) return;
-    var coord = posCoords[pos];
-    if (!coord) return;
-    var cx = coord[0], cy = coord[1];
-
-    var n = pids.length;
-    var imgSize = n === 1 ? 36 : n === 2 ? 28 : 22;
-    var fw = imgSize + 6, fh = imgSize + 16;
-    var gap = 3;
-    var totalW = n * fw + (n-1) * gap;
-    var startX = cx - totalW/2;
-
-    // Position label above chips
-    svg += '<text x="'+cx+'" y="'+(cy - imgSize/2 - 12)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.55)" font-family="system-ui,sans-serif" font-weight="700">'+pos+'</text>';
-
-    pids.forEach(function(pid, i) {
-      var px = startX + i*(fw+gap);
-      var py = cy - imgSize/2 - 8;
-      var lo = pid.toLowerCase();
-      var pl = getPlayer(pid);
-      var lname = pl ? (pl.display_name||pl.last||pid).split(' ').pop() : pid;
-      var click = ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"';
-      var errH  = ' onerror="imgError(this,\''+pid+'\',\'leader\')"';
-      svg += '<foreignObject x="'+px+'" y="'+py+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
-        '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
-          '<img src="img/players/'+lo+'" width="'+imgSize+'" height="'+imgSize+'"'+
-            ' style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px"'+errH+'>'+
-          '<div style="font-size:7px;font-weight:600;color:#e2e8f0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;text-shadow:0 1px 3px rgba(0,0,0,0.9)">'+lname+'</div>'+
-        '</div>'+
-      '</foreignObject>';
+  // Greedy one-per-position assignment (same algorithm as renderLineup)
+  // Sort candidates: prefer players with fewer alternatives (more specialised)
+  var allCandidates = [];
+  POS_PRIO.forEach(function(pos) {
+    Object.keys(playerInfo).forEach(function(pid) {
+      if (playerInfo[pid].posPlayed.indexOf(pos) !== -1) {
+        allCandidates.push({pos:pos, pid:pid});
+      }
     });
   });
+  // Sort by priority position index (earlier = higher priority pos)
+  allCandidates.sort(function(a,b){
+    return POS_PRIO.indexOf(a.pos) - POS_PRIO.indexOf(b.pos);
+  });
 
-  svg += '</svg>';
-  return svg;
+  var assigned = new Set(), starters = {};
+  allCandidates.forEach(function(c) {
+    if (!starters[c.pos] && !assigned.has(c.pid)) {
+      starters[c.pos] = c.pid; assigned.add(c.pid);
+    }
+  });
+  // Second pass: anyone not yet assigned gets their first pos (can share)
+  POS_PRIO.forEach(function(pos) {
+    if (starters[pos]) return;
+    var cands = Object.keys(playerInfo).filter(function(pid){
+      return !assigned.has(pid) && playerInfo[pid].posPlayed.indexOf(pos) !== -1;
+    });
+    if (cands.length) { starters[pos] = cands[0]; assigned.add(cands[0]); }
+  });
+
+  // Any remaining unassigned players → extras list
+  var extras = Object.keys(playerInfo).filter(function(pid){ return !assigned.has(pid); });
+
+  // ── exact same field geometry as renderLineup ───────────────────────────
+  var VX=0, VY=105, VW=480, VH=345;
+  var hx=240, hy=450, D=96;
+  var fx=336, fy=354, sx=240, sy=258, tx=144, ty=354;
+  var flLx=0, flLy=210, flRx=480, flRy=210;
+
+  var posCoords = {
+    'P':  [hx,      fy+2],
+    'C':  [hx,      hy-18],
+    '1B': [fx,      fy-14],
+    '2B': [hx+48,   sy+26],
+    '3B': [tx,      ty-14],
+    'SS': [hx-48,   sy+26],
+    'LF': [100,     228],
+    'LC': [192,     174],
+    'RC': [288,     174],
+    'RF': [380,     228],
+  };
+
+  // chip renderer — matches renderLineup's chip() exactly
+  function chip(pos, cx, cy) {
+    var pid = starters[pos];
+    var pl  = pid ? getPlayer(pid) : null;
+    var name = pid ? ((pl && pl.display_name) || pid) : null;
+    var lo   = pid ? pid.toLowerCase() : '';
+    var lname = name ? lastName(name) : '';
+    var click = pid ? ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
+    var fw=60, fh=68;
+    return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-fh/2)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
+        (pid
+          ? '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
+          : '<div style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
+        '<div style="font-size:9px;font-weight:700;color:#e2f0ff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;line-height:1.2">'+esc(lname)+'</div>'+
+      '</div>'+
+    '</foreignObject>';
+  }
+
+  // ── field SVG — identical path/polygon/circle code as renderLineup ────────
+  var fieldSvg =
+    '<svg viewBox="'+VX+' '+VY+' '+VW+' '+VH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto">'+
+    '<path d="M '+hx+','+hy+' L '+flLx+','+flLy+' Q '+hx+',30 '+flRx+','+flRy+' Z" fill="rgba(28,105,32,0.42)" stroke="none"/>'+
+    '<polygon points="'+hx+','+hy+' '+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+'" fill="rgba(150,90,30,0.48)" stroke="rgba(195,135,55,0.4)" stroke-width="1"/>'+
+    '<path d="M '+tx+','+ty+' Q '+hx+','+(sy-20)+' '+fx+','+fy+'" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flLx+'" y2="'+flLy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<line x1="'+hx+'" y1="'+hy+'" x2="'+flRx+'" y2="'+flRy+'" stroke="rgba(240,192,96,0.3)" stroke-width="1.2" stroke-dasharray="6,5"/>'+
+    '<polyline points="'+fx+','+fy+' '+sx+','+sy+' '+tx+','+ty+' '+hx+','+hy+' '+fx+','+fy+'" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.5" stroke-dasharray="5,4"/>'+
+    '<circle cx="'+hx+'" cy="'+fy+'" r="9" fill="rgba(150,90,30,0.65)" stroke="rgba(195,135,55,0.45)" stroke-width="1"/>'+
+    '<circle cx="'+hx+'" cy="'+hy+'" r="6" fill="rgba(240,220,180,0.3)" stroke="rgba(240,192,96,0.5)" stroke-width="1.2"/>'+
+    [[fx,fy],[sx,sy],[tx,ty]].map(function(b){
+      return '<rect x="'+(b[0]-6)+'" y="'+(b[1]-6)+'" width="12" height="12" fill="rgba(240,220,180,0.5)" stroke="rgba(240,192,96,0.5)" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+    }).join('')+
+    POSITIONS.map(function(pos){
+      var c=posCoords[pos]; return chip(pos,c[0],c[1]);
+    }).join('')+
+    '</svg>';
+
+  // ── extras in left foul territory (same slot pattern as renderLineup bench) ─
+  var utilSlots = [
+    [26,272],[26,332],[26,392],
+    [76,332],[76,392],
+    [126,392],
+    [454,272],[454,332],[454,392],
+    [404,332],[404,392],
+    [354,392]
+  ];
+  if (extras.length) {
+    var utilLabel = '<text x="26" y="260" text-anchor="middle" font-size="7" fill="#334155" font-weight="700" letter-spacing="0.1em" font-family="system-ui,sans-serif">UTIL</text>';
+    var utilFOs = extras.slice(0, utilSlots.length).map(function(pid, i) {
+      var slot = utilSlots[i];
+      var cx = slot[0], cy = slot[1];
+      var lo = pid.toLowerCase();
+      var pl = getPlayer(pid);
+      var lname = lastName((pl && pl.display_name) || pid);
+      var fw = 52, fh = 60;
+      var click = ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"';
+      var errH = ' onerror="imgError(this,\''+pid+'\',\'leader\')"';
+      return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-20)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
+        '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
+          '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px;opacity:0.85"'+errH+'>'+
+          '<div style="font-size:8px;font-weight:600;color:var(--text-dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:52px;text-shadow:0 1px 3px rgba(0,0,0,0.9)">'+esc(lname)+'</div>'+
+        '</div>'+
+      '</foreignObject>';
+    }).join('');
+    fieldSvg = fieldSvg.replace('</svg>', utilLabel + utilFOs + '</svg>');
+  }
+
+  return fieldSvg;
 }
 
 // ── RECORDS ───────────────────────────────────────────────────────────────
