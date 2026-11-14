@@ -2106,14 +2106,21 @@ function renderGameList() {
       '</div>';
 
       // Box panel (always emitted; hidden by default)
-      html += '<div class="gl-box-panel">';
+      var panelId = 'glpanel-' + boxKey.replace(/[^a-z0-9]/gi,'_');
+      html += '<div class="gl-box-panel" id="'+panelId+'">';
       if (hasBox) {
         var sorted = boxRows.slice().sort(function(a,b){
           var ao = a.batting_order != null ? a.batting_order : 1000 + boxRows.indexOf(a);
           var bo = b.batting_order != null ? b.batting_order : 1000 + boxRows.indexOf(b);
           return ao - bo;
         });
-        html += glBuildBoxTable(sorted);
+        // Toggle button row
+        html += '<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:0.4rem">'+
+          '<button onclick="glToggleLineup(\''+panelId+'\')" id="'+panelId+'-btn" '+
+          'style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.2rem 0.65rem;cursor:pointer;font-size:0.8rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap">'+
+          '⚾ Lineup</button></div>';
+        html += '<div id="'+panelId+'-table">'+glBuildBoxTable(sorted)+'</div>';
+        html += '<div id="'+panelId+'-field" style="display:none">'+glBuildLineupSVG(sorted)+'</div>';
       } else {
         html += '<div class="gl-no-box-msg">Box score not available for this game.</div>';
       }
@@ -2226,6 +2233,116 @@ function glBuildBoxTable(rows) {
 
   html += '</tbody></table>';
   return html;
+}
+
+function glToggleLineup(panelId) {
+  var btn   = document.getElementById(panelId+'-btn');
+  var table = document.getElementById(panelId+'-table');
+  var field = document.getElementById(panelId+'-field');
+  if (!btn || !table || !field) return;
+  var showingField = field.style.display !== 'none';
+  if (showingField) {
+    field.style.display = 'none';
+    table.style.display = '';
+    btn.textContent = '⚾ Lineup';
+    btn.style.background = 'var(--sky-dim)';
+  } else {
+    table.style.display = 'none';
+    field.style.display = '';
+    btn.textContent = '📊 Stats';
+    btn.style.background = 'var(--deep-mid)';
+  }
+}
+
+function glBuildLineupSVG(rows) {
+  // Build position → [playerIds] map from pos_* fields
+  var POSITIONS = ['P','C','1B','2B','3B','SS','LF','LC','RC','RF','DH'];
+  var posMap = {}; // pos -> [pid, ...]
+  POSITIONS.forEach(function(p){ posMap[p] = []; });
+
+  rows.forEach(function(r) {
+    POSITIONS.forEach(function(pos) {
+      if (r['pos_'+pos]) posMap[pos].push(r.player_id);
+    });
+  });
+
+  // Field coordinate map (same geometry as renderLineup)
+  var posCoords = {
+    'P':  [240, 280], 'C':  [240, 400], '1B': [330, 330],
+    '2B': [300, 250], '3B': [150, 330], 'SS': [180, 250],
+    'LF': [110, 175], 'LC': [195, 150], 'RC': [285, 150], 'RF': [370, 175],
+    'DH': [240, 450]
+  };
+
+  var VX=0, VY=105, VW=480, VH=345;
+
+  // Build field SVG (same as renderLineup field background)
+  var fieldSvg = '<svg viewBox="'+VX+' '+VY+' '+VW+' '+VH+'" style="width:100%;max-width:480px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">';
+
+  // Outfield wall
+  fieldSvg += '<path d="M 60,450 Q 240,80 420,450 Z" fill="#2d5a1b" stroke="#5a8a3a" stroke-width="2"/>';
+  // Infield dirt
+  fieldSvg += '<path d="M 150,390 Q 240,290 330,390 L 240,450 Z" fill="#8B6914" stroke="#a0802a" stroke-width="1"/>';
+  // Bases
+  var bases = [[240,390],[315,335],[240,280],[165,335]];
+  bases.forEach(function(b,i){
+    if(i===0) fieldSvg += '<polygon points="'+b[0]+','+(b[1]-7)+' '+(b[0]+7)+','+b[1]+' '+b[0]+','+(b[1]+7)+' '+(b[0]-7)+','+b[1]+'" fill="#f0d080" stroke="#c8a830" stroke-width="1.5"/>';
+    else fieldSvg += '<rect x="'+(b[0]-6)+'" y="'+(b[1]-6)+'" width="12" height="12" fill="white" stroke="#aaa" stroke-width="1" transform="rotate(45 '+b[0]+' '+b[1]+')"/>';
+  });
+  // Foul lines
+  fieldSvg += '<line x1="60" y1="450" x2="240" y2="135" stroke="#5a8a3a" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>';
+  fieldSvg += '<line x1="420" y1="450" x2="240" y2="135" stroke="#5a8a3a" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>';
+
+  // Pitcher's mound
+  fieldSvg += '<circle cx="240" cy="335" r="12" fill="#8B6914" stroke="#a0802a" stroke-width="1.5"/>';
+  fieldSvg += '<rect x="236" y="332" width="8" height="6" fill="white" stroke="#999" stroke-width="0.5"/>';
+
+  // Now render each position
+  POSITIONS.forEach(function(pos) {
+    var pids = posMap[pos];
+    if (!pids.length) return;
+    var coord = posCoords[pos];
+    if (!coord) return;
+    var cx = coord[0], cy = coord[1];
+
+    var n = pids.length;
+    // Size: 1 player = 36px, 2 = 28px, 3+ = 22px
+    var imgSize = n === 1 ? 36 : n === 2 ? 28 : 22;
+    var fh = imgSize + 14;
+    var fw = imgSize + 4;
+
+    // Spread players horizontally if multiple
+    var totalW = n * fw + (n-1) * 2;
+    var startX = cx - totalW/2;
+
+    pids.forEach(function(pid, i) {
+      var px = startX + i * (fw + 2);
+      var py = cy - imgSize/2 - 7;
+      var lo = pid.toLowerCase();
+      var lname = (function(pid2){
+        var pl = getPlayer(pid2);
+        if (!pl) return pid2;
+        var parts = (pl.display_name||pl.last||pid2).split(' ');
+        return parts[parts.length-1];
+      })(pid);
+
+      var click = ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"';
+      var errH = ' onerror="imgError(this,\''+pid+'\',\'leader\')"';
+      fieldSvg += '<foreignObject x="'+px+'" y="'+py+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
+        '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
+          '<img src="img/players/'+lo+'" width="'+imgSize+'" height="'+imgSize+'" '+
+            'style="border-radius:50%;border:1.5px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px"'+errH+'>'+
+          '<div style="font-size:7px;font-weight:600;color:#e2e8f0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;text-shadow:0 1px 3px rgba(0,0,0,0.9)">'+lname+'</div>'+
+        '</div>'+
+      '</foreignObject>';
+    });
+
+    // Position label
+    fieldSvg += '<text x="'+cx+'" y="'+(cy - imgSize/2 - 10)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.6)" font-family="system-ui,sans-serif" font-weight="700">'+pos+'</text>';
+  });
+
+  fieldSvg += '</svg>';
+  return fieldSvg;
 }
 
 // ── RECORDS ───────────────────────────────────────────────────────────────
