@@ -327,7 +327,10 @@ function computeAllCareerTotals() {
 
 function nameWithFace(id) {
   var lo=id.toLowerCase();
-  return '<img src="img/players/'+lo+'" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+id+'\',\'inline\')" alt="">'+displayName(id);
+  return '<span style="display:inline-flex;align-items:center;max-width:148px;overflow:hidden">'+
+    '<img src="img/players/'+lo+'" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;border:1px solid var(--border-bright);flex-shrink:0" onerror="imgError(this,\''+id+'\',\'inline\')" alt="">'+
+    '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+displayName(id)+'</span>'+
+  '</span>';
 }
 // ── ROUTING ───────────────────────────────────────────────────────────────
 function navigate(route, param) {
