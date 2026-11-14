@@ -2296,13 +2296,25 @@ function glBuildLineupSVG(rows) {
       starters[c.pos] = c.pid; assigned.add(c.pid);
     }
   });
-  // Second pass: anyone not yet assigned gets their first pos (can share)
+  // Second pass: fill empty positions from unassigned players
   POS_PRIO.forEach(function(pos) {
     if (starters[pos]) return;
     var cands = Object.keys(playerInfo).filter(function(pid){
       return !assigned.has(pid) && playerInfo[pid].posPlayed.indexOf(pos) !== -1;
     });
     if (cands.length) { starters[pos] = cands[0]; assigned.add(cands[0]); }
+  });
+
+  // Third pass: still-empty positions → allow any player who played there,
+  // even if already assigned elsewhere (no blank spots if someone played there)
+  POS_PRIO.forEach(function(pos) {
+    if (starters[pos]) return;
+    var cands = Object.keys(playerInfo).filter(function(pid){
+      return playerInfo[pid].posPlayed.indexOf(pos) !== -1;
+    });
+    // Pick highest PA among them
+    cands.sort(function(a,b){ return playerInfo[b].pa - playerInfo[a].pa; });
+    if (cands.length) starters[pos] = cands[0];
   });
 
   // Any remaining unassigned players → extras list
