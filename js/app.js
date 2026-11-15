@@ -2326,17 +2326,8 @@ function glBuildLineupSVG(rows) {
     if (cands.length) { starters[pos] = cands[0]; assigned.add(cands[0]); }
   });
 
-  // Third pass: still-empty positions → allow any player who played there,
-  // even if already assigned elsewhere (no blank spots if someone played there)
-  POS_PRIO.forEach(function(pos) {
-    if (starters[pos]) return;
-    var cands = Object.keys(playerInfo).filter(function(pid){
-      return playerInfo[pid].posPlayed.indexOf(pos) !== -1;
-    });
-    // Pick highest PA among them
-    cands.sort(function(a,b){ return playerInfo[b].pa - playerInfo[a].pa; });
-    if (cands.length) starters[pos] = cands[0];
-  });
+  // No third pass — if all players who played a position are already assigned
+  // elsewhere, leave it empty rather than show someone twice.
 
   // Any remaining unassigned players → extras list
   var extras = Object.keys(playerInfo).filter(function(pid){ return !assigned.has(pid); });
@@ -2363,17 +2354,15 @@ function glBuildLineupSVG(rows) {
   // chip renderer — matches renderLineup's chip() exactly
   function chip(pos, cx, cy) {
     var pid = starters[pos];
-    var pl  = pid ? getPlayer(pid) : null;
-    var name = pid ? ((pl && pl.display_name) || pid) : null;
-    var lo   = pid ? pid.toLowerCase() : '';
-    var lname = name ? lastName(name) : '';
-    var click = pid ? ' onclick="navigate(\'profile\',\''+pid+'\')" style="cursor:pointer"' : '';
+    if (!pid) return ''; // no player assigned — leave position blank
+    var pl  = getPlayer(pid);
+    var name = (pl && pl.display_name) || pid;
+    var lo   = pid.toLowerCase();
+    var lname = lastName(name);
     var fw=60, fh=68;
     return '<foreignObject x="'+(cx-fw/2)+'" y="'+(cy-fh/2)+'" width="'+fw+'" height="'+fh+'" overflow="visible">'+
-      '<div xmlns="http://www.w3.org/1999/xhtml"'+click+' style="width:'+fw+'px;text-align:center">'+
-        (pid
-          ? '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'
-          : '<div style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--deep-mid);margin:0 auto 2px"></div>')+
+      '<div xmlns="http://www.w3.org/1999/xhtml" onclick="navigate(\'profile\',\''+pid+'\')" style="width:'+fw+'px;text-align:center;cursor:pointer">'+
+        '<img src="img/players/'+lo+'" width="40" height="40" style="border-radius:50%;border:2px solid var(--sky-dim);object-fit:cover;display:block;margin:0 auto 2px" onerror="imgError(this,\''+pid+'\',\'leader\')">'+
         '<div style="font-size:9px;font-weight:700;color:#e2f0ff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:'+fw+'px;line-height:1.2">'+esc(lname)+'</div>'+
       '</div>'+
     '</foreignObject>';
