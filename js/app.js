@@ -2122,10 +2122,13 @@ function renderGameList() {
       html += '<div class="gl-box-panel" id="'+panelId+'">';
       if (hasBox) {
         var sorted = boxRows.slice().sort(function(a,b){
-          var ao = a.batting_order != null ? a.batting_order : 1000;
-          var bo = b.batting_order != null ? b.batting_order : 1000;
+          var ao = a.batting_order != null && a.batting_order > 1 ? a.batting_order : 1000;
+          var bo = b.batting_order != null && b.batting_order > 1 ? b.batting_order : 1000;
           if (ao !== bo) return ao - bo;
-          return (a._idx||0) - (b._idx||0); // preserve CSV row order as tiebreaker
+          // Use csv_row (original spreadsheet row) if available, else _idx (JSON load order)
+          var ar = a.csv_row != null ? a.csv_row : (a._idx != null ? a._idx + 10000 : 99999);
+          var br = b.csv_row != null ? b.csv_row : (b._idx != null ? b._idx + 10000 : 99999);
+          return ar - br;
         });
         html += '<div id="'+panelId+'-table">'+glBuildBoxTable(sorted)+'</div>';
         html += '<div id="'+panelId+'-field" style="display:none">'+glBuildLineupSVG(sorted)+'</div>';
