@@ -2103,10 +2103,8 @@ function renderGameList() {
 
       var panelId = 'glpanel-' + boxKey.replace(/[^a-z0-9]/gi,'_');
       var lineupBtnHtml = hasBox
-        ? '<button id="'+panelId+'-btn" onclick="event.stopPropagation();glToggleLineup(\''+panelId+'\')" '+
-          'style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.15rem 0.55rem;cursor:pointer;font-size:0.75rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap;margin-left:0.5rem">'+
-          '⚾ Lineup</button>'
-        : '';
+        ? '<button id="'+panelId+'-btn" class="gl-lineup-btn" onclick="event.stopPropagation();glToggleLineup(\''+panelId+'\')">⚾ Lineup</button>'
+        : '<span></span>';
 
       html += '<div class="gl-game-row' + (hasBox ? '' : ' no-box') + '"' +
               (hasBox ? ' onclick="glToggleBox(this)"' : '') + '>'+
@@ -2265,12 +2263,12 @@ function glToggleLineup(panelId) {
     field.style.display = 'none';
     table.style.display = '';
     btn.textContent = '⚾ Lineup';
-    btn.style.background = 'var(--sky-dim)';
+    btn.classList.remove('active');
   } else {
     table.style.display = 'none';
     field.style.display = '';
     btn.textContent = '📊 Stats';
-    btn.style.background = 'var(--deep-mid)';
+    btn.classList.add('active');
   }
 }
 
