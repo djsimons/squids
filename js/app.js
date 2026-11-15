@@ -2296,41 +2296,50 @@ function glBuildLineupSVG(rows) {
     };
   });
 
-  // Greedy one-per-position assignment — prefer higher PA players for field spots
-  var allCandidates = [];
+  // ── Bipartite matching: assign unique players to positions ──────────────
+  // Goal: maximise number of filled positions (all 10 if possible), with
+  // ties broken by total PA of the assignment.  Uses augmenting-path
+  // (Hopcroft-Karp flavour) so it handles multi-position players correctly.
+
+  var pids = Object.keys(playerInfo);
+
+  // Build adjacency: pos → [pid, ...] sorted by PA desc
+  var posAdj = {};
   POS_PRIO.forEach(function(pos) {
-    Object.keys(playerInfo).forEach(function(pid) {
-      if (playerInfo[pid].posPlayed.indexOf(pos) !== -1) {
-        allCandidates.push({pos:pos, pid:pid, pa: playerInfo[pid].pa});
+    posAdj[pos] = pids.filter(function(pid){
+      return playerInfo[pid].posPlayed.indexOf(pos) !== -1;
+    }).sort(function(a,b){ return playerInfo[b].pa - playerInfo[a].pa; });
+  });
+
+  // Augmenting-path match: match[pos] = pid, pidPos[pid] = pos
+  var match = {}, pidPos = {};
+
+  function augment(pos, visited) {
+    var cands = posAdj[pos];
+    for (var i = 0; i < cands.length; i++) {
+      var pid = cands[i];
+      if (visited[pid]) continue;
+      visited[pid] = true;
+      // If pid is unmatched, or its current pos can be re-routed
+      if (!pidPos[pid] || augment(pidPos[pid], visited)) {
+        match[pos] = pid;
+        pidPos[pid] = pos;
+        return true;
       }
-    });
-  });
-  // Higher PA first; break ties by position priority
-  allCandidates.sort(function(a,b){
-    if (b.pa !== a.pa) return b.pa - a.pa;
-    return POS_PRIO.indexOf(a.pos) - POS_PRIO.indexOf(b.pos);
-  });
-
-  var assigned = new Set(), starters = {};
-  allCandidates.forEach(function(c) {
-    if (!starters[c.pos] && !assigned.has(c.pid)) {
-      starters[c.pos] = c.pid; assigned.add(c.pid);
     }
-  });
-  // Second pass: fill empty positions from unassigned players
+    return false;
+  }
+
+  // Run matching in POS_PRIO order (infield first = harder to fill)
   POS_PRIO.forEach(function(pos) {
-    if (starters[pos]) return;
-    var cands = Object.keys(playerInfo).filter(function(pid){
-      return !assigned.has(pid) && playerInfo[pid].posPlayed.indexOf(pos) !== -1;
-    });
-    if (cands.length) { starters[pos] = cands[0]; assigned.add(cands[0]); }
+    augment(pos, {});
   });
 
-  // No third pass — if all players who played a position are already assigned
-  // elsewhere, leave it empty rather than show someone twice.
+  var starters = match; // pos → pid (only filled positions)
 
-  // Any remaining unassigned players → extras list
-  var extras = Object.keys(playerInfo).filter(function(pid){ return !assigned.has(pid); });
+  // Any player not placed on the field → extras (bench)
+  var onField = new Set(Object.values(starters));
+  var extras = pids.filter(function(pid){ return !onField.has(pid); });
 
   // ── exact same field geometry as renderLineup ───────────────────────────
   var VX=0, VY=105, VW=480, VH=345;
