@@ -34,9 +34,11 @@ async function loadData() {
     return s;
   });
   // Normalize archived log rows: rename dbl/trp if stored as 2B/3B
-  DATA.logs = res[2].map(function(l) {
+  // Also stamp each row with its original JSON index so we can restore CSV order
+  DATA.logs = res[2].map(function(l, i) {
     if (l.dbl === undefined && l['2B'] !== undefined) l.dbl = l['2B'];
     if (l.trp === undefined && l['3B'] !== undefined) l.trp = l['3B'];
+    l._idx = i;
     return l;
   });
   // Set maxSeason from static data first so site works even if live fetch fails
@@ -1918,6 +1920,8 @@ function renderStatsRows() {
 function sortStats(th) {
   var col = th.dataset.col;
   var tbody = document.getElementById('season-tbody');
+  var wrap = document.getElementById('stats-table-wrap');
+  var scrollLeft = wrap ? wrap.scrollLeft : 0;
   var asc = th.classList.contains('sort-asc');
   document.querySelectorAll('#season-thead th').forEach(function(t){t.classList.remove('sort-asc','sort-desc');});
   th.classList.add(asc ? 'sort-desc' : 'sort-asc');
@@ -1932,6 +1936,9 @@ function sortStats(th) {
   });
   window._statsRows = rows;
   renderStatsRows();
+  // Restore scroll position after re-render so sorting a right-side column
+  // doesn't snap the view back to the left
+  if (wrap) wrap.scrollLeft = scrollLeft;
 }
 
 // Sort the season-by-season table on a player profile page
@@ -2094,6 +2101,13 @@ function renderGameList() {
                      r.forfeit ? (r.wl === 'W' ? 'FFW' : 'FFL') : '';
       var haClass = r.home_away === 'H' ? 'gl-ha-badge home' : 'gl-ha-badge';
 
+      var panelId = 'glpanel-' + boxKey.replace(/[^a-z0-9]/gi,'_');
+      var lineupBtnHtml = hasBox
+        ? '<button id="'+panelId+'-btn" onclick="event.stopPropagation();glToggleLineup(\''+panelId+'\')" '+
+          'style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.15rem 0.55rem;cursor:pointer;font-size:0.75rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap;margin-left:0.5rem">'+
+          '⚾ Lineup</button>'
+        : '';
+
       html += '<div class="gl-game-row' + (hasBox ? '' : ' no-box') + '"' +
               (hasBox ? ' onclick="glToggleBox(this)"' : '') + '>'+
         '<span class="gl-game-num">' + (r.game_num || '') + '</span>'+
@@ -2102,23 +2116,19 @@ function renderGameList() {
         '<span class="gl-opponent">' + (r.opponent || '') + '</span>'+
         '<span class="gl-score" style="color:' + scoreColor + '">' + scoreStr + '</span>'+
         (r.wl ? '<span class="gl-wl-badge ' + r.wl + '">' + r.wl + '</span>' : '<span></span>')+
+        lineupBtnHtml+
         '<span class="gl-expand-arrow">&#9660;</span>'+
       '</div>';
 
       // Box panel (always emitted; hidden by default)
-      var panelId = 'glpanel-' + boxKey.replace(/[^a-z0-9]/gi,'_');
       html += '<div class="gl-box-panel" id="'+panelId+'">';
       if (hasBox) {
         var sorted = boxRows.slice().sort(function(a,b){
-          var ao = a.batting_order != null ? a.batting_order : 1000 + boxRows.indexOf(a);
-          var bo = b.batting_order != null ? b.batting_order : 1000 + boxRows.indexOf(b);
-          return ao - bo;
+          var ao = a.batting_order != null ? a.batting_order : 1000;
+          var bo = b.batting_order != null ? b.batting_order : 1000;
+          if (ao !== bo) return ao - bo;
+          return (a._idx||0) - (b._idx||0); // preserve CSV row order as tiebreaker
         });
-        // Toggle button row
-        html += '<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:0.4rem">'+
-          '<button onclick="glToggleLineup(\''+panelId+'\')" id="'+panelId+'-btn" '+
-          'style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.2rem 0.65rem;cursor:pointer;font-size:0.8rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap">'+
-          '⚾ Lineup</button></div>';
         html += '<div id="'+panelId+'-table">'+glBuildBoxTable(sorted)+'</div>';
         html += '<div id="'+panelId+'-field" style="display:none">'+glBuildLineupSVG(sorted)+'</div>';
       } else {
@@ -2240,6 +2250,16 @@ function glToggleLineup(panelId) {
   var table = document.getElementById(panelId+'-table');
   var field = document.getElementById(panelId+'-field');
   if (!btn || !table || !field) return;
+
+  // If the box panel isn't open yet, open it first
+  var panel = document.getElementById(panelId);
+  if (panel && !panel.classList.contains('open')) {
+    var gameRow = panel.previousElementSibling;
+    if (gameRow && gameRow.classList.contains('gl-game-row')) {
+      glToggleBox(gameRow);
+    }
+  }
+
   var showingField = field.style.display !== 'none';
   if (showingField) {
     field.style.display = 'none';
