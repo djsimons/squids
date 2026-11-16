@@ -703,9 +703,9 @@ table td:first-child { max-width: 160px; }
 
 .gl-game-row {
   display: grid;
-  grid-template-columns: 28px 90px 28px 1fr 52px 60px 28px;
+  grid-template-columns: 28px 90px 28px 1fr 52px 60px auto 28px;
   align-items: center;
-  gap: 0 10px;
+  gap: 0 6px;
   padding: 9px 10px;
   background: var(--bg-row, var(--card));
   border-bottom: 1px solid var(--border);
@@ -775,6 +775,20 @@ table td:first-child { max-width: 160px; }
 }
 .gl-game-row.expanded .gl-expand-arrow { transform: rotate(180deg); }
 .gl-game-row.no-box .gl-expand-arrow { opacity: 0.25; }
+.gl-lineup-btn {
+  background: var(--sky-dim);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 7px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+.gl-lineup-btn.active { background: var(--deep-mid); }
 
 .gl-box-panel {
   display: none;
@@ -829,8 +843,8 @@ table td:first-child { max-width: 160px; }
 
 @media (max-width: 639px) {
   .gl-game-row {
-    grid-template-columns: 22px 80px 26px 1fr 44px 50px 22px;
-    gap: 0 6px;
+    grid-template-columns: 22px 80px 26px 1fr 44px 50px auto 22px;
+    gap: 0 4px;
     padding: 8px 6px;
     font-size: 0.82rem;
   }

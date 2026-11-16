@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Fightin' Squids</title>
-  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="icon" type="image/png" href="img/favicon.png">
   <link rel="stylesheet" href="css/style.css" />
   <style>
     /* Stats table: freeze header row + totals row while scrolling */
@@ -109,7 +109,6 @@
 
 <!-- STATS -->
 <div id="page-seasons" class="page">
-  <div class="page-header"><h2>Stats</h2></div>
   <div class="container">
     <div id="season-recap"></div>
 
@@ -117,7 +116,7 @@
     <div class="card" style="margin-bottom:0.75rem">
       <div class="filter-bar" style="flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">Scope</span>
+          <span class="filter-label">View</span>
           <select id="stats-scope" onchange="onScopeChange()">
             <option value="game-player">Game &ndash; Player</option>
             <option value="game-team">Game &ndash; Team</option>
@@ -132,7 +131,7 @@
           <select id="stats-season" onchange="renderStats()"></select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">View</span>
+          <span class="filter-label">Bat/Pitch</span>
           <select id="stats-view" onchange="renderStats()">
             <option value="batting">Batting</option>
             <option value="pitching">Pitching</option>
@@ -147,25 +146,21 @@
           </select>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">Active</span>
-          <input type="checkbox" id="stats-active" onchange="renderStats()"
-            style="accent-color:var(--sky);width:14px;height:14px;margin-top:2px;cursor:pointer">
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
           <span class="filter-label">Min PA</span>
           <input type="number" id="stats-minab" value="0" min="0" step="5" style="width:65px" oninput="renderStats()">
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
-          <span class="filter-label">&nbsp;</span>
-          <button id="lineup-toggle-btn" onclick="toggleLineup()" style="background:var(--sky-dim);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.8rem;cursor:pointer;font-size:0.85rem;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap">⚾ Lineup</button>
+          <span class="filter-label">Active</span>
+          <input type="checkbox" id="stats-active" onchange="renderStats()"
+            style="accent-color:var(--sky);width:14px;height:14px;margin-top:2px;cursor:pointer">
         </div>
       </div>
     </div>
 
+    <div class="section-title" id="season-label"></div>
+
     <!-- Lineup inline view (replaces stats table) -->
     <div id="lineup-view" style="display:none"></div>
-
-    <div class="section-title" id="season-label"></div>
     <div class="table-wrap scroll-hint" id="stats-table-wrap" onscroll="if(this.scrollLeft>20)this.classList.remove('scroll-hint');else this.classList.add('scroll-hint')">
       <table>
         <thead id="season-thead"></thead>
