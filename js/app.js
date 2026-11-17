@@ -2005,62 +2005,36 @@ function showGameLogs() {
   document.getElementById('page-gamelogs').classList.add('active');
 
   // Build a box-score lookup: key = season_sort + '|' + game_num
-  // Using season_sort instead of date handles rescheduled games correctly
   var boxMap = {};
   DATA.logs.forEach(function(l) {
     if (l.season_sort == null || l.game_num == null) return;
-    var key = l.season_sort + '|' + (l.game_num != null ? l.game_num : '');
+    var key = l.season_sort + '|' + l.game_num;
     if (!boxMap[key]) boxMap[key] = [];
     boxMap[key].push(l);
   });
   window._glBoxMap = boxMap;
 
-  // Collect unique years from schedules for filter buttons
-  var years = Array.from(new Set(DATA.schedules.map(function(r){ return Math.floor(r.season_sort); })))
-    .sort(function(a,b){return b-a;});
-  window._glYearFilter = 'all';
-
-  // Build filter: dropdown on mobile, buttons on desktop
-  var isMobile = window.innerWidth < 640;
-  var filterHTML;
-  if (isMobile) {
-    filterHTML = '<select class="gl-year-select" onchange="glSetYear(this.value===\'all\'?\'all\':parseInt(this.value),null)">' +
-      '<option value="all">All Years</option>';
-    years.forEach(function(y) { filterHTML += '<option value="'+y+'">'+y+'</option>'; });
-    filterHTML += '</select>';
-  } else {
-    filterHTML = '<button class="gl-filter-btn active" onclick="glSetYear(\'all\',this)">All</button>';
-    years.forEach(function(y) {
-      filterHTML += '<button class="gl-filter-btn" onclick="glSetYear('+y+',this)">'+y+'</button>';
-    });
-  }
-  document.getElementById('gl-filter-row').innerHTML = filterHTML;
-
   renderGameList();
 }
 
-function glSetYear(yr, btn) {
-  window._glYearFilter = yr;
-  document.querySelectorAll('.gl-filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  renderGameList();
+function glToggleSeason(ss) {
+  var block = document.getElementById('gl-season-games-' + String(ss).replace('.', '_'));
+  var header = document.getElementById('gl-season-hdr-' + String(ss).replace('.', '_'));
+  if (!block) return;
+  var open = block.classList.toggle('open');
+  if (header) header.classList.toggle('open', open);
 }
 
 function renderGameList() {
-  var yr = window._glYearFilter || 'all';
   var boxMap = window._glBoxMap || {};
-
-  // Filter schedules by year
-  var games = DATA.schedules.filter(function(r) {
-    return yr === 'all' || Math.floor(r.season_sort) === parseInt(yr);
-  });
+  var games = DATA.schedules.slice();
 
   if (!games.length) {
     document.getElementById('game-list').innerHTML = '<div class="empty-state">No games found</div>';
     return;
   }
 
-  // Group by season_sort
+  // Group by season_sort, newest first
   var seasons = [];
   var seasonMap = {};
   games.forEach(function(r) {
@@ -2068,8 +2042,19 @@ function renderGameList() {
     if (!seasonMap[k]) { seasonMap[k] = []; seasons.push(k); }
     seasonMap[k].push(r);
   });
-  // seasons already sorted newest-first from schedules.json sort order; dedupe
   seasons = Array.from(new Set(seasons)).sort(function(a,b){return b-a;});
+  var mostRecent = seasons[0];
+
+  // Build game-counts per player per season from DATA.logs (for face strip)
+  // gameCounts[season_sort][player_id] = number of games
+  var gameCounts = {};
+  DATA.logs.forEach(function(l) {
+    if (!l.season_sort || !l.player_id) return;
+    if (!gameCounts[l.season_sort]) gameCounts[l.season_sort] = {};
+    gameCounts[l.season_sort][l.player_id] = (gameCounts[l.season_sort][l.player_id] || 0) + 1;
+  });
+
+  var MIN_GAMES = 6, MAX_FACES = 12;
 
   var html = '';
   seasons.forEach(function(ss) {
@@ -2078,10 +2063,36 @@ function renderGameList() {
     var wins = rows.filter(function(r){return r.wl==='W';}).length;
     var losses = rows.filter(function(r){return r.wl==='L';}).length;
     var record = wins + '-' + losses;
+    var ssKey = String(ss).replace('.','_');
+    var isOpen = ss === mostRecent;
+
+    // Face strip: players with >= MIN_GAMES this season, sorted by games desc
+    var seasonPlayers = gameCounts[ss] || {};
+    var faceList = Object.keys(seasonPlayers)
+      .filter(function(pid){ return seasonPlayers[pid] >= MIN_GAMES; })
+      .sort(function(a,b){ return seasonPlayers[b] - seasonPlayers[a]; })
+      .slice(0, MAX_FACES);
+
+    var facesHtml = faceList.map(function(pid) {
+      var lo = pid.toLowerCase();
+      return '<img src="img/players/'+lo+'" title="'+displayName(pid).replace(/"/g,'&quot;')+'" '+
+        'style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border-bright);object-fit:cover;flex-shrink:0;cursor:pointer" '+
+        'onerror="imgError(this,\''+pid+'\',\'leader\')" '+
+        'onclick="event.stopPropagation();navigate(\'profile\',\''+pid+'\')">';
+    }).join('');
 
     html += '<div class="gl-season-block">';
-    html += '<div class="gl-season-label">' + label.toLowerCase() +
-            ' <span class="gl-season-record">' + record + '</span></div>';
+    // Collapsible header
+    html += '<div class="gl-season-header' + (isOpen ? ' open' : '') + '" '+
+            'id="gl-season-hdr-'+ssKey+'" onclick="glToggleSeason('+ss+')">' +
+      '<span class="gl-season-chevron">&#9654;</span>' +
+      '<span class="gl-season-name">' + label.toLowerCase() + '</span>' +
+      '<span class="gl-season-record">' + record + '</span>' +
+      (facesHtml ? '<span class="gl-season-faces">' + facesHtml + '</span>' : '') +
+    '</div>';
+
+    // Collapsible games container
+    html += '<div class="gl-season-games' + (isOpen ? ' open' : '') + '" id="gl-season-games-'+ssKey+'">';
 
     rows.forEach(function(r) {
       // Schedule rows don't have season_sort; derive it from the date
@@ -2138,40 +2149,35 @@ function renderGameList() {
       html += '</div>';
     });
 
-    html += '</div>'; // season-block
+    html += '</div>'; // gl-season-games
+    html += '</div>'; // gl-season-block
   });
 
   document.getElementById('game-list').innerHTML = html ||
     '<div class="empty-state">No games found</div>';
 
-  // If navigated here from a player game log date link, scroll to and highlight that game
+  // If navigated here from a player game log date link, open that season and scroll to the game
   if (window._glTargetGame) {
     var tg = window._glTargetGame;
     window._glTargetGame = null;
-    // Filter to the target year so game_num is unambiguous
-    var targetYear = Math.floor(tg.season_sort);
-    window._glYearFilter = targetYear;
-    // Update filter button UI
-    document.querySelectorAll('.gl-filter-btn').forEach(function(b){ b.classList.remove('active'); });
-    var matchBtn = Array.from(document.querySelectorAll('.gl-filter-btn')).find(function(b){
-      return b.textContent.trim() === String(targetYear);
-    });
-    if (matchBtn) matchBtn.classList.add('active');
-    var sel = document.querySelector('.gl-year-select');
-    if (sel) sel.value = String(targetYear);
-    renderGameList();
-    // After re-render, scroll to the target game
+    var tgSsKey = String(tg.season_sort).replace('.','_');
+    // Ensure the target season is open
+    var tgBlock = document.getElementById('gl-season-games-' + tgSsKey);
+    var tgHdr   = document.getElementById('gl-season-hdr-' + tgSsKey);
+    if (tgBlock && !tgBlock.classList.contains('open')) {
+      tgBlock.classList.add('open');
+      if (tgHdr) tgHdr.classList.add('open');
+    }
     setTimeout(function() {
-      var allRows = document.querySelectorAll('.gl-game-row');
+      // Find the game row within this season's block
+      if (!tgBlock) return;
+      var allRows = tgBlock.querySelectorAll('.gl-game-row');
       for (var i = 0; i < allRows.length; i++) {
         var row = allRows[i];
         var numEl = row.querySelector('.gl-game-num');
         if (!numEl) continue;
-        var gn = numEl.textContent.trim();
-        if (String(gn) === String(tg.game_num)) {
-          if (!row.classList.contains('no-box')) {
-            glToggleBox(row);
-          }
+        if (String(numEl.textContent.trim()) === String(tg.game_num)) {
+          if (!row.classList.contains('no-box')) glToggleBox(row);
           row.scrollIntoView({behavior:'smooth', block:'center'});
           row.style.transition = 'background 0.3s';
           row.style.background = 'rgba(56,189,248,0.15)';
