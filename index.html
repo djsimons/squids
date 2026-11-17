@@ -73,24 +73,24 @@
 <div id="page-players" class="page">
   <div class="page-header"><h2>All-Time Roster</h2><p>186 players · all seasons</p></div>
   <div class="container">
-    <div class="filter-bar" style="align-items:flex-end;gap:0.75rem">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+    <div class="filter-bar roster-filter-bar" style="align-items:flex-end;gap:0.5rem;flex-wrap:nowrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;min-width:0;flex:1 1 0">
         <span class="filter-label">Search</span>
-        <input type="text" id="player-search" placeholder="Name..." oninput="applyRosterFilters()" style="width:160px">
+        <input type="text" id="player-search" placeholder="Name..." oninput="applyRosterFilters()" style="width:100%">
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;flex-shrink:0">
         <span class="filter-label">Season</span>
         <select id="roster-season" onchange="applyRosterFilters()">
           <option value="all">All Time</option>
         </select>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;flex-shrink:0">
         <span class="filter-label">Gender</span>
         <select id="gender-filter" onchange="applyRosterFilters()">
           <option value="all">All</option><option value="M">M</option><option value="F">F</option>
         </select>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;flex-shrink:0">
         <span class="filter-label">Position</span>
         <select id="pos-filter" onchange="applyRosterFilters()">
           <option value="all">All</option>
@@ -178,9 +178,8 @@
 
 <!-- GAME LOG -->
 <div id="page-gamelogs" class="page">
-  <div class="page-header"><h2>Game Log</h2><p>All-time schedule &amp; results · click a game for box score</p></div>
+  <div class="page-header"><h2>Game Log</h2><p>All-time schedule &amp; results · expand a season, then click a game to see the box score</p></div>
   <div class="container">
-    <div id="gl-filter-row" class="gl-filter-row"></div>
     <div id="game-list"></div>
   </div>
 </div>

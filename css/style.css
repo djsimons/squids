@@ -358,6 +358,13 @@ tbody td a:hover { color: var(--sky); text-decoration: underline; }
 
 /* ── FILTERS ── */
 .filter-bar { display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.1rem; }
+/* Roster filter: all 4 controls on one line on mobile */
+.roster-filter-bar select { max-width: 90px; }
+@media (max-width: 480px) {
+  .roster-filter-bar { gap: 0.35rem; }
+  .roster-filter-bar select { font-size: 0.78rem; padding: 0.4rem 0.4rem; max-width: 80px; }
+  .roster-filter-bar .filter-label { font-size: 0.65rem; }
+}
 .filter-label { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
 input[type="text"], input[type="number"], select {
   background: var(--surface); border: 1px solid var(--border-bright);
@@ -658,48 +665,70 @@ table td:first-child { max-width: 160px; }
 }
 
 /* ── GAME LOG (new unified layout) ─────────────────────────────────────── */
-.gl-filter-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.gl-filter-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 0.78rem;
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.gl-filter-btn:hover { border-color: var(--border-bright); color: var(--text); }
-.gl-filter-btn.active { background: rgba(56,189,248,0.12); border-color: var(--sky-dim); color: var(--sky); }
+.gl-season-block { margin-bottom: 6px; }
 
-.gl-season-block { margin-bottom: 28px; }
-.gl-season-label {
-  font-family: var(--font-blade);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: lowercase;
-  color: var(--sky);
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2px;
+/* Collapsible season header */
+.gl-season-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+  margin-bottom: 2px;
+}
+.gl-season-header:hover { background: var(--surface); border-color: var(--border-bright); }
+.gl-season-header.open { border-color: var(--sky-dim); border-radius: 7px 7px 0 0; margin-bottom: 0; }
+
+.gl-season-chevron {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.gl-season-header.open .gl-season-chevron { transform: rotate(90deg); }
+
+.gl-season-name {
+  font-family: var(--font-blade);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--sky);
+  flex-shrink: 0;
 }
 .gl-season-record {
   font-family: var(--font-body);
   font-size: 0.72rem;
   color: var(--text-muted);
   font-weight: 400;
-  letter-spacing: 0;
+  flex-shrink: 0;
 }
+.gl-season-faces {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 3px;
+  margin-left: auto;
+  overflow: hidden;
+  align-items: center;
+}
+.gl-season-faces img { transition: transform 0.15s; }
+.gl-season-faces img:hover { transform: scale(1.2); z-index: 1; }
+
+/* Collapsible game list */
+.gl-season-games {
+  display: none;
+  border: 1px solid var(--sky-dim);
+  border-top: none;
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.gl-season-games.open { display: block; }
 
 .gl-game-row {
   display: grid;
@@ -830,16 +859,6 @@ table td:first-child { max-width: 160px; }
   font-style: italic;
 }
 
-.gl-year-select {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 0.82rem;
-  font-family: var(--font-body);
-  cursor: pointer;
-}
 
 @media (max-width: 639px) {
   .gl-game-row {
@@ -853,4 +872,6 @@ table td:first-child { max-width: 160px; }
   .gl-wl-badge { width: 20px; height: 20px; font-size: 0.62rem; }
   .gl-box-panel { font-size: 0.72rem; }
   .gl-box-panel table { min-width: 480px; }
+  .gl-season-faces img { width: 22px; height: 22px; }
+  .gl-season-header { padding: 8px 10px; gap: 6px; }
 }
