@@ -1817,6 +1817,93 @@ function renderStatsTotalsRow(rows) {
   window._statsTotalsHTML = totalsHTML;
 }
 
+function exportStatsCSV() {
+  var rows = window._statsRows || [];
+  if (!rows.length) return;
+  var gameMode = window._statsGameMode;
+  var isPitching = window._statsPitching;
+  var showSeasonCol = window._statsShowSeason;
+
+  // Build header + data rows based on current view mode
+  var headers, getRow;
+
+  if (gameMode === 'team') {
+    if (isPitching) {
+      headers = ['date','opponent','IP','RA','W-L'];
+      getRow = function(r){ return [r.date, r.opponent, r.pit_IP!=null?r.pit_IP:'', r.pit_RA!=null?r.pit_RA:'', (r.pit_W||0)+'-'+(r.pit_L||0)]; };
+    } else {
+      headers = ['date','opponent','W/L','RS','RA','PA','AB','H','RBI','2B','3B','HR','BB','BA','OBP','RV'];
+      getRow = function(r){ return [r.date, r.opponent, r.wl||'', r.sched_rs!=null?r.sched_rs:'', r.sched_ra!=null?r.sched_ra:'',
+        (r.AB||0)+(r.BB||0), r.AB||0, r.H||0, r.RBI||0, r.dbl||0, r.trp||0, r.HR||0, r.BB||0,
+        r.BA!=null?r.BA.toFixed(3):'', r.OBP!=null?r.OBP.toFixed(3):'', r.RV!=null?r.RV.toFixed(2):''];
+      };
+    }
+  } else if (gameMode === 'player') {
+    if (isPitching) {
+      headers = ['player','date','opponent','IP','RA','W-L'];
+      getRow = function(r){ var p=getPlayer(r.pid); var nm=p?(p.first+' '+p.last):r.pid;
+        return [nm, r.date, r.opponent, r.pit_IP!=null?r.pit_IP:'', r.pit_RA!=null?r.pit_RA:'', (r.pit_W||0)+'-'+(r.pit_L||0)]; };
+    } else {
+      headers = ['player','date','opponent','PA','AB','R','H','RBI','2B','3B','HR','BB','BA','OBP','RV'];
+      getRow = function(r){ var p=getPlayer(r.pid); var nm=p?(p.first+' '+p.last):r.pid;
+        return [nm, r.date, r.opponent, r.PA!=null?r.PA:'', r.AB||0, r.R||0, r.H||0, r.RBI||0,
+          r.dbl||0, r.trp||0, r.HR||0, r.BB||0,
+          r.BA!=null?r.BA.toFixed(3):'', r.OBP!=null?r.OBP.toFixed(3):'', r.RV!=null?r.RV.toFixed(2):''];
+      };
+    }
+  } else if (gameMode === 'season-team' || gameMode === 'career-team') {
+    if (isPitching) {
+      headers = ['season','G','IP','RA','W-L'];
+      getRow = function(r){ return [r.seasonStr||'All-Time', r.pit_G||0, r.pit_IP!=null?r.pit_IP:'', r.pit_RA!=null?r.pit_RA:'', (r.pit_W||0)+'-'+(r.pit_L||0)]; };
+    } else {
+      headers = ['season','G','PA','AB','R','H','RBI','2B','3B','HR','BB','BA','OBP','SLG','OPS','RV'];
+      getRow = function(r){ return [r.seasonStr||'All-Time', r.G||0, r.PA!=null?r.PA:'', r.AB||0, r.R||0,
+        r.H||0, r.RBI||0, r.dbl||0, r.trp||0, r.HR||0, r.BB||0,
+        r.BA!=null?r.BA.toFixed(3):'', r.OBP!=null?r.OBP.toFixed(3):'',
+        r.SLG!=null?r.SLG.toFixed(3):'', r.OPS!=null?r.OPS.toFixed(3):'',
+        r.RV!=null?r.RV.toFixed(2):''];
+      };
+    }
+  } else {
+    // Player season/career batting or pitching
+    if (isPitching) {
+      headers = (showSeasonCol ? ['season'] : []).concat(['player','G','GS','IP','RA','W-L','RIP']);
+      getRow = function(r){ var p=getPlayer(r.pid); var nm=p?(p.first+' '+p.last):r.pid;
+        var row = showSeasonCol ? [r.seasonStr||''] : [];
+        return row.concat([nm, r.pit_G||0, r.pit_GS||0, r.pit_IP!=null?r.pit_IP:'', r.pit_RA!=null?r.pit_RA:'',
+          (r.pit_W||0)+'-'+(r.pit_L||0), r.RIP!=null?Number(r.RIP).toFixed(2):'']);
+      };
+    } else {
+      headers = (showSeasonCol ? ['season'] : []).concat(['player','G','PA','AB','R','H','RBI','2B','3B','HR','BB','BA','OBP','SLG','OPS','RV']);
+      getRow = function(r){ var p=getPlayer(r.pid); var nm=p?(p.first+' '+p.last):r.pid;
+        var row = showSeasonCol ? [r.seasonStr||''] : [];
+        return row.concat([nm, r.G||0, r.PA!=null?r.PA:'', r.AB||0, r.R||0,
+          r.H||0, r.RBI||0, r.dbl||0, r.trp||0, r.HR||0, r.BB||0,
+          r.BA!=null?r.BA.toFixed(3):'', r.OBP!=null?r.OBP.toFixed(3):'',
+          r.SLG!=null?r.SLG.toFixed(3):'', r.OPS!=null?r.OPS.toFixed(3):'',
+          r.RV!=null?r.RV.toFixed(2):'']);
+      };
+    }
+  }
+
+  var csvRows = [headers].concat(rows.map(getRow));
+  var csv = csvRows.map(function(row){
+    return row.map(function(v){
+      var s = v==null ? '' : String(v);
+      return s.indexOf(',') >= 0 || s.indexOf('"') >= 0 ? '"'+s.replace(/"/g,'""')+'"' : s;
+    }).join(',');
+  }).join('\n');
+
+  var blob = new Blob([csv], {type:'text/csv'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'squids-stats.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+
 function renderStatsRows() {
   // Reset scroll hint and position on new render
   var wrap = document.getElementById('stats-table-wrap');
@@ -1952,6 +2039,9 @@ function renderStatsRows() {
       Array.from(totalsRow.cells).forEach(function(td){ td.style.top = topPx; });
     }
   }
+  // Show export button whenever there are rows
+  var exportBar = document.getElementById('stats-export-bar');
+  if (exportBar) exportBar.style.display = rows.length > 0 ? '' : 'none';
 }
 
 function sortStats(th) {

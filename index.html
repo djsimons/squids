@@ -168,6 +168,9 @@
         <tfoot id="season-tfoot"></tfoot>
       </table>
     </div>
+    <div id="stats-export-bar" style="display:none;padding:0.5rem 0 0.25rem;text-align:right">
+      <button onclick="exportStatsCSV()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-size:0.72rem;padding:0.25rem 0.65rem;border-radius:4px;cursor:pointer;font-family:var(--font-display);letter-spacing:0.04em;transition:color 0.15s,border-color 0.15s" onmouseover="this.style.color='var(--sky)';this.style.borderColor='var(--sky)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)'">&#8595; export csv</button>
+    </div>
 
     <!-- Hidden elements for backward compat -->
     <select id="season-select" style="display:none"></select>
