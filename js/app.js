@@ -1050,6 +1050,14 @@ function getGameLogs() {
 }
 
 function calcGameTeamRows() {
+  // Build a schedule lookup keyed by season_sort+game_num for RS/RA/W/L
+  var schedMap = {};
+  (DATA.schedules||[]).forEach(function(s){
+    if(s.season_sort!=null && s.game_num!=null){
+      var key = s.season_sort.toFixed(1) + '||' + s.game_num;
+      schedMap[key] = s;
+    }
+  });
   // Aggregate all player lines per game into team totals (batting + pitching)
   var games = {};
   getGameLogs().forEach(function(l){
@@ -1057,7 +1065,8 @@ function calcGameTeamRows() {
     if(!games[key]){
       games[key] = {date:l.date, game_num:l.game_num, season_sort:l.season_sort, opponent:l.opponent,
         AB:0,R:0,H:0,RBI:0,dbl:0,trp:0,HR:0,BB:0,RV:0,
-        pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,pit_G:0};
+        pit_IP:0,pit_RA:0,pit_W:0,pit_L:0,pit_S:0,pit_G:0,
+        sched_rs:null, sched_ra:null, sched_wl:null};
     }
     var g = games[key];
     g.AB+=l.AB||0; g.R+=l.R||0; g.H+=l.H||0; g.RBI+=l.RBI||0;
@@ -1066,6 +1075,14 @@ function calcGameTeamRows() {
     // pitching from game logs uses pit_IP/pit_RA/pit_W/pit_L/pit_S fields
     if(l.pit_IP){ g.pit_IP+=parseFloat(l.pit_IP)||0; g.pit_RA+=l.pit_RA||0; g.pit_G+=1;
       if(l.pit_W&&l.pit_W!=0) g.pit_W+=1; if(l.pit_L&&l.pit_L!=0) g.pit_L+=1; if(l.pit_S&&l.pit_S!=0) g.pit_S+=1; }
+  });
+  // Annotate with schedule RS/RA/W/L
+  Object.values(games).forEach(function(g){
+    if(g.season_sort!=null && g.game_num!=null){
+      var sk = g.season_sort.toFixed(1) + '||' + g.game_num;
+      var sc = schedMap[sk];
+      if(sc){ g.sched_rs=sc.rs; g.sched_ra=sc.ra; g.sched_wl=sc.wl||null; }
+    }
   });
   return Object.values(games).sort(function(a,b){return b.date.localeCompare(a.date);});
 }
@@ -1506,6 +1523,7 @@ function renderGameTeamRows(view, season) {
   var rows = gameData.map(function(g){
     return {pid:null, date:g.date, opponent:g.opponent,
       season_sort:g.season_sort, game_num:g.game_num,
+      wl:g.sched_wl, sched_rs:g.sched_rs, sched_ra:g.sched_ra,
       PA:g.AB+g.BB, AB:g.AB, R:g.R, H:g.H, RBI:g.RBI,
       dbl:g.dbl, trp:g.trp, HR:g.HR, BB:g.BB,
       BA:g.AB>0?g.H/g.AB:null,
@@ -1517,10 +1535,9 @@ function renderGameTeamRows(view, season) {
   });
   if (isPit) {
     rows = rows.filter(function(r){return r.pit_G>0;});
-    rows.sort(function(a,b){return (b.pit_IP||0)-(a.pit_IP||0);});
-  } else {
-    rows.sort(function(a,b){return (b.RV||0)-(a.RV||0);});
   }
+  // Default: date descending
+  rows.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
   window._statsRows = rows;
   window._statsShowSeason = false;
   window._statsPitching = isPit;
@@ -1543,9 +1560,11 @@ function renderGameTeamRows(view, season) {
     thead.innerHTML = '<tr>'+
       '<th onclick="sortStats(this)" data-col="date" style="text-align:left">Date</th>'+
       '<th onclick="sortStats(this)" data-col="opponent" style="text-align:left">Opponent</th>'+
+      '<th onclick="sortStats(this)" data-col="wl" style="text-align:center">W/L</th>'+
+      '<th onclick="sortStats(this)" data-col="sched_rs">RS</th>'+
+      '<th onclick="sortStats(this)" data-col="sched_ra">RA</th>'+
       '<th onclick="sortStats(this)" data-col="PA">PA</th>'+
       '<th onclick="sortStats(this)" data-col="AB">AB</th>'+
-      '<th onclick="sortStats(this)" data-col="R">R</th>'+
       '<th onclick="sortStats(this)" data-col="H">H</th>'+
       '<th onclick="sortStats(this)" data-col="RBI">RBI</th>'+
       '<th onclick="sortStats(this)" data-col="dbl">2B</th>'+
@@ -1755,13 +1774,27 @@ function renderStatsTotalsRow(rows) {
     var ops=(obp!=null&&slg!=null)?obp+slg:null;
     var cells;
     if (isGameMode) {
-      // game-player/game-team batting: PA | AB | R | H | RBI | 2B | 3B | HR | BB | BA | OBP | RV  (no G, no SLG/OPS)
-      cells = '<td>'+(t.AB+t.BB)+'</td><td>'+t.AB+'</td><td>'+t.R+'</td>'+
-        '<td>'+t.H+'</td><td>'+t.RBI+'</td>'+
-        '<td>'+t.dbl+'</td><td>'+t.trp+'</td>'+
-        '<td>'+t.HR+'</td><td>'+t.BB+'</td>'+
-        '<td>'+fmtBA(ba)+'</td><td>'+fmtBA(obp)+'</td>'+
-        '<td>'+fmtRV(calcRV(t))+'</td>';
+      if (gameMode === 'team') {
+        // game-team batting: W/L(blank) | RS(sum) | RA(sum) | PA | AB | H | RBI | 2B | 3B | HR | BB | BA | OBP | RV
+        var totRS=0, totRA=0;
+        rows.forEach(function(r){ totRS+=r.sched_rs!=null?r.sched_rs:0; totRA+=r.sched_ra!=null?r.sched_ra:0; });
+        cells = '<td></td>'+ // W/L blank
+          '<td>'+totRS+'</td><td>'+totRA+'</td>'+
+          '<td>'+(t.AB+t.BB)+'</td><td>'+t.AB+'</td>'+
+          '<td>'+t.H+'</td><td>'+t.RBI+'</td>'+
+          '<td>'+t.dbl+'</td><td>'+t.trp+'</td>'+
+          '<td>'+t.HR+'</td><td>'+t.BB+'</td>'+
+          '<td>'+fmtBA(ba)+'</td><td>'+fmtBA(obp)+'</td>'+
+          '<td>'+fmtRV(calcRV(t))+'</td>';
+      } else {
+        // game-player batting: PA | AB | R | H | RBI | 2B | 3B | HR | BB | BA | OBP | RV  (no G, no SLG/OPS)
+        cells = '<td>'+(t.AB+t.BB)+'</td><td>'+t.AB+'</td><td>'+t.R+'</td>'+
+          '<td>'+t.H+'</td><td>'+t.RBI+'</td>'+
+          '<td>'+t.dbl+'</td><td>'+t.trp+'</td>'+
+          '<td>'+t.HR+'</td><td>'+t.BB+'</td>'+
+          '<td>'+fmtBA(ba)+'</td><td>'+fmtBA(obp)+'</td>'+
+          '<td>'+fmtRV(calcRV(t))+'</td>';
+      }
     } else {
       // season/career batting: (opt season blank) | G | PA | AB | R | H | RBI | 2B | 3B | HR | BB | BA | OBP | SLG | OPS | RV (+ pos cols for player)
       cells = (!isTeamMode && showSeasonCol ? '<td></td>' : '')+
@@ -1812,11 +1845,15 @@ function renderStatsRows() {
           '<td>'+(r.RIP!=null?Number(r.RIP).toFixed(2):'&mdash;')+'</td>'+
         '</tr>';
       }
+      var wlColor = r.wl==='W' ? 'color:var(--sky)' : r.wl==='L' ? 'color:var(--text-muted)' : '';
       return '<tr>'+
         dateTd+
         '<td style="text-align:left">'+r.opponent+'</td>'+
+        '<td style="text-align:center;font-weight:700;'+wlColor+'">'+(r.wl||'&mdash;')+'</td>'+
+        '<td>'+(r.sched_rs!=null?r.sched_rs:'&mdash;')+'</td>'+
+        '<td>'+(r.sched_ra!=null?r.sched_ra:'&mdash;')+'</td>'+
         '<td>'+fmtStat(r.PA)+'</td>'+
-        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.R)+'</td><td>'+fmtStat(r.H)+'</td>'+
+        '<td>'+fmtStat(r.AB)+'</td><td>'+fmtStat(r.H)+'</td>'+
         '<td>'+fmtStat(r.RBI)+'</td><td>'+fmtCount(r.dbl)+'</td><td>'+fmtCount(r.trp)+'</td>'+
         '<td>'+fmtCount(r.HR)+'</td><td>'+fmtCount(r.BB)+'</td>'+
         '<td>'+fmtBA(r.BA)+'</td><td>'+fmtBA(r.OBP)+'</td>'+

@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap');
-@import url('https://db.onlinewebfonts.com/c/7c274d633694f9a2be5321cfa4b31f8e?family=Blade+Runner+Movie+Font');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Orbitron:wght@400;700&display=swap');
 
 :root {
   --sky: #38bdf8;
@@ -23,7 +22,7 @@
   --glow: 0 0 20px rgba(56, 189, 248, 0.2);
   --font-display: 'Barlow Condensed', sans-serif;
   --font-body: 'Barlow', sans-serif;
-  --font-blade: 'Blade Runner Movie Font', 'Barlow Condensed', sans-serif;
+  --font-blade: 'Orbitron', 'Barlow Condensed', sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
